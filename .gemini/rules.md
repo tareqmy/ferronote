@@ -15,6 +15,8 @@
 4. **Auto-save** — the editor must auto-save after inactivity. Never lose user data.
 5. **Run `cargo fmt` and `cargo clippy` before committing.**
 6. **Use Conventional Commits** for all commit messages.
+7. **Modularity** — code must be separated into relevant modules/structs (Single Responsibility Principle).
+8. **Test Coverage** — code must be covered with test cases.
 
 ## Preferred Patterns
 - Use `Action` enum for all state transitions (never mutate state directly from event handlers)

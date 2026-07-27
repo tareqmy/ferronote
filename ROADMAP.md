@@ -27,19 +27,19 @@
 ## Phase 1 · Note Storage (Milestone: "It reads and writes")
 **Goal**: Read/write plain Markdown files from a configurable directory.
 
-- [ ] Implement `note_store.rs` — `NoteStore` struct
-  - [ ] `scan_directory()` — discover all `.md` files
-  - [ ] `load_note(path)` — read file contents into memory
-  - [ ] `save_note(path, content)` — write content to disk (atomic write via temp file)
-  - [ ] `create_note(title)` — create a new `.md` file
-  - [ ] `delete_note(path)` — delete with confirmation
-  - [ ] `rename_note(old, new)` — rename file on disk
-- [ ] Implement `config.rs` — load/save user config
-  - [ ] Notes directory path (default: `~/ferronotes/`)
-  - [ ] Config file location: `~/.config/ferronote/config.json`
-- [ ] Metadata sidecar: `.ferronote/metadata.json` in notes dir
-  - [ ] Track `created_at`, `modified_at` per note
-- [ ] Unit tests for all `NoteStore` operations
+- [x] Implement `note_store.rs` — `NoteStore` struct
+  - [x] `scan_directory()` — discover all `.md` files
+  - [x] `load_note(path)` — read file contents into memory
+  - [x] `save_note(path, content)` — write content to disk (atomic write via temp file)
+  - [x] `create_note(title)` — create a new `.md` file
+  - [x] `delete_note(path)` — delete with confirmation
+  - [x] `rename_note(old, new)` — rename file on disk
+- [x] Implement `config.rs` — load/save user config
+  - [x] Notes directory path (default: `~/ferronotes/`)
+  - [x] Config file location: `~/.config/ferronote/config.json`
+- [x] Metadata sidecar: `.ferronote/metadata.json` in notes dir
+  - [x] Track `created_at`, `modified_at` per note
+- [x] Unit tests for all `NoteStore` operations
 
 **Deliverable**: Rock-solid file I/O layer with tests. No data loss possible.
 

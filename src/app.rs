@@ -10,18 +10,23 @@ use ratatui::{
 use crate::{
     action::Action,
     event::{Event, EventHandler},
+    note_store::NoteStore,
     tui::Tui,
 };
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct App {
     pub should_quit: bool,
+    pub note_store: NoteStore,
 }
 
 impl App {
     #[must_use]
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(note_store: NoteStore) -> Self {
+        Self {
+            should_quit: false,
+            note_store,
+        }
     }
 
     /// # Errors

@@ -13,12 +13,12 @@
 - [x] Set up `.gemini/rules.md` (Gemini rules)
 - [x] Create `README.md` with project overview
 - [x] Create `LICENSE` (MIT)
-- [ ] Implement `tui.rs` — terminal init/restore with panic hook
-- [ ] Implement `event.rs` — async crossterm event polling loop
-- [ ] Implement `action.rs` — initial `Action` enum
-- [ ] Implement `app.rs` — skeleton App struct with run loop
-- [ ] Wire up `main.rs` — CLI parsing, terminal setup, run the app
-- [ ] Verify: app starts, shows blank screen, quits on `Ctrl+Q`
+- [x] Implement `tui.rs` — terminal init/restore with panic hook
+- [x] Implement `event.rs` — async crossterm event polling loop
+- [x] Implement `action.rs` — initial `Action` enum
+- [x] Implement `app.rs` — skeleton App struct with run loop
+- [x] Wire up `main.rs` — CLI parsing, terminal setup, run the app
+- [x] Verify: app starts, shows blank screen, quits on `Ctrl+Q`
 
 **Deliverable**: A running TUI that gracefully handles startup, rendering, and shutdown.
 

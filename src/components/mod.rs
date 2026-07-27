@@ -1,1 +1,3 @@
-// Components module (will be populated in Phase 2)
+pub mod editor;
+pub mod note_list;
+pub mod search_bar;

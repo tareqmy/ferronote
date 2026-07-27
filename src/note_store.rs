@@ -1,10 +1,7 @@
 use chrono::{DateTime, Utc};
 use color_eyre::Result;
 use serde::{Deserialize, Serialize};
-use std::{
-    collections::HashMap,
-    path::PathBuf,
-};
+use std::{collections::HashMap, path::PathBuf};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct NoteMetadata {
@@ -73,9 +70,9 @@ impl NoteStore {
             let entry = entry?;
             let path = entry.path();
 
-            if path.is_file() 
-                && path.extension().is_some_and(|ext| ext == "md") 
-                && let Some(name) = path.file_name().and_then(|n| n.to_str()) 
+            if path.is_file()
+                && path.extension().is_some_and(|ext| ext == "md")
+                && let Some(name) = path.file_name().and_then(|n| n.to_str())
             {
                 found_files.push(name.to_string());
             }

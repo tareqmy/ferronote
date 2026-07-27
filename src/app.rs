@@ -1,31 +1,42 @@
 use color_eyre::Result;
-use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::{
-    Frame,
-    layout::{Alignment, Rect},
+    crossterm::event::{KeyCode, KeyEvent},
+    layout::{Constraint, Direction, Layout},
     style::{Color, Style},
-    widgets::{Block, BorderType, Borders, Paragraph},
+    text::{Line, Span},
+    widgets::Paragraph,
+    Frame,
 };
 
 use crate::{
     action::Action,
+    components::{editor::Editor, note_list::NoteList, search_bar::SearchBar},
     event::{Event, EventHandler},
+    focus::Focus,
     note_store::NoteStore,
     tui::Tui,
 };
 
 #[derive(Debug)]
-pub struct App {
+pub struct App<'a> {
     pub should_quit: bool,
     pub note_store: NoteStore,
+    pub focus: Focus,
+    pub search_bar: SearchBar<'a>,
+    pub note_list: NoteList,
+    pub editor: Editor<'a>,
 }
 
-impl App {
+impl App<'_> {
     #[must_use]
     pub fn new(note_store: NoteStore) -> Self {
         Self {
             should_quit: false,
             note_store,
+            focus: Focus::default(),
+            search_bar: SearchBar::new(),
+            note_list: NoteList::new(),
+            editor: Editor::new(),
         }
     }
 
@@ -36,7 +47,7 @@ impl App {
             tui.draw(|frame| self.draw(frame))?;
 
             let event = events.next().await?;
-            let action = Self::handle_event(event);
+            let action = self.handle_event(event);
 
             if let Some(action) = action {
                 self.update(action);
@@ -46,26 +57,52 @@ impl App {
         Ok(())
     }
 
-    fn handle_event(event: Event) -> Option<Action> {
+    fn handle_event(&mut self, event: Event) -> Option<Action> {
         match event {
             Event::Tick => Some(Action::Tick),
-            Event::Key(key_event) => Self::handle_key(key_event),
+            Event::Key(key_event) => self.handle_key(key_event),
             Event::Mouse(_) => None,
             Event::Resize(w, h) => Some(Action::Resize(w, h)),
         }
     }
 
-    fn handle_key(key: KeyEvent) -> Option<Action> {
+    fn handle_key(&mut self, key: KeyEvent) -> Option<Action> {
         match key.code {
             KeyCode::Char('q')
                 if key
                     .modifiers
                     .contains(crossterm::event::KeyModifiers::CONTROL) =>
             {
-                Some(Action::Quit)
+                return Some(Action::Quit);
             }
-            _ => None,
+            KeyCode::Tab => {
+                self.focus = self.focus.next();
+                return None;
+            }
+            KeyCode::Esc => {
+                self.focus = Focus::SearchBar;
+                return None;
+            }
+            _ => {}
         }
+
+        match self.focus {
+            Focus::SearchBar => {
+                self.search_bar.handle_key(key);
+            }
+            Focus::NoteList => {
+                if key.code == KeyCode::Down {
+                    self.note_list.next();
+                } else if key.code == KeyCode::Up {
+                    self.note_list.previous();
+                }
+            }
+            Focus::Editor => {
+                self.editor.handle_key(key);
+            }
+        }
+
+        None
     }
 
     pub fn update(&mut self, action: Action) {
@@ -75,30 +112,45 @@ impl App {
         }
     }
 
-    pub fn draw(&self, frame: &mut Frame) {
-        let size = frame.area();
+    pub fn draw(&mut self, frame: &mut Frame) {
+        let main_layout = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([
+                Constraint::Length(3), // Search bar
+                Constraint::Min(1),    // Main content
+                Constraint::Length(1), // Status bar
+            ])
+            .split(frame.area());
 
-        let text = "🗒️ Ferronote — Notes at the speed of thought";
-        let paragraph = Paragraph::new(text)
-            .alignment(Alignment::Center)
-            .block(
-                Block::default()
-                    .borders(Borders::ALL)
-                    .border_type(BorderType::Rounded)
-                    .title(" Ferronote ")
-                    .title_alignment(Alignment::Center),
-            )
-            .style(Style::default().fg(Color::White));
+        let content_layout = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints([
+                Constraint::Percentage(30), // Note list
+                Constraint::Percentage(70), // Editor
+            ])
+            .split(main_layout[1]);
 
-        // Render centered text box
-        // Handle case where terminal might be too small
-        let x = size.x.saturating_add(size.width / 4);
-        let y = size.y.saturating_add(size.height / 2).saturating_sub(2);
-        let width = (size.width / 2).max(10);
-        let height = 3;
+        // Render components
+        self.search_bar
+            .draw(frame, main_layout[0], self.focus == Focus::SearchBar);
+        self.note_list
+            .draw(frame, content_layout[0], self.focus == Focus::NoteList);
+        self.editor
+            .draw(frame, content_layout[1], self.focus == Focus::Editor);
 
-        let inner_area = Rect::new(x, y, width.min(size.width), height.min(size.height));
-
-        frame.render_widget(paragraph, inner_area);
+        // Render status bar
+        let status_text = Line::from(vec![
+            Span::styled(" [Tab/Esc] ", Style::default().fg(Color::Yellow)),
+            Span::raw("Switch Focus  |"),
+            Span::styled(" [Ctrl+N] ", Style::default().fg(Color::Yellow)),
+            Span::raw("New Note  |"),
+            Span::styled(" [Ctrl+D] ", Style::default().fg(Color::Yellow)),
+            Span::raw("Delete  |"),
+            Span::styled(" [Ctrl+Q] ", Style::default().fg(Color::Yellow)),
+            Span::raw("Quit"),
+        ]);
+        let status_bar = Paragraph::new(status_text)
+            .style(Style::default().bg(Color::DarkGray).fg(Color::White));
+        frame.render_widget(status_bar, main_layout[2]);
     }
 }

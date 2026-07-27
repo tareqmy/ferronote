@@ -3,6 +3,7 @@ pub mod app;
 pub mod components;
 pub mod config;
 pub mod event;
+pub mod focus;
 pub mod note_store;
 pub mod tui;
 

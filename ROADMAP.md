@@ -48,25 +48,25 @@
 ## Phase 2 · Core UI (Milestone: "It looks like Notational Velocity")
 **Goal**: Three-panel layout with search bar, note list, and editor.
 
-- [ ] Implement `components/search_bar.rs`
-  - [ ] Text input widget with cursor
-  - [ ] Real-time filtering as user types
-  - [ ] Visual feedback: "Press Enter to create '[query]'" when 0 matches
-- [ ] Implement `components/note_list.rs`
-  - [ ] Scrollable list of note titles
-  - [ ] Selected item highlighting
-  - [ ] Fuzzy match character highlighting in titles
-  - [ ] Sort by: last modified (default), title, created
-- [ ] Implement `components/editor.rs`
-  - [ ] Integrate `tui-textarea` for Markdown editing
-  - [ ] Display note title as header
-  - [ ] Line numbers (optional, toggleable)
-- [ ] Layout manager
-  - [ ] Three-panel split as defined in `STYLE_GUIDE.md`
-  - [ ] Status bar with keybinding hints
-  - [ ] Responsive: collapse note list if terminal too narrow
-- [ ] Focus management
-  - [ ] Tab / Esc cycling between Search → List → Editor
+- [x] Implement `components/search_bar.rs`
+  - [x] Text input widget with cursor
+  - [x] Real-time filtering as user types
+  - [x] Visual feedback: "Press Enter to create '[query]'" when 0 matches
+- [x] Implement `components/note_list.rs`
+  - [x] Scrollable list of note titles
+  - [x] Selected item highlighting
+  - [x] Fuzzy match character highlighting in titles
+  - [x] Sort by: last modified (default), title, created
+- [x] Implement `components/editor.rs`
+  - [x] Integrate `tui-textarea` for Markdown editing
+  - [x] Display note title as header
+  - [x] Line numbers (optional, toggleable)
+- [x] Layout manager
+  - [x] Three-panel split as defined in `STYLE_GUIDE.md`
+  - [x] Status bar with keybinding hints
+  - [x] Responsive: collapse note list if terminal too narrow
+- [x] Focus management
+  - [x] Tab / Esc cycling between Search → List → Editor
 
 **Deliverable**: Fully navigable UI with all three panels rendering real note data.
 

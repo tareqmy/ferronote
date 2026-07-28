@@ -704,7 +704,7 @@ impl App<'_> {
             );
 
             let area = frame.area();
-            let width = 58;
+            let width = 70;
             let height = 17;
             let x = (area.width.saturating_sub(width)) / 2;
             let y = (area.height.saturating_sub(height)) / 2;

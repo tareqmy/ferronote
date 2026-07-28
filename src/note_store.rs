@@ -41,16 +41,34 @@ impl NoteStore {
         store.load_metadata()?;
         store.scan_directory()?;
 
-        if store.filenames().is_empty() {
-            let _ = store.create_default_welcome_note();
-        }
+        let _ = store.create_default_welcome_note();
 
         Ok(store)
     }
 
+    /// Creates or updates the default welcome note with the latest application guide content.
+    /// # Errors
+    /// Returns an error if saving the note fails.
     pub fn create_default_welcome_note(&mut self) -> Result<String> {
         let title = "Welcome to Ferronote";
-        let filename = self.create_note(title)?;
+        let filename = format!("{title}.md");
+        let path = self.notes_dir.join(&filename);
+
+        if !path.exists() {
+            let content = format!("# {title}\n\n");
+            std::fs::write(&path, content)?;
+
+            let now = Utc::now();
+            self.metadata.insert(
+                filename.clone(),
+                NoteMetadata {
+                    created_at: now,
+                    modified_at: now,
+                },
+            );
+            self.save_metadata()?;
+        }
+
         let content = r#"# Welcome to Ferronote
 
 Ferronote is a blazing-fast terminal note-taking app inspired by Notational Velocity.
@@ -586,6 +604,26 @@ mod tests {
         let content = store.load_note(&filename).unwrap();
         assert_eq!(content, "# Test Note\n\n");
     }
+
+    #[test]
+    fn test_welcome_note_updated_on_reopen() {
+        let dir = setup_test_dir("welcome_update");
+        let mut store1 = NoteStore::new(dir.clone()).unwrap();
+        store1
+            .save_note("Welcome to Ferronote.md", "Old outdated content")
+            .unwrap();
+        assert_eq!(
+            store1.load_note("Welcome to Ferronote.md").unwrap(),
+            "Old outdated content"
+        );
+
+        // Reopening NoteStore should refresh Welcome to Ferronote.md with latest content
+        let store2 = NoteStore::new(dir).unwrap();
+        let content = store2.load_note("Welcome to Ferronote.md").unwrap();
+        assert!(content.contains("# Welcome to Ferronote"));
+        assert!(content.contains("Ctrl+, / F2 / Ctrl+P"));
+    }
+
 
     #[test]
     fn test_save_note() {

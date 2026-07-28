@@ -173,7 +173,7 @@
   - [x] Import single `.md` / `.txt` file or directory via CLI (`--import`)
   - [x] Import notes from a `.zip` archive
 - [x] **Settings & Configuration**
-  - [x] Expanded `config.json` schema (`default_extension`, `auto_save_delay_ms`, `tab_size`, `sidebar_width_percent`, `theme`, `default_sort`, `auto_purge_days`)
+  - [x] Expanded `config.json` schema (`default_extension`, `auto_save_delay_ms`, `tab_size`, `sidebar_width_percent`, `theme`, `default_sort`, `auto_purge_days`, `show_modified_time`)
   - [x] Interactive Settings TUI Overlay (`Ctrl+P`)
   - [x] Auto-upgrading backward-compatible config loader (`serde(default)`)
 

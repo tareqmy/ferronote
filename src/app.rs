@@ -223,6 +223,9 @@ impl App<'_> {
                 };
                 self.config.auto_purge_days = options[next_idx];
             }
+            7 => {
+                self.config.show_modified_time = !self.config.show_modified_time;
+            }
             _ => {}
         }
         let _ = self.config.save();
@@ -423,7 +426,7 @@ impl App<'_> {
                 self.show_settings = !self.show_settings;
             }
             Action::NextSetting => {
-                if self.settings_selected_index < 6 {
+                if self.settings_selected_index < 7 {
                     self.settings_selected_index += 1;
                 }
             }
@@ -577,6 +580,7 @@ impl App<'_> {
             frame,
             content_layout[0],
             self.focus == Focus::NoteList,
+            self.config.show_modified_time,
             &theme,
         );
         self.editor.draw(
@@ -818,6 +822,14 @@ impl App<'_> {
                         format!("{} days", self.config.auto_purge_days)
                     },
                 ),
+                (
+                    "Show Modified Time",
+                    if self.config.show_modified_time {
+                        "Enabled".to_string()
+                    } else {
+                        "Disabled".to_string()
+                    },
+                ),
             ];
 
             let mut lines = vec![
@@ -871,7 +883,7 @@ impl App<'_> {
 
             let area = frame.area();
             let width = 64;
-            let height = 14;
+            let height = 15;
             let x = (area.width.saturating_sub(width)) / 2;
             let y = (area.height.saturating_sub(height)) / 2;
             let popup_area = ratatui::layout::Rect::new(x, y, width, height);
@@ -963,6 +975,15 @@ mod tests {
 
         app.update(Action::PrevSetting);
         assert_eq!(app.settings_selected_index, 0);
+
+        // Navigate to Show Modified Time (option 7)
+        for _ in 0..7 {
+            app.update(Action::NextSetting);
+        }
+        assert_eq!(app.settings_selected_index, 7);
+        assert!(app.config.show_modified_time);
+        app.update(Action::ChangeSettingOption(true));
+        assert!(!app.config.show_modified_time);
 
         app.update(Action::ToggleSettings);
         assert!(!app.show_settings);

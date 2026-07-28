@@ -120,6 +120,7 @@ impl NoteList {
         frame: &mut Frame,
         area: Rect,
         is_focused: bool,
+        show_modified_time: bool,
         theme: &crate::theme::ThemePalette,
     ) {
         let border_color = if is_focused {
@@ -158,7 +159,11 @@ impl NoteList {
 
                 let mut lines = vec![Line::from(spans)];
 
-                let date_str = format_timestamp(i.modified_at);
+                let date_str = if show_modified_time {
+                    format_timestamp(i.modified_at)
+                } else {
+                    String::new()
+                };
                 if !date_str.is_empty() {
                     let sub_text = if let Some(preview) = &i.content_preview {
                         format!("{} · {}", date_str, preview)

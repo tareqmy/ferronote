@@ -36,6 +36,10 @@ fn default_auto_purge_days() -> u32 {
     30
 }
 
+fn default_show_modified_time() -> bool {
+    true
+}
+
 /// User preferences and application configuration persisted in `config.json`.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Config {
@@ -70,6 +74,10 @@ pub struct Config {
     /// Number of days before soft-deleted trash items are auto-purged.
     #[serde(default = "default_auto_purge_days")]
     pub auto_purge_days: u32,
+
+    /// Whether to show the last modified timestamp in the note list sidebar.
+    #[serde(default = "default_show_modified_time")]
+    pub show_modified_time: bool,
 }
 
 
@@ -84,6 +92,7 @@ impl Default for Config {
             theme: default_theme(),
             default_sort: default_sort(),
             auto_purge_days: default_auto_purge_days(),
+            show_modified_time: default_show_modified_time(),
         }
     }
 }
@@ -133,6 +142,7 @@ mod tests {
         assert_eq!(config.theme, "default");
         assert_eq!(config.default_sort, "modified_desc");
         assert_eq!(config.auto_purge_days, 30);
+        assert_eq!(config.show_modified_time, true);
     }
 
     #[test]

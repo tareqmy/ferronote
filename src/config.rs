@@ -40,6 +40,10 @@ fn default_show_modified_time() -> bool {
     true
 }
 
+fn default_word_wrap() -> bool {
+    true
+}
+
 /// User preferences and application configuration persisted in `config.json`.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Config {
@@ -78,6 +82,10 @@ pub struct Config {
     /// Whether to show the last modified timestamp in the note list sidebar.
     #[serde(default = "default_show_modified_time")]
     pub show_modified_time: bool,
+
+    /// Whether word wrap is enabled in the Markdown editor.
+    #[serde(default = "default_word_wrap")]
+    pub word_wrap: bool,
 }
 
 
@@ -93,6 +101,7 @@ impl Default for Config {
             default_sort: default_sort(),
             auto_purge_days: default_auto_purge_days(),
             show_modified_time: default_show_modified_time(),
+            word_wrap: default_word_wrap(),
         }
     }
 }
@@ -143,6 +152,7 @@ mod tests {
         assert_eq!(config.default_sort, "modified_desc");
         assert_eq!(config.auto_purge_days, 30);
         assert_eq!(config.show_modified_time, true);
+        assert_eq!(config.word_wrap, true);
     }
 
     #[test]

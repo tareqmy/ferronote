@@ -145,6 +145,7 @@
   - [x] Skipped: opted for instant snapping NV style for speed
 - [x] Help overlay
   - [x] `?` key shows keybinding reference
+- [x] Configurable Word Wrap setting in editor (Enabled by default)
 
 **Deliverable**: A polished, delightful TUI that users *enjoy* using.
 

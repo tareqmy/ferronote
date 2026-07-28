@@ -48,7 +48,7 @@ Focus flows: `Search → List → Editor → (Esc) → Search` (cycled with `Tab
 
 ### Settings Overlay (`Ctrl+P`)
 - Rendered as a centered modal popup box overlaying the main layout.
-- Options: Theme, Tab Size, Sidebar Width, Default Sort, Auto-Purge Days, Auto-Save Delay, Show Modified Time.
+- Options: Theme, Tab Size, Sidebar Width, Default Sort, Auto-Purge Days, Auto-Save Delay, Show Modified Time, Word Wrap.
 - Controls: `↑`/`↓` to select setting item, `←`/`→` or `Space`/`Enter` to cycle value options, `Esc` to save & close.
 
 ### About Overlay (`Ctrl+V`)

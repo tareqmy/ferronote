@@ -232,6 +232,9 @@ impl App<'_> {
             7 => {
                 self.config.show_modified_time = !self.config.show_modified_time;
             }
+            8 => {
+                self.config.word_wrap = !self.config.word_wrap;
+            }
             _ => {}
         }
         let _ = self.config.save();
@@ -440,7 +443,7 @@ impl App<'_> {
                 self.show_settings = !self.show_settings;
             }
             Action::NextSetting => {
-                if self.settings_selected_index < 7 {
+                if self.settings_selected_index < 8 {
                     self.settings_selected_index += 1;
                 }
             }
@@ -648,6 +651,7 @@ impl App<'_> {
             frame,
             content_layout[1],
             self.focus == Focus::Editor,
+            self.config.word_wrap,
             &theme,
         );
 
@@ -891,6 +895,14 @@ impl App<'_> {
                         "Disabled".to_string()
                     },
                 ),
+                (
+                    "Word Wrap",
+                    if self.config.word_wrap {
+                        "Enabled".to_string()
+                    } else {
+                        "Disabled".to_string()
+                    },
+                ),
             ];
 
             let mut lines = vec![
@@ -944,7 +956,7 @@ impl App<'_> {
 
             let area = frame.area();
             let width = 64;
-            let height = 15;
+            let height = 16;
             let x = (area.width.saturating_sub(width)) / 2;
             let y = (area.height.saturating_sub(height)) / 2;
             let popup_area = ratatui::layout::Rect::new(x, y, width, height);
@@ -1045,6 +1057,13 @@ mod tests {
         let initial_mod_time = app.config.show_modified_time;
         app.update(Action::ChangeSettingOption(true));
         assert_eq!(app.config.show_modified_time, !initial_mod_time);
+
+        // Navigate to Word Wrap (option 8)
+        app.update(Action::NextSetting);
+        assert_eq!(app.settings_selected_index, 8);
+        let initial_word_wrap = app.config.word_wrap;
+        app.update(Action::ChangeSettingOption(true));
+        assert_eq!(app.config.word_wrap, !initial_word_wrap);
 
         app.update(Action::ToggleSettings);
         assert!(!app.show_settings);

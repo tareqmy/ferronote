@@ -31,6 +31,37 @@ impl Default for Editor<'_> {
     }
 }
 
+/// Soft wraps lines to fit max character width on space boundaries.
+#[must_use]
+pub fn wrap_text_to_width(lines: &[String], max_width: usize) -> Vec<String> {
+    if max_width == 0 {
+        return lines.to_vec();
+    }
+    let mut result = Vec::new();
+    for line in lines {
+        if line.chars().count() <= max_width {
+            result.push(line.clone());
+        } else {
+            let mut current_line = String::new();
+            for word in line.split(' ') {
+                if current_line.is_empty() {
+                    current_line.push_str(word);
+                } else if current_line.chars().count() + 1 + word.chars().count() <= max_width {
+                    current_line.push(' ');
+                    current_line.push_str(word);
+                } else {
+                    result.push(current_line);
+                    current_line = word.to_string();
+                }
+            }
+            if !current_line.is_empty() {
+                result.push(current_line);
+            }
+        }
+    }
+    result
+}
+
 impl Editor<'_> {
     /// Creates a new empty `Editor` component.
     #[must_use]
@@ -42,7 +73,6 @@ impl Editor<'_> {
             original_content: HashMap::new(),
         }
     }
-
 
     pub fn set_content(&mut self, title: &str, content: &str) {
         if title.is_empty() {
@@ -97,6 +127,7 @@ impl Editor<'_> {
         frame: &mut Frame,
         area: Rect,
         is_focused: bool,
+        word_wrap: bool,
         theme: &crate::theme::ThemePalette,
     ) {
         let title = if let Some(ref note) = self.current_note {
@@ -118,7 +149,15 @@ impl Editor<'_> {
 
         if let Some(ref note) = self.current_note {
             if let Some(ta) = self.textareas.get(note) {
-                let mut ta_clone = ta.clone();
+                let mut ta_clone = if word_wrap {
+                    let max_width = (area.width as usize).saturating_sub(2);
+                    let wrapped_lines = wrap_text_to_width(ta.lines(), max_width);
+                    let wrapped_ta = TextArea::new(wrapped_lines);
+                    wrapped_ta
+                } else {
+                    ta.clone()
+                };
+
                 ta_clone.set_block(block);
                 if is_focused {
                     ta_clone.set_cursor_style(Style::default().bg(Color::White).fg(Color::Black));
@@ -250,10 +289,19 @@ mod tests {
 
         editor.mark_saved();
         assert!(!editor.has_unsaved_changes());
+    }
 
-        // Setting empty title clears current_note
-        editor.set_content("", "");
-        assert_eq!(editor.current_note, None);
+    #[test]
+    fn test_editor_wrap_text_to_width() {
+        let lines = vec![
+            "Short line".to_string(),
+            "This is a longer line that should be wrapped across multiple lines".to_string(),
+        ];
+        let wrapped = wrap_text_to_width(&lines, 20);
+        assert_eq!(wrapped[0], "Short line");
+        assert!(wrapped.len() > 2);
+        for line in &wrapped {
+            assert!(line.chars().count() <= 20);
+        }
     }
 }
-

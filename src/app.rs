@@ -171,7 +171,7 @@ impl App<'_> {
         if (key
             .modifiers
             .contains(crossterm::event::KeyModifiers::CONTROL)
-            && key.code == KeyCode::Char('p'))
+            && (key.code == KeyCode::Char(',') || key.code == KeyCode::Char('p')))
             || key.code == KeyCode::F(2)
         {
             return Some(Action::ToggleSettings);
@@ -529,7 +529,7 @@ impl App<'_> {
                     Span::raw("    : Delete Selected Note"),
                 ]),
                 Line::from(vec![
-                    Span::styled("F2 / Ctrl+P", Style::default().fg(Color::Cyan)),
+                    Span::styled("Ctrl+, / F2 / Ctrl+P", Style::default().fg(Color::Cyan)),
                     Span::raw(" : Settings Overlay"),
                 ]),
                 Line::from(vec![
@@ -549,7 +549,7 @@ impl App<'_> {
 
             let area = frame.area();
             // Centered rect
-            let width = 42;
+            let width = 45;
             let height = 16;
             let x = (area.width.saturating_sub(width)) / 2;
             let y = (area.height.saturating_sub(height)) / 2;
@@ -604,7 +604,7 @@ impl App<'_> {
                 ]),
                 Line::from(""),
                 Line::from(Span::styled(
-                    "Press any key to close Settings (F2 or Ctrl+P to open)",
+                    "Press any key to close Settings (Ctrl+, / F2 / Ctrl+P to open)",
                     Style::default().fg(Color::DarkGray),
                 )),
             ];

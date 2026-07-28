@@ -429,10 +429,17 @@ impl App<'_> {
             );
             spans.insert(5, Span::raw("Redo  |"));
 
+            let backlinks_count = if let Some(ref note) = self.editor.current_note {
+                self.index.get_backlinks(note).len()
+            } else {
+                0
+            };
+
             let stats = format!(
-                "  Words: {} | Chars: {}  |",
+                "  Words: {} | Chars: {} | Backlinks: {}  |",
                 self.editor.word_count(),
-                self.editor.char_count()
+                self.editor.char_count(),
+                backlinks_count
             );
             spans.push(Span::raw(stats));
         } else {

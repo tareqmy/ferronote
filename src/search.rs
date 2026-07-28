@@ -78,6 +78,35 @@ impl Index {
     }
 
     #[must_use]
+    pub fn get_backlinks(&self, note_title: &str) -> Vec<SearchResult> {
+        let clean_title = note_title.strip_suffix(".md").unwrap_or(note_title);
+        let link_pattern = format!("[[{}]]", clean_title.to_lowercase());
+
+        let mut backlinks = Vec::new();
+
+        for (filename, (title, content, modified_at, _)) in &self.notes {
+            if title.eq_ignore_ascii_case(clean_title) {
+                continue;
+            }
+
+            if content.to_lowercase().contains(&link_pattern) {
+                backlinks.push(SearchResult {
+                    filename: filename.clone(),
+                    title: title.clone(),
+                    score: 100,
+                    title_match_indices: Vec::new(),
+                    content_preview: Some(format!("Links to [[{clean_title}]]")),
+                    is_create_prompt: false,
+                    modified_at: *modified_at,
+                });
+            }
+        }
+
+        backlinks.sort_by_key(|b| std::cmp::Reverse(b.modified_at));
+        backlinks
+    }
+
+    #[must_use]
     pub fn search(&self, query: &str) -> Vec<SearchResult> {
         let is_tag_search = query.starts_with('#');
         let tag_query = if is_tag_search {
@@ -275,5 +304,24 @@ mod tests {
         let results_ideas = index.search("#ideas");
         assert_eq!(results_ideas.len(), 1);
         assert_eq!(results_ideas[0].filename, "ideas.md");
+    }
+
+    #[test]
+    fn test_get_backlinks() {
+        let mut index = Index::new();
+        index.add_note(
+            "source.md".to_string(),
+            "Check out [[Target Note]] for details.".to_string(),
+            100,
+        );
+        index.add_note(
+            "target note.md".to_string(),
+            "Content of target note".to_string(),
+            200,
+        );
+
+        let backlinks = index.get_backlinks("Target Note");
+        assert_eq!(backlinks.len(), 1);
+        assert_eq!(backlinks[0].filename, "source.md");
     }
 }

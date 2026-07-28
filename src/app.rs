@@ -418,19 +418,22 @@ impl App<'_> {
 
         let mut spans = vec![
             Span::styled(" [Tab/Esc] ", key_style),
-            Span::styled("Switch Focus ", text_style),
-            Span::styled("│", sep_style),
-            Span::styled(" [Ctrl+Q] ", key_style),
-            Span::styled("Quit", text_style),
+            Span::styled("Switch Focus", text_style),
+            Span::styled(" │", sep_style),
         ];
 
         if self.focus == Focus::Editor {
-            spans.insert(2, Span::styled(" [Ctrl+Z] ", key_style));
-            spans.insert(3, Span::styled("Undo ", text_style));
-            spans.insert(4, Span::styled("│", sep_style));
-            spans.insert(5, Span::styled(" [Ctrl+Y] ", key_style));
-            spans.insert(6, Span::styled("Redo ", text_style));
-            spans.insert(7, Span::styled("│", sep_style));
+            spans.push(Span::styled(" [Ctrl+Z] ", key_style));
+            spans.push(Span::styled("Undo", text_style));
+            spans.push(Span::styled(" │", sep_style));
+
+            spans.push(Span::styled(" [Ctrl+Y] ", key_style));
+            spans.push(Span::styled("Redo", text_style));
+            spans.push(Span::styled(" │", sep_style));
+
+            spans.push(Span::styled(" [Ctrl+Q] ", key_style));
+            spans.push(Span::styled("Quit", text_style));
+            spans.push(Span::styled(" │", sep_style));
 
             let backlinks_count = if let Some(ref note) = self.editor.current_note {
                 self.index.get_backlinks(note).len()
@@ -444,18 +447,22 @@ impl App<'_> {
                 self.editor.char_count(),
                 backlinks_count
             );
-            spans.push(Span::styled("│", sep_style));
             spans.push(Span::styled(stats, Style::default().fg(Color::Yellow)));
         } else {
-            spans.insert(2, Span::styled(" [?] ", key_style));
-            spans.insert(3, Span::styled("Help ", text_style));
-            spans.insert(4, Span::styled("│", sep_style));
-            spans.insert(5, Span::styled(" [Enter] ", key_style));
-            spans.insert(6, Span::styled("Create/Edit ", text_style));
-            spans.insert(7, Span::styled("│", sep_style));
-            spans.insert(8, Span::styled(" [Ctrl+D] ", key_style));
-            spans.insert(9, Span::styled("Delete ", text_style));
-            spans.insert(10, Span::styled("│", sep_style));
+            spans.push(Span::styled(" [?] ", key_style));
+            spans.push(Span::styled("Help", text_style));
+            spans.push(Span::styled(" │", sep_style));
+
+            spans.push(Span::styled(" [Enter] ", key_style));
+            spans.push(Span::styled("Create/Edit", text_style));
+            spans.push(Span::styled(" │", sep_style));
+
+            spans.push(Span::styled(" [Ctrl+D] ", key_style));
+            spans.push(Span::styled("Delete", text_style));
+            spans.push(Span::styled(" │", sep_style));
+
+            spans.push(Span::styled(" [Ctrl+Q] ", key_style));
+            spans.push(Span::styled("Quit", text_style));
         }
 
         let status_text = Line::from(spans);

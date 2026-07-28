@@ -169,11 +169,11 @@ impl App<'_> {
             }
             KeyCode::Tab => {
                 self.focus = self.focus.next();
-                return None;
+                return Some(Action::SaveNote);
             }
             KeyCode::Esc => {
                 self.focus = Focus::SearchBar;
-                return None;
+                return Some(Action::SaveNote);
             }
             KeyCode::Char('?') if self.focus != Focus::Editor => {
                 return Some(Action::ToggleHelp);
@@ -291,8 +291,8 @@ impl App<'_> {
                 if self.editor.has_unsaved_changes() {
                     if let Some(ref note) = self.editor.current_note.clone() {
                         let content = self.editor.content();
-                        let _ = self.save_note(note, &content);
                         self.editor.mark_saved();
+                        let _ = self.save_note(note, &content);
                     }
                 }
             }

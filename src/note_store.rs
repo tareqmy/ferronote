@@ -86,7 +86,7 @@ You don't need a separate "New Note" button!
 - Home / End: Jump to top or bottom of notes list.
 - Ctrl+D: Soft delete selected note (moves file to trash).
 - Ctrl+Z / Ctrl+Y: Undo / Redo inside the editor.
-- Ctrl+, / F2 / Ctrl+P: Toggle Interactive Settings Overlay.
+- F2 / Ctrl+P: Toggle Interactive Settings Overlay.
 - ?: Toggle Help Overlay.
 - Ctrl+Q: Quit Ferronote.
 
@@ -646,7 +646,7 @@ mod tests {
         let store2 = NoteStore::new(dir).unwrap();
         let content = store2.load_note("Welcome to Ferronote.md").unwrap();
         assert!(content.contains("# Welcome to Ferronote"));
-        assert!(content.contains("Ctrl+, / F2 / Ctrl+P"));
+        assert!(content.contains("F2 / Ctrl+P"));
     }
 
 

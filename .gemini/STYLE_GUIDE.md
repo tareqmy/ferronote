@@ -46,7 +46,7 @@ The app has three focusable main regions:
 
 Focus flows: `Search → List → Editor → (Esc) → Search` (cycled with `Tab` / `Shift+Tab`).
 
-### Settings Overlay (`Ctrl+,` / `F2` / `Ctrl+P`)
+### Settings Overlay (`F2` / `Ctrl+P`)
 - Rendered as a centered modal popup box overlaying the main layout.
 - Options: Theme, Tab Size, Sidebar Width, Default Sort, Auto-Purge Days, Auto-Save Delay.
 - Controls: `↑`/`↓` to select setting item, `←`/`→` or `Space`/`Enter` to cycle value options, `Esc` to save & close.

@@ -17,7 +17,7 @@ Ferronote is a Rust TUI application that brings the elegance and speed of Notati
 - **🏷️ Tag Filtering** — Organize with `#tag` annotations and instantly filter notes by `#tag` search query.
 - **🔗 Wiki Links & Backlinks** — Link notes seamlessly using `[[Note Title]]` syntax with automatic backlink detection.
 - **🎨 Custom Themes** — Personalize your terminal experience with pre-built themes (`default`, `gruvbox`, `nord`, `dracula`).
-- **⚙️ Interactive Settings** — Tweak options dynamically in the interactive Settings Overlay (`Ctrl+,` / `F2` / `Ctrl+P`).
+- **⚙️ Interactive Settings** — Tweak options dynamically in the interactive Settings Overlay (`F2` / `Ctrl+P`).
 - **🗑️ Trash & Recovery** — Soft delete prevents accidental loss with list and restore capabilities.
 - **📦 Import & Export** — Export single notes to HTML or full vaults to `.zip` archives; import `.md`, directories, or `.zip` files seamlessly.
 
@@ -49,18 +49,18 @@ cargo build --release
 
 ## ⌨️ Keybindings
 
-| Key                        | Action                                              |
-|----------------------------|-----------------------------------------------------|
-| `/` or `Ctrl+L`            | Focus search bar                                    |
-| `Tab` / `Shift+Tab`        | Cycle focus (Search → Note List → Editor)           |
-| `Enter`                    | Open selected note / Create new / Follow wiki-link  |
-| `↑` / `↓`                  | Navigate note list / settings items                 |
-| `PageUp` / `PageDown`      | Page jump note list                                 |
-| `Ctrl+S`                   | Force save current note                             |
-| `Ctrl+D`                   | Delete note (moves to trash)                        |
-| `Ctrl+N`                   | New note                                            |
-| `Ctrl+Z` / `Ctrl+Y`        | Undo / Redo in editor                               |
-| `Ctrl+,` / `F2` / `Ctrl+P` | Toggle Interactive Settings Overlay                 |
+| Key                 | Action                                              |
+|---------------------|-----------------------------------------------------|
+| `/` or `Ctrl+L`     | Focus search bar                                    |
+| `Tab` / `Shift+Tab` | Cycle focus (Search → Note List → Editor)           |
+| `Enter`             | Open selected note / Create new / Follow wiki-link  |
+| `↑` / `↓`           | Navigate note list / settings items                 |
+| `PageUp` / `PageDown` | Page jump note list                               |
+| `Ctrl+S`            | Force save current note                             |
+| `Ctrl+D`            | Delete note (moves to trash)                        |
+| `Ctrl+N`            | New note                                            |
+| `Ctrl+Z` / `Ctrl+Y` | Undo / Redo in editor                               |
+| `F2` / `Ctrl+P`     | Toggle Interactive Settings Overlay                 |
 | `?`                        | Toggle Help Overlay                                 |
 | `Esc`                      | Close overlay / Back to search                      |
 | `Ctrl+Q`                   | Quit application                                    |

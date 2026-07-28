@@ -115,6 +115,36 @@ impl NoteList {
             .and_then(|i| self.items.get(i).map(|res| res.filename.clone()))
     }
 
+    pub fn click_at(&mut self, y: u16, list_area: Rect) -> Option<String> {
+        let border_offset = 1;
+        if y <= list_area.y || y >= list_area.y + list_area.height.saturating_sub(border_offset) {
+            return None;
+        }
+
+        let relative_y = (y - list_area.y - border_offset) as usize;
+        let scroll_offset = self.state.offset();
+
+        let mut current_line = 0;
+        for (i, item) in self.items.iter().enumerate().skip(scroll_offset) {
+            let item_lines = if item.is_create_prompt {
+                1
+            } else if item.content_preview.is_some() || item.modified_at > 0 {
+                2
+            } else {
+                1
+            };
+
+            if relative_y >= current_line && relative_y < current_line + item_lines {
+                self.state.select(Some(i));
+                return Some(item.filename.clone());
+            }
+
+            current_line += item_lines;
+        }
+
+        None
+    }
+
     pub fn draw(
         &mut self,
         frame: &mut Frame,
@@ -243,6 +273,24 @@ mod tests {
 
         list.select_first();
         assert_eq!(list.state.selected(), Some(0));
+    }
+
+    #[test]
+    fn test_note_list_click_at() {
+        let mut list = NoteList::new();
+        list.set_items(make_mock_results(5));
+        let list_area = Rect::new(0, 3, 24, 20);
+
+        // Click top border (y = 3) returns None
+        assert_eq!(list.click_at(3, list_area), None);
+
+        // Click first item (y = 4)
+        assert_eq!(list.click_at(4, list_area), Some("note_0.md".to_string()));
+        assert_eq!(list.state.selected(), Some(0));
+
+        // Click second item (y = 5)
+        assert_eq!(list.click_at(5, list_area), Some("note_1.md".to_string()));
+        assert_eq!(list.state.selected(), Some(1));
     }
 
     #[test]

@@ -584,16 +584,13 @@ impl App<'_> {
                     && y < self.list_area.y + self.list_area.height
                 {
                     self.focus = Focus::NoteList;
-                    let relative_y = y.saturating_sub(self.list_area.y + 1);
-                    let item_idx = (relative_y / 2) as usize;
-                    if item_idx < self.note_list.items.len() {
-                        self.note_list.state.select(Some(item_idx));
-                        if let Some(selected) = self.note_list.selected_note() {
-                            if !selected.is_empty() {
-                                if let Ok(content) = self.note_store.load_note(&selected) {
-                                    self.editor.set_content(&selected, &content);
-                                }
+                    if let Some(selected) = self.note_list.click_at(y, self.list_area) {
+                        if !selected.is_empty() {
+                            if let Ok(content) = self.note_store.load_note(&selected) {
+                                self.editor.set_content(&selected, &content);
                             }
+                        } else {
+                            self.update(Action::SubmitSearch);
                         }
                     }
                 } else if x >= self.editor_area.x

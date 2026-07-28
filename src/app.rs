@@ -154,6 +154,13 @@ impl App<'_> {
             {
                 return Some(Action::Quit);
             }
+            KeyCode::Char('d')
+                if key
+                    .modifiers
+                    .contains(crossterm::event::KeyModifiers::CONTROL) =>
+            {
+                return Some(Action::DeleteNote);
+            }
             KeyCode::Tab => {
                 self.focus = self.focus.next();
                 return None;
@@ -277,6 +284,18 @@ impl App<'_> {
                     }
                 }
             }
+            Action::DeleteNote => {
+                // Delete currently selected note
+                if let Some(selected) = self.note_list.selected_note() {
+                    if !selected.is_empty() {
+                        let _ = self.delete_note(&selected);
+                        
+                        // Select the next item in the list automatically
+                        let new_selected = self.note_list.selected_note();
+                        self.update(Action::SelectNote(new_selected));
+                    }
+                }
+            }
             Action::FileChanged(path) => {
                 if let Some(ext) = path.extension().and_then(|e| e.to_str()) {
                     if ext == "md" {
@@ -328,17 +347,27 @@ impl App<'_> {
         self.editor
             .draw(frame, content_layout[1], self.focus == Focus::Editor);
 
-        // Render status bar
-        let status_text = Line::from(vec![
+        // Render dynamic status bar
+        let mut spans = vec![
             Span::styled(" [Tab/Esc] ", Style::default().fg(Color::Yellow)),
             Span::raw("Switch Focus  |"),
-            Span::styled(" [Ctrl+N] ", Style::default().fg(Color::Yellow)),
-            Span::raw("New Note  |"),
-            Span::styled(" [Ctrl+D] ", Style::default().fg(Color::Yellow)),
-            Span::raw("Delete  |"),
             Span::styled(" [Ctrl+Q] ", Style::default().fg(Color::Yellow)),
             Span::raw("Quit"),
-        ]);
+        ];
+
+        if self.focus == Focus::Editor {
+            spans.insert(2, Span::styled(" [Ctrl+Z] ", Style::default().fg(Color::Yellow)));
+            spans.insert(3, Span::raw("Undo  |"));
+            spans.insert(4, Span::styled(" [Ctrl+Y] ", Style::default().fg(Color::Yellow)));
+            spans.insert(5, Span::raw("Redo  |"));
+        } else {
+            spans.insert(2, Span::styled(" [Enter] ", Style::default().fg(Color::Yellow)));
+            spans.insert(3, Span::raw("Create/Edit Note  |"));
+            spans.insert(4, Span::styled(" [Ctrl+D] ", Style::default().fg(Color::Yellow)));
+            spans.insert(5, Span::raw("Delete Note  |"));
+        }
+
+        let status_text = Line::from(spans);
         let status_bar = Paragraph::new(status_text)
             .style(Style::default().bg(Color::DarkGray).fg(Color::White));
         frame.render_widget(status_bar, main_layout[2]);

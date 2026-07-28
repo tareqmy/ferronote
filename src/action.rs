@@ -6,6 +6,7 @@ pub enum Action {
     SelectNote(Option<String>),
     SubmitSearch,
     SaveNote,
+    DeleteNote,
     FileChanged(std::path::PathBuf),
     Quit,
 }

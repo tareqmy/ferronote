@@ -132,16 +132,12 @@
 
 ---
 
-## Phase 6 · Polish & UX (Milestone: "It feels great to use")
+## Phase 6 · Polish & TUI Interactions (Milestone: "It feels great to use")
 **Goal**: Refine the experience until it feels effortless.
 
-- [ ] Keybinding customization
-  - [ ] Load custom keybindings from config
-  - [ ] Display current bindings in status bar
-- [ ] Color theme support
-  - [ ] Dark theme (default)
-  - [ ] Light theme
-  - [ ] Custom theme via config
+- [x] Dynamic status bar (shows keybinds based on focus state)
+- [x] Keybinds for deleting note (`Ctrl+D` from search or list)
+- [x] Code cleanup and linting
 - [ ] Note metadata display
   - [ ] Created/modified timestamps in status bar
   - [ ] Word count

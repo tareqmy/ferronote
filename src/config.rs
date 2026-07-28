@@ -2,16 +2,78 @@ use color_eyre::Result;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
+fn default_notes_dir() -> PathBuf {
+    dirs::home_dir()
+        .unwrap_or_else(|| PathBuf::from("."))
+        .join(".ferronote")
+}
+
+fn default_extension() -> String {
+    "md".to_string()
+}
+
+fn default_auto_save_delay_ms() -> u64 {
+    1000
+}
+
+fn default_tab_size() -> u8 {
+    4
+}
+
+fn default_sidebar_width_percent() -> u16 {
+    30
+}
+
+fn default_theme() -> String {
+    "default".to_string()
+}
+
+fn default_sort() -> String {
+    "modified_desc".to_string()
+}
+
+fn default_auto_purge_days() -> u32 {
+    30
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Config {
+    #[serde(default = "default_notes_dir")]
     pub notes_dir: PathBuf,
+
+    #[serde(default = "default_extension")]
+    pub default_extension: String,
+
+    #[serde(default = "default_auto_save_delay_ms")]
+    pub auto_save_delay_ms: u64,
+
+    #[serde(default = "default_tab_size")]
+    pub tab_size: u8,
+
+    #[serde(default = "default_sidebar_width_percent")]
+    pub sidebar_width_percent: u16,
+
+    #[serde(default = "default_theme")]
+    pub theme: String,
+
+    #[serde(default = "default_sort")]
+    pub default_sort: String,
+
+    #[serde(default = "default_auto_purge_days")]
+    pub auto_purge_days: u32,
 }
 
 impl Default for Config {
     fn default() -> Self {
-        let home = dirs::home_dir().unwrap_or_else(|| PathBuf::from("."));
         Self {
-            notes_dir: home.join(".ferronote"),
+            notes_dir: default_notes_dir(),
+            default_extension: default_extension(),
+            auto_save_delay_ms: default_auto_save_delay_ms(),
+            tab_size: default_tab_size(),
+            sidebar_width_percent: default_sidebar_width_percent(),
+            theme: default_theme(),
+            default_sort: default_sort(),
+            auto_purge_days: default_auto_purge_days(),
         }
     }
 }
@@ -44,5 +106,31 @@ impl Config {
         let content = serde_json::to_string_pretty(self)?;
         std::fs::write(config_path, content)?;
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_config_defaults() {
+        let config = Config::default();
+        assert_eq!(config.default_extension, "md");
+        assert_eq!(config.auto_save_delay_ms, 1000);
+        assert_eq!(config.tab_size, 4);
+        assert_eq!(config.sidebar_width_percent, 30);
+        assert_eq!(config.theme, "default");
+        assert_eq!(config.default_sort, "modified_desc");
+        assert_eq!(config.auto_purge_days, 30);
+    }
+
+    #[test]
+    fn test_partial_json_deserialization() {
+        let partial_json = r#"{"notes_dir": "/tmp/test"}"#;
+        let config: Config = serde_json::from_str(partial_json).unwrap();
+        assert_eq!(config.notes_dir, PathBuf::from("/tmp/test"));
+        assert_eq!(config.default_extension, "md");
+        assert_eq!(config.tab_size, 4);
     }
 }

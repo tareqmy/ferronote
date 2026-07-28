@@ -11,6 +11,7 @@ use ratatui::{
 use crate::{
     action::Action,
     components::{editor::Editor, note_list::NoteList, search_bar::SearchBar},
+    config::Config,
     event::{Event, EventHandler},
     focus::Focus,
     note_store::NoteStore,
@@ -31,6 +32,7 @@ pub struct App<'a> {
     pub last_search_input: Option<Instant>,
     pub current_query: String,
     pub show_help: bool,
+    pub show_settings: bool,
 }
 
 impl App<'_> {
@@ -56,6 +58,7 @@ impl App<'_> {
             last_search_input: None,
             current_query: String::new(),
             show_help: false,
+            show_settings: false,
         };
         app.update_search();
         app
@@ -157,8 +160,20 @@ impl App<'_> {
             return None;
         }
 
+        if self.show_settings {
+            return Some(Action::ToggleSettings);
+        }
+
         if self.show_help {
             return Some(Action::ToggleHelp);
+        }
+
+        if key
+            .modifiers
+            .contains(crossterm::event::KeyModifiers::CONTROL)
+            && key.code == KeyCode::Char(',')
+        {
+            return Some(Action::ToggleSettings);
         }
 
         match key.code {
@@ -274,6 +289,9 @@ impl App<'_> {
 
     pub fn update(&mut self, action: Action) {
         match action {
+            Action::ToggleSettings => {
+                self.show_settings = !self.show_settings;
+            }
             Action::ToggleHelp => {
                 self.show_help = !self.show_help;
             }
@@ -534,6 +552,71 @@ impl App<'_> {
 
             frame.render_widget(Clear, popup_area);
             frame.render_widget(help_block, popup_area);
+        }
+
+        // Render Settings Overlay
+        if self.show_settings {
+            let config = Config::load().unwrap_or_default();
+            let settings_text = vec![
+                Line::from(Span::styled(
+                    "Ferronote Settings",
+                    Style::default()
+                        .fg(Color::Yellow)
+                        .add_modifier(Modifier::BOLD),
+                )),
+                Line::from(""),
+                Line::from(vec![
+                    Span::styled("Storage Path:      ", Style::default().fg(Color::Cyan)),
+                    Span::raw(config.notes_dir.to_string_lossy()),
+                ]),
+                Line::from(vec![
+                    Span::styled("Default Extension: ", Style::default().fg(Color::Cyan)),
+                    Span::raw(format!(".{}", config.default_extension)),
+                ]),
+                Line::from(vec![
+                    Span::styled("Auto-Save Delay:   ", Style::default().fg(Color::Cyan)),
+                    Span::raw(format!("{} ms", config.auto_save_delay_ms)),
+                ]),
+                Line::from(vec![
+                    Span::styled("Tab Size:          ", Style::default().fg(Color::Cyan)),
+                    Span::raw(format!("{} spaces", config.tab_size)),
+                ]),
+                Line::from(vec![
+                    Span::styled("Sidebar Width:     ", Style::default().fg(Color::Cyan)),
+                    Span::raw(format!("{}%", config.sidebar_width_percent)),
+                ]),
+                Line::from(vec![
+                    Span::styled("Active Theme:      ", Style::default().fg(Color::Cyan)),
+                    Span::raw(&config.theme),
+                ]),
+                Line::from(vec![
+                    Span::styled("Default Sort:      ", Style::default().fg(Color::Cyan)),
+                    Span::raw(&config.default_sort),
+                ]),
+                Line::from(vec![
+                    Span::styled("Auto-Purge Trash:  ", Style::default().fg(Color::Cyan)),
+                    Span::raw(format!("{} days", config.auto_purge_days)),
+                ]),
+                Line::from(""),
+                Line::from(Span::styled(
+                    "Press any key to close Settings",
+                    Style::default().fg(Color::DarkGray),
+                )),
+            ];
+
+            let settings_block = Paragraph::new(settings_text)
+                .block(Block::default().borders(Borders::ALL).title(" Settings "))
+                .alignment(ratatui::layout::Alignment::Center);
+
+            let area = frame.area();
+            let width = 50;
+            let height = 16;
+            let x = (area.width.saturating_sub(width)) / 2;
+            let y = (area.height.saturating_sub(height)) / 2;
+            let popup_area = ratatui::layout::Rect::new(x, y, width, height);
+
+            frame.render_widget(Clear, popup_area);
+            frame.render_widget(settings_block, popup_area);
         }
     }
 }

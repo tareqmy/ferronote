@@ -172,10 +172,10 @@
 - [x] **Import**
   - [x] Import single `.md` / `.txt` file or directory via CLI (`--import`)
   - [x] Import notes from a `.zip` archive
-- [ ] **Settings & Configuration**
-  - [ ] Expanded `config.json` schema (`default_extension`, `auto_save_delay_ms`, `tab_size`, `sidebar_width_percent`, `theme`, `default_sort`, `auto_purge_days`)
-  - [ ] Interactive Settings TUI Overlay (`Ctrl+,`)
-  - [ ] CLI argument overrides for configuration options
+- [x] **Settings & Configuration**
+  - [x] Expanded `config.json` schema (`default_extension`, `auto_save_delay_ms`, `tab_size`, `sidebar_width_percent`, `theme`, `default_sort`, `auto_purge_days`)
+  - [x] Interactive Settings TUI Overlay (`Ctrl+,`)
+  - [x] Auto-upgrading backward-compatible config loader (`serde(default)`)
 
 **Deliverable**: Features that make Ferronote a daily-driver for power users.
 

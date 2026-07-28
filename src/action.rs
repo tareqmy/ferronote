@@ -8,6 +8,7 @@ pub enum Action {
     SaveNote,
     DeleteNote,
     ToggleHelp,
+    ToggleSettings,
     FileChanged(std::path::PathBuf),
     Quit,
 }

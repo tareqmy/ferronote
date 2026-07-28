@@ -658,66 +658,54 @@ impl App<'_> {
 
         // Render Help Overlay
         if self.show_help {
-            let help_text = vec![
-                Line::from(Span::styled(
-                    "Ferronote Keybindings",
-                    Style::default().fg(Color::Yellow),
-                )),
-                Line::from(""),
-                Line::from(vec![
-                    Span::styled("Tab / Esc", Style::default().fg(Color::Cyan)),
-                    Span::raw(" : Switch Focus"),
-                ]),
-                Line::from(vec![
-                    Span::styled("Enter", Style::default().fg(Color::Cyan)),
-                    Span::raw("     : Create/Edit Note"),
-                ]),
-                Line::from(vec![
-                    Span::styled("Up / Down", Style::default().fg(Color::Cyan)),
-                    Span::raw(" : Navigate Note List"),
-                ]),
-                Line::from(vec![
-                    Span::styled("PgUp / PgDn", Style::default().fg(Color::Cyan)),
-                    Span::raw(" : Scroll Note List Page"),
-                ]),
-                Line::from(vec![
-                    Span::styled("Home / End", Style::default().fg(Color::Cyan)),
-                    Span::raw("  : Jump to Top / Bottom"),
-                ]),
-                Line::from(vec![
-                    Span::styled("Ctrl+Z", Style::default().fg(Color::Cyan)),
-                    Span::raw("    : Undo (in Editor)"),
-                ]),
-                Line::from(vec![
-                    Span::styled("Ctrl+Y", Style::default().fg(Color::Cyan)),
-                    Span::raw("    : Redo (in Editor)"),
-                ]),
-                Line::from(vec![
-                    Span::styled("Ctrl+D", Style::default().fg(Color::Cyan)),
-                    Span::raw("    : Delete Selected Note"),
-                ]),
-                Line::from(vec![
-                    Span::styled("F2 / Ctrl+P", Style::default().fg(Color::Cyan)),
-                    Span::raw(" : Settings Overlay"),
-                ]),
-                Line::from(vec![
-                    Span::styled("Ctrl+Q", Style::default().fg(Color::Cyan)),
-                    Span::raw("    : Quit Application"),
-                ]),
-                Line::from(""),
-                Line::from(Span::styled(
-                    "Press any key to close",
-                    Style::default().fg(Color::DarkGray),
-                )),
+            let keybindings_data = [
+                ("Tab / Esc", "Switch Focus (Search → List → Editor)"),
+                ("Enter", "Open selected note / Create / Wiki-link"),
+                ("Up / Down", "Navigate note list"),
+                ("PgUp / PgDn", "Scroll note list page by page"),
+                ("Home / End", "Jump to top / bottom of note list"),
+                ("Ctrl+Z", "Undo in editor"),
+                ("Ctrl+Y", "Redo in editor"),
+                ("Ctrl+D", "Delete selected note (moves to trash)"),
+                ("F2 / Ctrl+P", "Toggle Settings Overlay"),
+                ("?", "Toggle Help Overlay"),
+                ("Ctrl+Q", "Quit Application"),
             ];
 
-            let help_block = Paragraph::new(help_text)
-                .block(Block::default().borders(Borders::ALL).title(" Help "))
-                .alignment(ratatui::layout::Alignment::Center);
+            let mut lines = vec![
+                Line::from(Span::styled(
+                    " 💡 Ferronote Keybindings",
+                    Style::default()
+                        .fg(Color::Yellow)
+                        .add_modifier(Modifier::BOLD),
+                )),
+                Line::from(""),
+            ];
+
+            for (key, action) in keybindings_data {
+                lines.push(Line::from(vec![
+                    Span::styled(format!("  {:<14} ", key), Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
+                    Span::styled("│ ", Style::default().fg(Color::DarkGray)),
+                    Span::styled(action, Style::default().fg(Color::White)),
+                ]));
+            }
+
+            lines.push(Line::from(""));
+            lines.push(Line::from(Span::styled(
+                " [Press any key or Esc to close]",
+                Style::default().fg(Color::DarkGray),
+            )));
+
+            let help_block = Paragraph::new(lines).block(
+                Block::default()
+                    .borders(Borders::ALL)
+                    .title(" Help (?) ")
+                    .border_style(Style::default().fg(Color::Yellow)),
+            );
 
             let area = frame.area();
-            let width = 42;
-            let height = 16;
+            let width = 58;
+            let height = 17;
             let x = (area.width.saturating_sub(width)) / 2;
             let y = (area.height.saturating_sub(height)) / 2;
             let popup_area = ratatui::layout::Rect::new(x, y, width, height);

@@ -61,7 +61,8 @@ cargo build --release
 | `Ctrl+N`            | New note                                            |
 | `Ctrl+Z` / `Ctrl+Y` | Undo / Redo in editor                               |
 | `F2` / `Ctrl+P`     | Toggle Interactive Settings Overlay                 |
-| `?`                        | Toggle Help Overlay                                 |
+| `F1`                | Toggle About Application Overlay                    |
+| `?`                 | Toggle Help Overlay                                 |
 | `Esc`                      | Close overlay / Back to search                      |
 | `Ctrl+Q`                   | Quit application                                    |
 

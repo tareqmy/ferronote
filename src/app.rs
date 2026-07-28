@@ -32,6 +32,7 @@ pub struct App<'a> {
     pub last_search_input: Option<Instant>,
     pub current_query: String,
     pub show_help: bool,
+    pub show_about: bool,
     pub show_settings: bool,
     pub settings_selected_index: usize,
     pub config: Config,
@@ -62,6 +63,7 @@ impl App<'_> {
             last_search_input: None,
             current_query: String::new(),
             show_help: false,
+            show_about: false,
             show_settings: false,
             settings_selected_index: 0,
             config,
@@ -284,6 +286,14 @@ impl App<'_> {
             return Some(Action::ToggleHelp);
         }
 
+        if self.show_about {
+            return Some(Action::ToggleAbout);
+        }
+
+        if key.code == KeyCode::F(1) {
+            return Some(Action::ToggleAbout);
+        }
+
         if (key
             .modifiers
             .contains(crossterm::event::KeyModifiers::CONTROL)
@@ -422,6 +432,9 @@ impl App<'_> {
             }
             Action::ToggleHelp => {
                 self.show_help = !self.show_help;
+            }
+            Action::ToggleAbout => {
+                self.show_about = !self.show_about;
             }
             Action::Quit => {
                 self.update(Action::SaveNote);
@@ -630,6 +643,10 @@ impl App<'_> {
             spans.push(Span::styled("Help", text_style));
             spans.push(Span::styled(" │", sep_style));
 
+            spans.push(Span::styled(" [F1] ", key_style));
+            spans.push(Span::styled("About", text_style));
+            spans.push(Span::styled(" │", sep_style));
+
             spans.push(Span::styled(" [Enter] ", key_style));
             spans.push(Span::styled("Create/Edit", text_style));
             spans.push(Span::styled(" │", sep_style));
@@ -668,6 +685,7 @@ impl App<'_> {
                 ("Ctrl+Y", "Redo in editor"),
                 ("Ctrl+D", "Delete selected note (moves to trash)"),
                 ("F2 / Ctrl+P", "Toggle Settings Overlay"),
+                ("F1", "Toggle About Overlay"),
                 ("?", "Toggle Help Overlay"),
                 ("Ctrl+Q", "Quit Application"),
             ];
@@ -705,13 +723,70 @@ impl App<'_> {
 
             let area = frame.area();
             let width = 70;
-            let height = 17;
+            let height = 18;
             let x = (area.width.saturating_sub(width)) / 2;
             let y = (area.height.saturating_sub(height)) / 2;
             let popup_area = ratatui::layout::Rect::new(x, y, width, height);
 
             frame.render_widget(Clear, popup_area);
             frame.render_widget(help_block, popup_area);
+        }
+
+        // Render About Overlay
+        if self.show_about {
+            let version = env!("CARGO_PKG_VERSION");
+            let about_lines = vec![
+                Line::from(Span::styled(
+                    format!(" ℹ️  Ferronote v{version}"),
+                    Style::default()
+                        .fg(Color::Yellow)
+                        .add_modifier(Modifier::BOLD),
+                )),
+                Line::from(Span::styled(
+                    " Notes at the speed of thought — Notational Velocity for TUI",
+                    Style::default().fg(Color::DarkGray),
+                )),
+                Line::from(""),
+                Line::from(vec![
+                    Span::styled("  Creator   : ", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
+                    Span::styled("Tareq M Y ", Style::default().fg(Color::White)),
+                    Span::styled("(https://tareqmy.com)", Style::default().fg(Color::Blue)),
+                ]),
+                Line::from(vec![
+                    Span::styled("  Contact   : ", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
+                    Span::styled("tareq.y@gmail.com", Style::default().fg(Color::White)),
+                ]),
+                Line::from(vec![
+                    Span::styled("  GitHub    : ", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
+                    Span::styled("https://github.com/tareqmy/ferronote", Style::default().fg(Color::Blue)),
+                ]),
+                Line::from(vec![
+                    Span::styled("  License   : ", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
+                    Span::styled("MIT License", Style::default().fg(Color::White)),
+                ]),
+                Line::from(""),
+                Line::from(Span::styled(
+                    " [Press any key or Esc to close]",
+                    Style::default().fg(Color::DarkGray),
+                )),
+            ];
+
+            let about_block = Paragraph::new(about_lines).block(
+                Block::default()
+                    .borders(Borders::ALL)
+                    .title(" About (F1) ")
+                    .border_style(Style::default().fg(Color::Yellow)),
+            );
+
+            let area = frame.area();
+            let width = 62;
+            let height = 13;
+            let x = (area.width.saturating_sub(width)) / 2;
+            let y = (area.height.saturating_sub(height)) / 2;
+            let popup_area = ratatui::layout::Rect::new(x, y, width, height);
+
+            frame.render_widget(Clear, popup_area);
+            frame.render_widget(about_block, popup_area);
         }
 
         // Render Settings Overlay (Interactive & Left-Aligned)
@@ -888,6 +963,21 @@ mod tests {
 
         app.update(Action::ToggleSettings);
         assert!(!app.show_settings);
+    }
+
+    #[test]
+    fn test_app_about_overlay_toggle() {
+        let (mut app, _temp_dir) = setup_test_app();
+        assert_eq!(app.show_about, false);
+
+        app.update(Action::ToggleAbout);
+        assert_eq!(app.show_about, true);
+
+        app.update(Action::ToggleAbout);
+        assert_eq!(app.show_about, false);
+
+        let action = app.handle_key(KeyEvent::new(KeyCode::F(1), KeyModifiers::NONE));
+        assert_eq!(action, Some(Action::ToggleAbout));
     }
 
     #[test]

@@ -17,6 +17,8 @@ pub enum Action {
     DeleteNote,
     /// Toggle help modal overlay.
     ToggleHelp,
+    /// Toggle about modal overlay.
+    ToggleAbout,
     /// Toggle settings modal overlay.
     ToggleSettings,
     /// Move focus to next setting in settings menu.

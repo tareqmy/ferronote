@@ -87,6 +87,7 @@ You don't need a separate "New Note" button!
 - Ctrl+D: Soft delete selected note (moves file to trash).
 - Ctrl+Z / Ctrl+Y: Undo / Redo inside the editor.
 - F2 / Ctrl+P: Toggle Interactive Settings Overlay.
+- F1: Toggle About Overlay.
 - ?: Toggle Help Overlay.
 - Ctrl+Q: Quit Ferronote.
 

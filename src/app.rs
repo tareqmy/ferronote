@@ -768,7 +768,7 @@ impl App<'_> {
 
         let status_text = Line::from(spans);
         let status_bar = Paragraph::new(status_text);
-        frame.render_widget(status_bar, main_layout[2]);
+        frame.render_widget(status_bar, main_layout[3]);
 
         // Render Help Overlay
         if self.show_help {

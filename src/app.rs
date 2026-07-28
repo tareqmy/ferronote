@@ -148,6 +148,10 @@ impl App<'_> {
     }
 
     fn handle_key(&mut self, key: KeyEvent) -> Option<Action> {
+        if key.kind != crossterm::event::KeyEventKind::Press {
+            return None;
+        }
+
         if self.show_help {
             return Some(Action::ToggleHelp);
         }
@@ -273,8 +277,7 @@ impl App<'_> {
                         // This is a "Create new note" prompt, clear editor content
                         self.editor.set_content("", "");
                     } else if let Ok(content) = self.note_store.load_note(&filename) {
-                        let title = filename.strip_suffix(".md").unwrap_or(&filename);
-                        self.editor.set_content(title, &content);
+                        self.editor.set_content(&filename, &content);
                     }
                 } else {
                     self.editor.set_content("", "");
@@ -335,8 +338,7 @@ impl App<'_> {
                                 
                                 if Some(&filename) == self.editor.current_note.as_ref() {
                                     if !self.editor.has_unsaved_changes() {
-                                        let title = filename.strip_suffix(".md").unwrap_or(&filename);
-                                        self.editor.set_content(title, &content);
+                                        self.editor.set_content(&filename, &content);
                                     }
                                 }
                                 self.update_search();

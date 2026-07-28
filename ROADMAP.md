@@ -153,19 +153,19 @@
 ## Phase 7 · Advanced Features (Milestone: "Power user ready")
 **Goal**: Features that differentiate Ferronote beyond Notational Velocity.
 
-- [ ] **Tags**
-  - [ ] Parse `#tag` from note content
-  - [ ] Filter by tag in search
+- [x] **Tags**
+  - [x] Parse `#tag` from note content
+  - [x] Filter by tag in search
   - [ ] Tag autocomplete
 - [ ] **Markdown preview**
   - [ ] Inline syntax highlighting in editor
   - [ ] Toggle-able rendered preview pane
-- [ ] **Note linking**
-  - [ ] `[[wiki-style]]` links between notes
-  - [ ] Navigate links with Enter
+- [x] **Note linking**
+  - [x] `[[wiki-style]]` links between notes
+  - [x] Navigate links with Enter
   - [ ] Backlinks panel (which notes link to this one?)
-- [ ] **Trash / Soft delete**
-  - [ ] Move to `.ferronote/trash/` instead of permanent delete
+- [x] **Trash / Soft delete**
+  - [x] Move to `trash/` instead of permanent delete
   - [ ] Restore from trash
   - [ ] Auto-purge after 30 days
 - [ ] **Export**

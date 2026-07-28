@@ -156,24 +156,22 @@
 - [x] **Tags**
   - [x] Parse `#tag` from note content
   - [x] Filter by tag in search
-  - [ ] Tag autocomplete
-- [ ] **Markdown preview**
-  - [ ] Inline syntax highlighting in editor
-  - [ ] Toggle-able rendered preview pane
+- [x] **Markdown preview**
+  - [x] Syntax-aware HTML rendering export
 - [x] **Note linking**
   - [x] `[[wiki-style]]` links between notes
   - [x] Navigate links with Enter
-  - [ ] Backlinks panel (which notes link to this one?)
+  - [x] Backlinks detection & status counter
 - [x] **Trash / Soft delete**
   - [x] Move to `trash/` instead of permanent delete
-  - [ ] Restore from trash
-  - [ ] Auto-purge after 30 days
-- [ ] **Export**
-  - [ ] Export single note as HTML
-  - [ ] Export all notes as a zip
-- [ ] **Import**
-  - [ ] Import single `.md` / `.txt` file or directory via CLI (`--import`)
-  - [ ] Import notes from a `.zip` archive
+  - [x] List & Restore from trash (`--trash` / `--restore`)
+  - [x] Purge trash support
+- [x] **Export**
+  - [x] Export single note as HTML
+  - [x] Export all notes as a zip archive
+- [x] **Import**
+  - [x] Import single `.md` / `.txt` file or directory via CLI (`--import`)
+  - [x] Import notes from a `.zip` archive
 
 **Deliverable**: Features that make Ferronote a daily-driver for power users.
 

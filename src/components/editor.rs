@@ -150,4 +150,29 @@ impl Editor<'_> {
         // Exclude newlines from char count to be more accurate to typical editors
         self.content().chars().filter(|c| !c.is_whitespace() || *c == ' ').count()
     }
+
+    pub fn extract_wiki_link_at_cursor(&self) -> Option<String> {
+        if let Some(ref note) = self.current_note {
+            if let Some(ta) = self.textareas.get(note) {
+                let (row, col) = ta.cursor();
+                if let Some(line) = ta.lines().get(row) {
+                    let mut current_idx = 0;
+                    while let Some(start) = line[current_idx..].find("[[") {
+                        let start_idx = current_idx + start;
+                        if let Some(end) = line[start_idx..].find("]]") {
+                            let end_idx = start_idx + end + 2;
+                            if col >= start_idx && col <= end_idx {
+                                let link = &line[start_idx + 2 .. end_idx - 2];
+                                return Some(link.to_string());
+                            }
+                            current_idx = end_idx;
+                        } else {
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        None
+    }
 }

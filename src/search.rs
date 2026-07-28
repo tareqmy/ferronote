@@ -1,6 +1,13 @@
 use fuzzy_matcher::skim::SkimMatcherV2;
 use fuzzy_matcher::FuzzyMatcher;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
+use regex::Regex;
+use std::sync::OnceLock;
+
+fn tag_regex() -> &'static Regex {
+    static RE: OnceLock<Regex> = OnceLock::new();
+    RE.get_or_init(|| Regex::new(r"(?i)#([a-z0-9_-]+)").unwrap())
+}
 
 #[derive(Debug, Clone)]
 pub struct SearchResult {
@@ -15,8 +22,8 @@ pub struct SearchResult {
 
 pub struct Index {
     matcher: SkimMatcherV2,
-    // filename -> (title, content, modified_at)
-    notes: HashMap<String, (String, String, i64)>,
+    // filename -> (title, content, modified_at, tags)
+    notes: HashMap<String, (String, String, i64, HashSet<String>)>,
 }
 
 impl std::fmt::Debug for Index {
@@ -44,7 +51,13 @@ impl Index {
 
     pub fn add_note(&mut self, filename: String, content: String, modified_at: i64) {
         let title = filename.strip_suffix(".md").unwrap_or(&filename).to_string();
-        self.notes.insert(filename, (title, content, modified_at));
+        let mut tags = HashSet::new();
+        for cap in tag_regex().captures_iter(&content) {
+            if let Some(match_) = cap.get(1) {
+                tags.insert(match_.as_str().to_lowercase());
+            }
+        }
+        self.notes.insert(filename, (title, content, modified_at, tags));
     }
 
     pub fn remove_note(&mut self, filename: &str) {
@@ -58,9 +71,16 @@ impl Index {
 
     #[must_use]
     pub fn search(&self, query: &str) -> Vec<SearchResult> {
+        let is_tag_search = query.starts_with('#');
+        let tag_query = if is_tag_search {
+            query.trim_start_matches('#').to_lowercase()
+        } else {
+            String::new()
+        };
+
         if query.is_empty() {
             // For empty query, return all notes sorted by modified date descending
-            let mut all_notes: Vec<_> = self.notes.iter().map(|(filename, (title, _, modified_at))| {
+            let mut all_notes: Vec<_> = self.notes.iter().map(|(filename, (title, _, modified_at, _))| {
                 SearchResult {
                     filename: filename.clone(),
                     title: title.clone(),
@@ -77,7 +97,26 @@ impl Index {
 
         let mut matches = Vec::new();
 
-        for (filename, (title, content, modified_at)) in &self.notes {
+        for (filename, (title, content, modified_at, tags)) in &self.notes {
+            if is_tag_search {
+                if !tags.contains(&tag_query) && !tag_query.is_empty() {
+                    continue;
+                }
+                
+                // If it's a tag search and it matched, we give it a high score
+                matches.push((
+                    filename,
+                    title,
+                    content,
+                    100, // Fixed score for tag matches
+                    vec![],
+                    false,
+                    vec![],
+                    *modified_at,
+                ));
+                continue;
+            }
+
             let title_match = self.matcher.fuzzy_indices(title, query);
             let content_match = self.matcher.fuzzy_indices(content, query);
 

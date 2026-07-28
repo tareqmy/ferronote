@@ -20,16 +20,23 @@ impl NoteStore {
     /// # Errors
     /// Returns an error if directory creation fails.
     pub fn new(notes_dir: PathBuf) -> Result<Self> {
-        let ferronote_dir = notes_dir.join(".ferronote");
-
         if !notes_dir.exists() {
             std::fs::create_dir_all(&notes_dir)?;
         }
-        if !ferronote_dir.exists() {
-            std::fs::create_dir_all(&ferronote_dir)?;
+        
+        // Create internal metadata directory
+        let meta_dir = notes_dir.join(".ferronote");
+        if !meta_dir.exists() {
+            std::fs::create_dir_all(&meta_dir)?;
         }
 
-        let metadata_path = ferronote_dir.join("metadata.json");
+        // Create trash directory
+        let trash_dir = meta_dir.join("trash");
+        if !trash_dir.exists() {
+            std::fs::create_dir_all(&trash_dir)?;
+        }
+
+        let metadata_path = meta_dir.join("metadata.json");
 
         let mut store = Self {
             notes_dir,
@@ -175,12 +182,18 @@ impl NoteStore {
     /// # Errors
     /// Returns an error if the file cannot be deleted.
     pub fn delete_note(&mut self, filename: &str) -> Result<()> {
-        let path = self.notes_dir.join(filename);
-
-        if path.exists() {
-            std::fs::remove_file(path)?;
+        let file_path = self.notes_dir.join(filename);
+        if file_path.exists() {
+            let trash_dir = self.notes_dir.join(".ferronote").join("trash");
+            
+            // Generate a unique filename for the trash to avoid overwriting previously deleted notes with the same name
+            let timestamp = chrono::Utc::now().timestamp();
+            let trash_filename = format!("{}-{}", timestamp, filename);
+            let trash_path = trash_dir.join(trash_filename);
+            
+            std::fs::rename(file_path, trash_path)?;
         }
-
+        
         self.metadata.remove(filename);
         self.save_metadata()?;
 

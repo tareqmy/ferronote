@@ -219,6 +219,22 @@ impl App<'_> {
                 if key.code == KeyCode::Esc {
                     self.focus = Focus::NoteList;
                     return Some(Action::SaveNote);
+                } else if key.code == KeyCode::Enter {
+                    if let Some(link) = self.editor.extract_wiki_link_at_cursor() {
+                        self.update(Action::SaveNote);
+                        
+                        let filename = format!("{}.md", link.replace(['/', '\\'], "-"));
+                        if !self.note_store.filenames().contains(&filename) {
+                            let _ = self.create_note(&link);
+                        }
+                        
+                        let mut ta = tui_textarea::TextArea::default();
+                        ta.insert_str(&link);
+                        self.search_bar.textarea = ta;
+                        self.update_search();
+                        
+                        return None;
+                    }
                 }
                 self.editor.handle_key(key);
             }

@@ -171,6 +171,9 @@
 - [ ] **Export**
   - [ ] Export single note as HTML
   - [ ] Export all notes as a zip
+- [ ] **Import**
+  - [ ] Import single `.md` / `.txt` file or directory via CLI (`--import`)
+  - [ ] Import notes from a `.zip` archive
 
 **Deliverable**: Features that make Ferronote a daily-driver for power users.
 

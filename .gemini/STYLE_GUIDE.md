@@ -46,12 +46,12 @@ The app has three focusable main regions:
 
 Focus flows: `Search → List → Editor → (Esc) → Search` (cycled with `Tab` / `Shift+Tab`).
 
-### Settings Overlay (`F2` / `Ctrl+P`)
+### Settings Overlay (`Ctrl+P`)
 - Rendered as a centered modal popup box overlaying the main layout.
 - Options: Theme, Tab Size, Sidebar Width, Default Sort, Auto-Purge Days, Auto-Save Delay.
 - Controls: `↑`/`↓` to select setting item, `←`/`→` or `Space`/`Enter` to cycle value options, `Esc` to save & close.
 
-### About Overlay (`F1`)
+### About Overlay (`Ctrl+V`)
 - Rendered as a centered modal popup box.
 - Displays app version (`v0.1.0`), creator (`Tareq M Y` / `tareqmy.com`), contact email (`tareq.y@gmail.com`), GitHub repo URL, and license.
 - Pressing `Esc` or any key closes the modal.

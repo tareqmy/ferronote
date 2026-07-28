@@ -17,7 +17,7 @@ Ferronote is a Rust TUI application that brings the elegance and speed of Notati
 - **🏷️ Tag Filtering** — Organize with `#tag` annotations and instantly filter notes by `#tag` search query.
 - **🔗 Wiki Links & Backlinks** — Link notes seamlessly using `[[Note Title]]` syntax with automatic backlink detection.
 - **🎨 Custom Themes** — Personalize your terminal experience with pre-built themes (`default`, `gruvbox`, `nord`, `dracula`).
-- **⚙️ Interactive Settings** — Tweak options dynamically in the interactive Settings Overlay (`F2` / `Ctrl+P`).
+- **⚙️ Interactive Settings** — Tweak options dynamically in the interactive Settings Overlay (`Ctrl+P`).
 - **🗑️ Trash & Recovery** — Soft delete prevents accidental loss with list and restore capabilities.
 - **📦 Import & Export** — Export single notes to HTML or full vaults to `.zip` archives; import `.md`, directories, or `.zip` files seamlessly.
 
@@ -60,8 +60,8 @@ cargo build --release
 | `Ctrl+D`            | Delete note (moves to trash)                        |
 | `Ctrl+N`            | New note                                            |
 | `Ctrl+Z` / `Ctrl+Y` | Undo / Redo in editor                               |
-| `F2` / `Ctrl+P`     | Toggle Interactive Settings Overlay                 |
-| `F1`                | Toggle About Application Overlay                    |
+| `Ctrl+P`            | Toggle Interactive Settings Overlay                 |
+| `Ctrl+V`            | Toggle About Application Overlay                    |
 | `?`                 | Toggle Help Overlay                                 |
 | `Esc`                      | Close overlay / Back to search                      |
 | `Ctrl+Q`                   | Quit application                                    |

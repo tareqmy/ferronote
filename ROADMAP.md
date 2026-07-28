@@ -174,7 +174,7 @@
   - [x] Import notes from a `.zip` archive
 - [x] **Settings & Configuration**
   - [x] Expanded `config.json` schema (`default_extension`, `auto_save_delay_ms`, `tab_size`, `sidebar_width_percent`, `theme`, `default_sort`, `auto_purge_days`)
-  - [x] Interactive Settings TUI Overlay (`F2` / `Ctrl+P`)
+  - [x] Interactive Settings TUI Overlay (`Ctrl+P`)
   - [x] Auto-upgrading backward-compatible config loader (`serde(default)`)
 
 **Deliverable**: Features that make Ferronote a daily-driver for power users.

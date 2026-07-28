@@ -262,7 +262,7 @@ impl App<'_> {
 
         if self.show_settings {
             match key.code {
-                KeyCode::Esc | KeyCode::F(2) => return Some(Action::ToggleSettings),
+                KeyCode::Esc => return Some(Action::ToggleSettings),
                 KeyCode::Char('p')
                     if key
                         .modifiers
@@ -290,15 +290,18 @@ impl App<'_> {
             return Some(Action::ToggleAbout);
         }
 
-        if key.code == KeyCode::F(1) {
+        if key
+            .modifiers
+            .contains(crossterm::event::KeyModifiers::CONTROL)
+            && key.code == KeyCode::Char('v')
+        {
             return Some(Action::ToggleAbout);
         }
 
-        if (key
+        if key
             .modifiers
             .contains(crossterm::event::KeyModifiers::CONTROL)
-            && key.code == KeyCode::Char('p'))
-            || key.code == KeyCode::F(2)
+            && key.code == KeyCode::Char('p')
         {
             return Some(Action::ToggleSettings);
         }
@@ -643,7 +646,7 @@ impl App<'_> {
             spans.push(Span::styled("Help", text_style));
             spans.push(Span::styled(" │", sep_style));
 
-            spans.push(Span::styled(" [F1] ", key_style));
+            spans.push(Span::styled(" [Ctrl+V] ", key_style));
             spans.push(Span::styled("About", text_style));
             spans.push(Span::styled(" │", sep_style));
 
@@ -684,8 +687,8 @@ impl App<'_> {
                 ("Ctrl+Z", "Undo in editor"),
                 ("Ctrl+Y", "Redo in editor"),
                 ("Ctrl+D", "Delete selected note (moves to trash)"),
-                ("F2 / Ctrl+P", "Toggle Settings Overlay"),
-                ("F1", "Toggle About Overlay"),
+                ("Ctrl+P", "Toggle Settings Overlay"),
+                ("Ctrl+V", "Toggle About Overlay"),
                 ("?", "Toggle Help Overlay"),
                 ("Ctrl+Q", "Quit Application"),
             ];
@@ -774,7 +777,7 @@ impl App<'_> {
             let about_block = Paragraph::new(about_lines).block(
                 Block::default()
                     .borders(Borders::ALL)
-                    .title(" About (F1) ")
+                    .title(" About (Ctrl+V) ")
                     .border_style(Style::default().fg(Color::Yellow)),
             );
 
@@ -856,14 +859,14 @@ impl App<'_> {
 
             lines.push(Line::from(""));
             lines.push(Line::from(Span::styled(
-                " [Up/Down] Select   [Left/Right/Enter] Modify   [Esc/F2] Close",
+                " [Up/Down] Select   [Left/Right/Enter] Modify   [Esc/Ctrl+P] Close",
                 Style::default().fg(Color::DarkGray),
             )));
 
             let settings_block = Paragraph::new(lines).block(
                 Block::default()
                     .borders(Borders::ALL)
-                    .title(" Settings (F2) "),
+                    .title(" Settings (Ctrl+P) "),
             );
 
             let area = frame.area();
@@ -976,7 +979,7 @@ mod tests {
         app.update(Action::ToggleAbout);
         assert_eq!(app.show_about, false);
 
-        let action = app.handle_key(KeyEvent::new(KeyCode::F(1), KeyModifiers::NONE));
+        let action = app.handle_key(KeyEvent::new(KeyCode::Char('v'), KeyModifiers::CONTROL));
         assert_eq!(action, Some(Action::ToggleAbout));
     }
 

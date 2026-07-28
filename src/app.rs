@@ -587,7 +587,9 @@ impl App<'_> {
                     && y < self.list_area.y + self.list_area.height
                 {
                     self.focus = Focus::NoteList;
-                    if let Some(selected) = self.note_list.click_at(y, self.list_area) {
+                    if let Some(selected) =
+                        self.note_list.click_at(y, self.list_area, self.config.show_modified_time)
+                    {
                         if !selected.is_empty() {
                             if let Ok(content) = self.note_store.load_note(&selected) {
                                 self.editor.set_content(&selected, &content);

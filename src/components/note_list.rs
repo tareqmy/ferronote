@@ -115,7 +115,12 @@ impl NoteList {
             .and_then(|i| self.items.get(i).map(|res| res.filename.clone()))
     }
 
-    pub fn click_at(&mut self, y: u16, list_area: Rect) -> Option<String> {
+    pub fn click_at(
+        &mut self,
+        y: u16,
+        list_area: Rect,
+        show_modified_time: bool,
+    ) -> Option<String> {
         let border_offset = 1;
         if y <= list_area.y || y >= list_area.y + list_area.height.saturating_sub(border_offset) {
             return None;
@@ -126,9 +131,15 @@ impl NoteList {
 
         let mut current_line = 0;
         for (i, item) in self.items.iter().enumerate().skip(scroll_offset) {
+            let has_sub_text = if show_modified_time && item.modified_at > 0 {
+                true
+            } else {
+                item.content_preview.is_some()
+            };
+
             let item_lines = if item.is_create_prompt {
                 1
-            } else if item.content_preview.is_some() || item.modified_at > 0 {
+            } else if has_sub_text {
                 2
             } else {
                 1
@@ -282,15 +293,29 @@ mod tests {
         let list_area = Rect::new(0, 3, 24, 20);
 
         // Click top border (y = 3) returns None
-        assert_eq!(list.click_at(3, list_area), None);
+        assert_eq!(list.click_at(3, list_area, true), None);
 
+        // With show_modified_time = false (1 line per item)
         // Click first item (y = 4)
-        assert_eq!(list.click_at(4, list_area), Some("note_0.md".to_string()));
+        assert_eq!(
+            list.click_at(4, list_area, false),
+            Some("note_0.md".to_string())
+        );
         assert_eq!(list.state.selected(), Some(0));
 
         // Click second item (y = 5)
-        assert_eq!(list.click_at(5, list_area), Some("note_1.md".to_string()));
+        assert_eq!(
+            list.click_at(5, list_area, false),
+            Some("note_1.md".to_string())
+        );
         assert_eq!(list.state.selected(), Some(1));
+
+        // Click third item (y = 6)
+        assert_eq!(
+            list.click_at(6, list_area, false),
+            Some("note_2.md".to_string())
+        );
+        assert_eq!(list.state.selected(), Some(2));
     }
 
     #[test]

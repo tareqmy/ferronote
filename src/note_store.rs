@@ -24,19 +24,13 @@ impl NoteStore {
             std::fs::create_dir_all(&notes_dir)?;
         }
         
-        // Create internal metadata directory
-        let meta_dir = notes_dir.join(".ferronote");
-        if !meta_dir.exists() {
-            std::fs::create_dir_all(&meta_dir)?;
-        }
-
-        // Create trash directory
-        let trash_dir = meta_dir.join("trash");
+        // Create trash directory directly in notes_dir
+        let trash_dir = notes_dir.join("trash");
         if !trash_dir.exists() {
             std::fs::create_dir_all(&trash_dir)?;
         }
 
-        let metadata_path = meta_dir.join("metadata.json");
+        let metadata_path = notes_dir.join("metadata.json");
 
         let mut store = Self {
             notes_dir,
@@ -184,7 +178,7 @@ impl NoteStore {
     pub fn delete_note(&mut self, filename: &str) -> Result<()> {
         let file_path = self.notes_dir.join(filename);
         if file_path.exists() {
-            let trash_dir = self.notes_dir.join(".ferronote").join("trash");
+            let trash_dir = self.notes_dir.join("trash");
             
             // Generate a unique filename for the trash to avoid overwriting previously deleted notes with the same name
             let timestamp = chrono::Utc::now().timestamp();
@@ -287,7 +281,7 @@ mod tests {
         assert!(!store.metadata.contains_key(&filename));
         assert!(!store.notes_dir.join(&filename).exists());
 
-        let trash_dir = store.notes_dir.join(".ferronote").join("trash");
+        let trash_dir = store.notes_dir.join("trash");
         let trash_files: Vec<_> = std::fs::read_dir(&trash_dir)
             .unwrap()
             .flatten()

@@ -455,6 +455,68 @@ Happy note taking!
     }
 
     /// # Errors
+    /// Returns an error if reading note or writing HTML file fails.
+    pub fn export_note_to_html(
+        &self,
+        filename: &str,
+        output_path: &std::path::Path,
+    ) -> Result<PathBuf> {
+        let content = self.load_note(filename)?;
+        let title = filename.strip_suffix(".md").unwrap_or(filename);
+
+        let mut body_html = String::new();
+        for line in content.lines() {
+            if let Some(h1) = line.strip_prefix("# ") {
+                body_html.push_str(&format!("<h1>{}</h1>\n", h1));
+            } else if let Some(h2) = line.strip_prefix("## ") {
+                body_html.push_str(&format!("<h2>{}</h2>\n", h2));
+            } else if let Some(h3) = line.strip_prefix("### ") {
+                body_html.push_str(&format!("<h3>{}</h3>\n", h3));
+            } else if line.trim().is_empty() {
+                body_html.push_str("<br/>\n");
+            } else {
+                body_html.push_str(&format!("<p>{}</p>\n", line));
+            }
+        }
+
+        let html_document = format!(
+            "<!DOCTYPE html>\n<html>\n<head>\n<meta charset=\"utf-8\">\n<title>{}</title>\n<style>body {{ font-family: system-ui, sans-serif; line-height: 1.6; max-width: 800px; margin: 20px auto; padding: 0 20px; }}</style>\n</head>\n<body>\n{}\n</body>\n</html>",
+            title, body_html
+        );
+
+        let final_path = if output_path.is_dir() {
+            output_path.join(format!("{title}.html"))
+        } else {
+            output_path.to_path_buf()
+        };
+
+        std::fs::write(&final_path, html_document)?;
+        Ok(final_path)
+    }
+
+    /// # Errors
+    /// Returns an error if writing zip file fails.
+    pub fn export_vault_to_zip(&self, output_zip_path: &std::path::Path) -> Result<usize> {
+        let file = std::fs::File::create(output_zip_path)?;
+        let mut zip = zip::ZipWriter::new(file);
+        let options = zip::write::SimpleFileOptions::default()
+            .compression_method(zip::CompressionMethod::Stored);
+
+        let mut count = 0;
+        for filename in self.filenames() {
+            if let Ok(content) = self.load_note(&filename) {
+                zip.start_file(&filename, options)?;
+                use std::io::Write;
+                zip.write_all(content.as_bytes())?;
+                count += 1;
+            }
+        }
+
+        zip.finish()?;
+        Ok(count)
+    }
+
+    /// # Errors
     /// Returns an error if renaming fails.
     pub fn rename_note(&mut self, old_filename: &str, new_title: &str) -> Result<String> {
         let old_path = self.notes_dir.join(old_filename);
@@ -613,5 +675,29 @@ mod tests {
         let purged_count = store.purge_trash().unwrap();
         assert_eq!(purged_count, 1);
         assert!(store.list_trash().unwrap().is_empty());
+    }
+
+    #[test]
+    fn test_export_html_and_zip() {
+        let dir = setup_test_dir("export");
+        let mut store = NoteStore::new(dir).unwrap();
+
+        let filename = store.create_note("Export Note").unwrap();
+        store
+            .save_note(&filename, "# Header 1\n## Header 2\nBody text")
+            .unwrap();
+
+        let export_dir = setup_test_dir("export_target");
+        let html_target = export_dir.join("export_note.html");
+        let exported_html = store.export_note_to_html(&filename, &html_target).unwrap();
+        assert!(exported_html.exists());
+        let html_content = std::fs::read_to_string(&exported_html).unwrap();
+        assert!(html_content.contains("<h1>Header 1</h1>"));
+        assert!(html_content.contains("<h2>Header 2</h2>"));
+
+        let zip_target = export_dir.join("vault_export.zip");
+        let count = store.export_vault_to_zip(&zip_target).unwrap();
+        assert!(count >= 1);
+        assert!(zip_target.exists());
     }
 }

@@ -1,18 +1,29 @@
 use ratatui::style::Color;
 
+/// Color palette mapping for UI themes (Default, Gruvbox, Nord, Dracula).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ThemePalette {
+    /// Border color for active focused container.
     pub border_active: Color,
+    /// Border color for inactive containers.
     pub border_inactive: Color,
+    /// Title header text color.
     pub title: Color,
+    /// Search input text color.
     pub search_fg: Color,
+    /// Highlight color for matching search characters.
     pub search_match: Color,
+    /// Background color for selected list items.
     pub selection_bg: Color,
+    /// Foreground text color for selected list items.
     pub selection_fg: Color,
+    /// Accent color for UI highlights and status tags.
     pub accent: Color,
 }
 
 impl ThemePalette {
+    /// Returns the `ThemePalette` corresponding to `name` (`default`, `gruvbox`, `nord`, or `dracula`).
+    /// Fallback is `default`.
     #[must_use]
     pub fn from_name(name: &str) -> Self {
         match name {

@@ -5,15 +5,22 @@ use notify::{Event as NotifyEvent, RecommendedWatcher, RecursiveMode, Watcher};
 use std::path::PathBuf;
 use tokio::sync::mpsc;
 
+/// Internal event type wrapping terminal input, system signals, and filesystem notifications.
 #[derive(Clone, Debug)]
 pub enum Event {
+    /// Periodic tick event.
     Tick,
+    /// Terminal key press event.
     Key(KeyEvent),
+    /// Terminal mouse event.
     Mouse(MouseEvent),
+    /// Terminal window resize event.
     Resize(u16, u16),
+    /// External filesystem modification event for a note file.
     FileChanged(PathBuf),
 }
 
+/// Asynchronous event loop listener that polls Crossterm terminal events and file system changes.
 #[derive(Debug)]
 pub struct EventHandler {
     receiver: mpsc::UnboundedReceiver<Event>,
@@ -21,6 +28,7 @@ pub struct EventHandler {
 }
 
 impl EventHandler {
+    /// Creates a new `EventHandler` with given tick rate and optional notes directory file watcher.
     #[must_use]
     pub fn new(tick_rate: std::time::Duration, watch_dir: Option<PathBuf>) -> Self {
         let (sender, receiver) = mpsc::unbounded_channel();

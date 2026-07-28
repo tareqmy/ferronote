@@ -7,13 +7,17 @@ use ratatui::{
     widgets::{Block, Borders, List, ListItem, ListState},
 };
 
+/// Sidebar component rendering a filterable list of note titles with match highlights.
 #[derive(Debug, Default)]
 pub struct NoteList {
+    /// Ratatui state tracking active list selection index.
     pub state: ListState,
+    /// Matching search results displayed in sidebar list.
     pub items: Vec<SearchResult>,
 }
 
 impl NoteList {
+    /// Creates a new empty `NoteList` component.
     #[must_use]
     pub fn new() -> Self {
         Self {
@@ -21,6 +25,7 @@ impl NoteList {
             items: Vec::new(),
         }
     }
+
 
     pub fn set_items(&mut self, items: Vec<SearchResult>) {
         self.items = items;

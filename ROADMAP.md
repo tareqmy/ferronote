@@ -197,7 +197,7 @@
 - [ ] **Documentation**
   - [ ] `man` page
   - [ ] Website / landing page
-  - [ ] `CONTRIBUTING.md`
+  - [x] `CONTRIBUTING.md`
   - [ ] Architecture decision records (ADRs)
 - [ ] **Community**
   - [ ] Issue templates

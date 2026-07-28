@@ -9,17 +9,26 @@ fn tag_regex() -> &'static Regex {
     RE.get_or_init(|| Regex::new(r"(?i)#([a-z0-9_-]+)").expect("valid tag regex"))
 }
 
+/// Single search result or note selection candidate.
 #[derive(Debug, Clone)]
 pub struct SearchResult {
+    /// Note filename (e.g. `meeting.md`).
     pub filename: String,
+    /// Clean title displayed in UI without extension.
     pub title: String,
+    /// Match score derived from Skim fuzzy matcher.
     pub score: i64,
+    /// Indices of characters in title matching the search query.
     pub title_match_indices: Vec<usize>,
+    /// Optional content preview snippet around content match.
     pub content_preview: Option<String>,
+    /// Flag set if item represents the unified "Create note" prompt.
     pub is_create_prompt: bool,
+    /// Last modification Unix timestamp.
     pub modified_at: i64,
 }
 
+/// In-memory search index supporting fuzzy search, tag indexing, and backlink resolution.
 pub struct Index {
     matcher: SkimMatcherV2,
     // filename -> (title, content, modified_at, tags)
@@ -39,6 +48,7 @@ impl Default for Index {
 }
 
 impl Index {
+    /// Creates a new empty search `Index`.
     #[must_use]
     pub fn new() -> Self {
         Self {
@@ -47,6 +57,7 @@ impl Index {
         }
     }
 
+    /// Adds or updates a note in the search index, extracting `#tag` annotations automatically.
     pub fn add_note(&mut self, filename: String, content: String, modified_at: i64) {
         let title = filename
             .strip_suffix(".md")
@@ -62,10 +73,12 @@ impl Index {
             .insert(filename, (title, content, modified_at, tags));
     }
 
+    /// Removes a note from the search index by filename.
     pub fn remove_note(&mut self, filename: &str) {
         self.notes.remove(filename);
     }
 
+    /// Renames a note in the index, updating its key, content, and modified timestamp.
     pub fn rename_note(
         &mut self,
         old_filename: &str,
@@ -77,6 +90,7 @@ impl Index {
         self.add_note(new_filename, content, modified_at);
     }
 
+    /// Returns a list of notes containing wiki-style links (`[[note_title]]`) pointing to `note_title`.
     #[must_use]
     pub fn get_backlinks(&self, note_title: &str) -> Vec<SearchResult> {
         let clean_title = note_title.strip_suffix(".md").unwrap_or(note_title);
@@ -106,6 +120,7 @@ impl Index {
         backlinks
     }
 
+    /// Searches the index with `query`. Supports `#tag` filtering and fuzzy title/content matching.
     #[must_use]
     pub fn search(&self, query: &str) -> Vec<SearchResult> {
         let is_tag_search = query.starts_with('#');

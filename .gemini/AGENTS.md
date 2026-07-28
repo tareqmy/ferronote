@@ -85,16 +85,20 @@ The application follows **The Elm Architecture (TEA)** adapted for Rust:
 | File                       | Responsibility                                           |
 |----------------------------|----------------------------------------------------------|
 | `src/main.rs`              | Entry point: CLI parsing, terminal init, run loop        |
+| `src/lib.rs`               | Library exports and module declarations                  |
 | `src/app.rs`               | Application state, update logic, mode management         |
 | `src/tui.rs`               | Terminal backend setup, enter/exit alternate screen       |
-| `src/event.rs`             | Async event polling (keyboard, resize, tick)             |
+| `src/event.rs`             | Async event polling (keyboard, resize, tick, watcher)    |
 | `src/action.rs`            | Centralized `Action` enum for all state transitions      |
-| `src/note_store.rs`        | Note CRUD, filesystem I/O, in-memory index               |
-| `src/config.rs`            | User configuration loading/saving                        |
+| `src/focus.rs`             | Focus state enum (SearchBar, NoteList, Editor)           |
+| `src/search.rs`            | Skim fuzzy search index, `#tag` parser, backlinks        |
+| `src/theme.rs`             | Theme palette manager (default, gruvbox, nord, dracula)  |
+| `src/note_store.rs`        | Note CRUD, filesystem I/O, trash, import/export          |
+| `src/config.rs`            | User configuration loading, default fallbacks, saving    |
 | `src/components/mod.rs`    | Component trait definition, re-exports                   |
 | `src/components/search_bar.rs` | Search/create input widget                           |
-| `src/components/note_list.rs`  | Scrollable, filterable note list                     |
-| `src/components/editor.rs`     | Markdown note editor using tui-textarea              |
+| `src/components/note_list.rs`  | Scrollable, filterable note list with highlights     |
+| `src/components/editor.rs`     | Markdown note editor using tui-textarea & wiki links |
 
 ## Coding Conventions
 

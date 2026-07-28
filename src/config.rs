@@ -36,32 +36,42 @@ fn default_auto_purge_days() -> u32 {
     30
 }
 
+/// User preferences and application configuration persisted in `config.json`.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Config {
+    /// Directory where Markdown notes are stored.
     #[serde(default = "default_notes_dir")]
     pub notes_dir: PathBuf,
 
+    /// Default file extension for newly created notes (e.g. `md`).
     #[serde(default = "default_extension")]
     pub default_extension: String,
 
+    /// Delay in milliseconds before auto-saving editor changes.
     #[serde(default = "default_auto_save_delay_ms")]
     pub auto_save_delay_ms: u64,
 
+    /// Tab character width in spaces.
     #[serde(default = "default_tab_size")]
     pub tab_size: u8,
 
+    /// Sidebar note list width as a percentage of total width.
     #[serde(default = "default_sidebar_width_percent")]
     pub sidebar_width_percent: u16,
 
+    /// UI theme palette name (`default`, `gruvbox`, `nord`, `dracula`).
     #[serde(default = "default_theme")]
     pub theme: String,
 
+    /// Default note list sorting mode (`modified_desc`, `title_asc`, `created_desc`).
     #[serde(default = "default_sort")]
     pub default_sort: String,
 
+    /// Number of days before soft-deleted trash items are auto-purged.
     #[serde(default = "default_auto_purge_days")]
     pub auto_purge_days: u32,
 }
+
 
 impl Default for Config {
     fn default() -> Self {

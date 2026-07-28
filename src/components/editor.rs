@@ -12,11 +12,16 @@ use std::collections::HashMap;
 use std::time::Instant;
 use tui_textarea::TextArea;
 
+/// Main note editor component supporting Markdown editing, undo/redo, and wiki-link extraction.
 #[derive(Debug, Clone)]
 pub struct Editor<'a> {
+    /// In-memory text areas per open note filename.
     pub textareas: HashMap<String, TextArea<'a>>,
+    /// Active note filename being edited.
     pub current_note: Option<String>,
+    /// Last edit timestamp used for debounced auto-save calculation.
     pub last_edit_time: Option<Instant>,
+    /// Last saved content per note filename for dirty checking.
     pub original_content: HashMap<String, String>,
 }
 
@@ -27,6 +32,7 @@ impl Default for Editor<'_> {
 }
 
 impl Editor<'_> {
+    /// Creates a new empty `Editor` component.
     #[must_use]
     pub fn new() -> Self {
         Self {
@@ -36,6 +42,7 @@ impl Editor<'_> {
             original_content: HashMap::new(),
         }
     }
+
 
     pub fn set_content(&mut self, title: &str, content: &str) {
         if title.is_empty() {

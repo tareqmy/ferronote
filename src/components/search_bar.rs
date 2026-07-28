@@ -7,8 +7,10 @@ use ratatui::{
 };
 use tui_textarea::TextArea;
 
+/// Unified search bar and note creation input component.
 #[derive(Debug, Clone)]
 pub struct SearchBar<'a> {
+    /// Inner text area holding search query input.
     pub textarea: TextArea<'a>,
 }
 
@@ -19,6 +21,7 @@ impl Default for SearchBar<'_> {
 }
 
 impl SearchBar<'_> {
+    /// Creates a new `SearchBar` instance initialized with border box styling.
     #[must_use]
     pub fn new() -> Self {
         let mut textarea = TextArea::default();
@@ -30,9 +33,11 @@ impl SearchBar<'_> {
         Self { textarea }
     }
 
+    /// Forwards keyboard events to the search text area.
     pub fn handle_key(&mut self, key: KeyEvent) {
         self.textarea.input(key);
     }
+
 
     pub fn draw(
         &self,

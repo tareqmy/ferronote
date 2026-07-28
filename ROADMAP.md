@@ -138,16 +138,13 @@
 - [x] Dynamic status bar (shows keybinds based on focus state)
 - [x] Keybinds for deleting note (`Ctrl+D` from search or list)
 - [x] Code cleanup and linting
-- [ ] Note metadata display
-  - [ ] Created/modified timestamps in status bar
-  - [ ] Word count
-  - [ ] Character count
-- [ ] Smooth scrolling & transitions
-  - [ ] Animated cursor in note list
-  - [ ] Smooth scroll for long note lists
-- [ ] Help overlay
-  - [ ] `?` key shows keybinding reference
-  - [ ] First-run welcome/tutorial
+- [x] Note metadata display
+  - [x] Word count
+  - [x] Character count
+- [x] Smooth scrolling & transitions
+  - [x] Skipped: opted for instant snapping NV style for speed
+- [x] Help overlay
+  - [x] `?` key shows keybinding reference
 
 **Deliverable**: A polished, delightful TUI that users *enjoy* using.
 

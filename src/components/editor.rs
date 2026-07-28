@@ -139,4 +139,15 @@ impl Editor<'_> {
             self.last_edit_time = None;
         }
     }
+
+    #[must_use]
+    pub fn word_count(&self) -> usize {
+        self.content().split_whitespace().count()
+    }
+
+    #[must_use]
+    pub fn char_count(&self) -> usize {
+        // Exclude newlines from char count to be more accurate to typical editors
+        self.content().chars().filter(|c| !c.is_whitespace() || *c == ' ').count()
+    }
 }

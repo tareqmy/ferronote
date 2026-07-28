@@ -9,6 +9,9 @@ pub enum Action {
     DeleteNote,
     ToggleHelp,
     ToggleSettings,
+    NextSetting,
+    PrevSetting,
+    ChangeSettingOption(bool),
     FileChanged(std::path::PathBuf),
     Quit,
 }

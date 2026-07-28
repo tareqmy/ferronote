@@ -33,6 +33,8 @@ pub struct App<'a> {
     pub current_query: String,
     pub show_help: bool,
     pub show_settings: bool,
+    pub settings_selected_index: usize,
+    pub config: Config,
 }
 
 impl App<'_> {
@@ -47,6 +49,8 @@ impl App<'_> {
             }
         }
 
+        let config = Config::load().unwrap_or_default();
+
         let mut app = Self {
             should_quit: false,
             note_store,
@@ -59,6 +63,8 @@ impl App<'_> {
             current_query: String::new(),
             show_help: false,
             show_settings: false,
+            settings_selected_index: 0,
+            config,
         };
         app.update_search();
         app
@@ -128,6 +134,98 @@ impl App<'_> {
         Ok(new_filename)
     }
 
+    fn cycle_setting(&mut self, forward: bool) {
+        match self.settings_selected_index {
+            0 => {
+                self.config.default_extension = if self.config.default_extension == "md" {
+                    "txt".to_string()
+                } else {
+                    "md".to_string()
+                };
+            }
+            1 => {
+                let options = [500, 1000, 2000, 3000];
+                let current_idx = options
+                    .iter()
+                    .position(|&v| v == self.config.auto_save_delay_ms)
+                    .unwrap_or(1);
+                let next_idx = if forward {
+                    (current_idx + 1) % options.len()
+                } else {
+                    (current_idx + options.len() - 1) % options.len()
+                };
+                self.config.auto_save_delay_ms = options[next_idx];
+            }
+            2 => {
+                let options = [2, 4, 8];
+                let current_idx = options
+                    .iter()
+                    .position(|&v| v == self.config.tab_size)
+                    .unwrap_or(1);
+                let next_idx = if forward {
+                    (current_idx + 1) % options.len()
+                } else {
+                    (current_idx + options.len() - 1) % options.len()
+                };
+                self.config.tab_size = options[next_idx];
+            }
+            3 => {
+                let options = [20, 25, 30, 35, 40];
+                let current_idx = options
+                    .iter()
+                    .position(|&v| v == self.config.sidebar_width_percent)
+                    .unwrap_or(2);
+                let next_idx = if forward {
+                    (current_idx + 1) % options.len()
+                } else {
+                    (current_idx + options.len() - 1) % options.len()
+                };
+                self.config.sidebar_width_percent = options[next_idx];
+            }
+            4 => {
+                let options = ["default", "gruvbox", "nord", "dracula"];
+                let current_idx = options
+                    .iter()
+                    .position(|&v| v == self.config.theme)
+                    .unwrap_or(0);
+                let next_idx = if forward {
+                    (current_idx + 1) % options.len()
+                } else {
+                    (current_idx + options.len() - 1) % options.len()
+                };
+                self.config.theme = options[next_idx].to_string();
+            }
+            5 => {
+                let options = ["modified_desc", "title_asc", "created_desc"];
+                let current_idx = options
+                    .iter()
+                    .position(|&v| v == self.config.default_sort)
+                    .unwrap_or(0);
+                let next_idx = if forward {
+                    (current_idx + 1) % options.len()
+                } else {
+                    (current_idx + options.len() - 1) % options.len()
+                };
+                self.config.default_sort = options[next_idx].to_string();
+            }
+            6 => {
+                let options = [0, 7, 14, 30, 90];
+                let current_idx = options
+                    .iter()
+                    .position(|&v| v == self.config.auto_purge_days)
+                    .unwrap_or(3);
+                let next_idx = if forward {
+                    (current_idx + 1) % options.len()
+                } else {
+                    (current_idx + options.len() - 1) % options.len()
+                };
+                self.config.auto_purge_days = options[next_idx];
+            }
+            _ => {}
+        }
+        let _ = self.config.save();
+    }
+
     /// # Errors
     /// Returns an error if drawing to the terminal fails or the event stream closes.
     pub async fn run(&mut self, mut tui: Tui, mut events: EventHandler) -> Result<()> {
@@ -161,7 +259,25 @@ impl App<'_> {
         }
 
         if self.show_settings {
-            return Some(Action::ToggleSettings);
+            match key.code {
+                KeyCode::Esc | KeyCode::F(2) => return Some(Action::ToggleSettings),
+                KeyCode::Char('p')
+                    if key
+                        .modifiers
+                        .contains(crossterm::event::KeyModifiers::CONTROL) =>
+                {
+                    return Some(Action::ToggleSettings);
+                }
+                KeyCode::Up | KeyCode::Char('k') => return Some(Action::PrevSetting),
+                KeyCode::Down | KeyCode::Char('j') => return Some(Action::NextSetting),
+                KeyCode::Left | KeyCode::Char('h') => {
+                    return Some(Action::ChangeSettingOption(false));
+                }
+                KeyCode::Right | KeyCode::Char('l') | KeyCode::Enter | KeyCode::Char(' ') => {
+                    return Some(Action::ChangeSettingOption(true));
+                }
+                _ => return None,
+            }
         }
 
         if self.show_help {
@@ -171,7 +287,7 @@ impl App<'_> {
         if (key
             .modifiers
             .contains(crossterm::event::KeyModifiers::CONTROL)
-            && (key.code == KeyCode::Char(',') || key.code == KeyCode::Char('p')))
+            && key.code == KeyCode::Char('p'))
             || key.code == KeyCode::F(2)
         {
             return Some(Action::ToggleSettings);
@@ -292,6 +408,17 @@ impl App<'_> {
         match action {
             Action::ToggleSettings => {
                 self.show_settings = !self.show_settings;
+            }
+            Action::NextSetting => {
+                if self.settings_selected_index < 6 {
+                    self.settings_selected_index += 1;
+                }
+            }
+            Action::PrevSetting => {
+                self.settings_selected_index = self.settings_selected_index.saturating_sub(1);
+            }
+            Action::ChangeSettingOption(forward) => {
+                self.cycle_setting(forward);
             }
             Action::ToggleHelp => {
                 self.show_help = !self.show_help;
@@ -529,7 +656,7 @@ impl App<'_> {
                     Span::raw("    : Delete Selected Note"),
                 ]),
                 Line::from(vec![
-                    Span::styled("Ctrl+, / F2 / Ctrl+P", Style::default().fg(Color::Cyan)),
+                    Span::styled("F2 / Ctrl+P", Style::default().fg(Color::Cyan)),
                     Span::raw(" : Settings Overlay"),
                 ]),
                 Line::from(vec![
@@ -548,8 +675,7 @@ impl App<'_> {
                 .alignment(ratatui::layout::Alignment::Center);
 
             let area = frame.area();
-            // Centered rect
-            let width = 45;
+            let width = 42;
             let height = 16;
             let x = (area.width.saturating_sub(width)) / 2;
             let y = (area.height.saturating_sub(height)) / 2;
@@ -559,63 +685,86 @@ impl App<'_> {
             frame.render_widget(help_block, popup_area);
         }
 
-        // Render Settings Overlay
+        // Render Settings Overlay (Interactive & Left-Aligned)
         if self.show_settings {
-            let config = Config::load().unwrap_or_default();
-            let settings_text = vec![
+            let options_data = [
+                (
+                    "Default Extension",
+                    format!(".{}", self.config.default_extension),
+                ),
+                (
+                    "Auto-Save Delay",
+                    format!("{} ms", self.config.auto_save_delay_ms),
+                ),
+                ("Tab Size", format!("{} spaces", self.config.tab_size)),
+                (
+                    "Sidebar Width",
+                    format!("{}%", self.config.sidebar_width_percent),
+                ),
+                ("Active Theme", self.config.theme.clone()),
+                ("Default Sort", self.config.default_sort.clone()),
+                (
+                    "Auto-Purge Trash",
+                    if self.config.auto_purge_days == 0 {
+                        "Disabled".to_string()
+                    } else {
+                        format!("{} days", self.config.auto_purge_days)
+                    },
+                ),
+            ];
+
+            let mut lines = vec![
                 Line::from(Span::styled(
-                    "Ferronote Settings",
+                    " ⚙️  Ferronote Settings",
                     Style::default()
                         .fg(Color::Yellow)
                         .add_modifier(Modifier::BOLD),
                 )),
                 Line::from(""),
-                Line::from(vec![
-                    Span::styled("Storage Path:      ", Style::default().fg(Color::Cyan)),
-                    Span::raw(config.notes_dir.to_string_lossy()),
-                ]),
-                Line::from(vec![
-                    Span::styled("Default Extension: ", Style::default().fg(Color::Cyan)),
-                    Span::raw(format!(".{}", config.default_extension)),
-                ]),
-                Line::from(vec![
-                    Span::styled("Auto-Save Delay:   ", Style::default().fg(Color::Cyan)),
-                    Span::raw(format!("{} ms", config.auto_save_delay_ms)),
-                ]),
-                Line::from(vec![
-                    Span::styled("Tab Size:          ", Style::default().fg(Color::Cyan)),
-                    Span::raw(format!("{} spaces", config.tab_size)),
-                ]),
-                Line::from(vec![
-                    Span::styled("Sidebar Width:     ", Style::default().fg(Color::Cyan)),
-                    Span::raw(format!("{}%", config.sidebar_width_percent)),
-                ]),
-                Line::from(vec![
-                    Span::styled("Active Theme:      ", Style::default().fg(Color::Cyan)),
-                    Span::raw(&config.theme),
-                ]),
-                Line::from(vec![
-                    Span::styled("Default Sort:      ", Style::default().fg(Color::Cyan)),
-                    Span::raw(&config.default_sort),
-                ]),
-                Line::from(vec![
-                    Span::styled("Auto-Purge Trash:  ", Style::default().fg(Color::Cyan)),
-                    Span::raw(format!("{} days", config.auto_purge_days)),
-                ]),
-                Line::from(""),
-                Line::from(Span::styled(
-                    "Press any key to close Settings (Ctrl+, / F2 / Ctrl+P to open)",
-                    Style::default().fg(Color::DarkGray),
-                )),
             ];
 
-            let settings_block = Paragraph::new(settings_text)
-                .block(Block::default().borders(Borders::ALL).title(" Settings "))
-                .alignment(ratatui::layout::Alignment::Center);
+            for (idx, (label, val)) in options_data.iter().enumerate() {
+                let is_selected = idx == self.settings_selected_index;
+                let prefix = if is_selected { " ▶ " } else { "   " };
+                let label_style = if is_selected {
+                    Style::default()
+                        .fg(Color::Yellow)
+                        .add_modifier(Modifier::BOLD)
+                } else {
+                    Style::default().fg(Color::Cyan)
+                };
+
+                let val_style = if is_selected {
+                    Style::default()
+                        .fg(Color::Black)
+                        .bg(Color::Yellow)
+                        .add_modifier(Modifier::BOLD)
+                } else {
+                    Style::default().fg(Color::White)
+                };
+
+                lines.push(Line::from(vec![
+                    Span::styled(prefix, label_style),
+                    Span::styled(format!("{:<20}", label), label_style),
+                    Span::styled(format!(" [ {:<14} ]", val), val_style),
+                ]));
+            }
+
+            lines.push(Line::from(""));
+            lines.push(Line::from(Span::styled(
+                " [Up/Down] Select   [Left/Right/Enter] Modify   [Esc/F2] Close",
+                Style::default().fg(Color::DarkGray),
+            )));
+
+            let settings_block = Paragraph::new(lines).block(
+                Block::default()
+                    .borders(Borders::ALL)
+                    .title(" Settings (F2) "),
+            );
 
             let area = frame.area();
-            let width = 50;
-            let height = 16;
+            let width = 64;
+            let height = 14;
             let x = (area.width.saturating_sub(width)) / 2;
             let y = (area.height.saturating_sub(height)) / 2;
             let popup_area = ratatui::layout::Rect::new(x, y, width, height);

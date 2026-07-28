@@ -30,3 +30,10 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 lto = true
 codegen-units = 1
 strip = true
+
+[dev-dependencies]
+criterion = "0.5"
+
+[[bench]]
+name = "search_benchmark"
+harness = false

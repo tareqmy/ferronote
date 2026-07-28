@@ -75,20 +75,20 @@
 ## Phase 3 · Search Engine (Milestone: "It finds everything instantly")
 **Goal**: Blazing-fast fuzzy search across titles and content.
 
-- [ ] Integrate `fuzzy-matcher` (Skim algorithm)
-  - [ ] Title matching with score-based ranking
-  - [ ] Content matching (search body text)
-  - [ ] Combined score: title matches weighted 3x over content
-- [ ] In-memory index
-  - [ ] Build on startup from `NoteStore`
-  - [ ] Update incrementally on note create/edit/delete
-- [ ] Search UX
-  - [ ] Results update as-you-type (debounced at ~50ms)
-  - [ ] Highlight matching characters in note list
-  - [ ] Show content preview snippet with match context
-- [ ] Performance benchmarks
-  - [ ] Target: < 5ms for 10,000 notes
-  - [ ] Add `criterion` benchmarks for search
+- [x] Integrate `fuzzy-matcher` (Skim algorithm)
+  - [x] Title matching with score-based ranking
+  - [x] Content matching (search body text)
+  - [x] Combined score: title matches weighted 3x over content
+- [x] In-memory index
+  - [x] Build on startup from `NoteStore`
+  - [x] Update incrementally on note create/edit/delete
+- [x] Search UX
+  - [x] Results update as-you-type (debounced at ~50ms)
+  - [x] Highlight matching characters in note list
+  - [x] Show content preview snippet with match context
+- [x] Performance benchmarks
+  - [x] Target: < 5ms for 10,000 notes
+  - [x] Add `criterion` benchmarks for search
 
 **Deliverable**: Sub-millisecond fuzzy search that feels instant.
 

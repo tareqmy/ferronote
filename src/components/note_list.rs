@@ -1,3 +1,4 @@
+use crate::search::SearchResult;
 use ratatui::{
     Frame,
     layout::Rect,
@@ -9,7 +10,7 @@ use ratatui::{
 #[derive(Debug, Default)]
 pub struct NoteList {
     pub state: ListState,
-    pub items: Vec<String>,
+    pub items: Vec<SearchResult>,
 }
 
 impl NoteList {
@@ -21,7 +22,7 @@ impl NoteList {
         }
     }
 
-    pub fn set_items(&mut self, items: Vec<String>) {
+    pub fn set_items(&mut self, items: Vec<SearchResult>) {
         self.items = items;
         // Reset selection if out of bounds
         if let Some(selected) = self.state.selected() {
@@ -75,7 +76,7 @@ impl NoteList {
     pub fn selected_note(&self) -> Option<String> {
         self.state
             .selected()
-            .and_then(|i| self.items.get(i).cloned())
+            .and_then(|i| self.items.get(i).map(|res| res.filename.clone()))
     }
 
     pub fn draw(&mut self, frame: &mut Frame, area: Rect, is_focused: bool) {
@@ -94,8 +95,25 @@ impl NoteList {
             .items
             .iter()
             .map(|i| {
-                let display_name = i.strip_suffix(".md").unwrap_or(i);
-                ListItem::new(Line::from(Span::raw(display_name.to_string())))
+                let mut spans = Vec::new();
+                for (idx, ch) in i.title.chars().enumerate() {
+                    let mut style = Style::default();
+                    if i.title_match_indices.contains(&idx) {
+                        style = style.fg(Color::Yellow).add_modifier(Modifier::BOLD);
+                    }
+                    spans.push(Span::styled(ch.to_string(), style));
+                }
+                
+                let mut lines = vec![Line::from(spans)];
+                
+                if let Some(preview) = &i.content_preview {
+                    lines.push(Line::from(Span::styled(
+                        preview.clone(),
+                        Style::default().fg(Color::DarkGray),
+                    )));
+                }
+
+                ListItem::new(lines)
             })
             .collect();
 

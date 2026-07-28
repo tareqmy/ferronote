@@ -14,8 +14,10 @@ use crate::{
     event::{Event, EventHandler},
     focus::Focus,
     note_store::NoteStore,
+    search::Index,
     tui::Tui,
 };
+use std::time::Instant;
 
 #[derive(Debug)]
 pub struct App<'a> {
@@ -25,19 +27,72 @@ pub struct App<'a> {
     pub search_bar: SearchBar<'a>,
     pub note_list: NoteList,
     pub editor: Editor<'a>,
+    pub index: Index,
+    pub last_search_input: Option<Instant>,
+    pub current_query: String,
 }
 
 impl App<'_> {
     #[must_use]
     pub fn new(note_store: NoteStore) -> Self {
-        Self {
+        let mut index = Index::new();
+        
+        for filename in note_store.filenames() {
+            if let Ok(content) = note_store.load_note(&filename) {
+                index.add_note(filename, content);
+            }
+        }
+
+        let mut app = Self {
             should_quit: false,
             note_store,
             focus: Focus::default(),
             search_bar: SearchBar::new(),
             note_list: NoteList::new(),
             editor: Editor::new(),
+            index,
+            last_search_input: None,
+            current_query: String::new(),
+        };
+        app.update_search();
+        app
+    }
+
+    pub fn update_search(&mut self) {
+        let query = self.search_bar.query();
+        let results = self.index.search(&query);
+        self.note_list.set_items(results);
+    }
+
+    pub fn create_note(&mut self, title: &str) -> Result<String> {
+        let filename = self.note_store.create_note(title)?;
+        let content = format!("# {title}\n\n");
+        self.index.add_note(filename.clone(), content);
+        self.update_search();
+        Ok(filename)
+    }
+
+    pub fn save_note(&mut self, filename: &str, content: &str) -> Result<()> {
+        self.note_store.save_note(filename, content)?;
+        self.index.add_note(filename.to_string(), content.to_string());
+        self.update_search();
+        Ok(())
+    }
+
+    pub fn delete_note(&mut self, filename: &str) -> Result<()> {
+        self.note_store.delete_note(filename)?;
+        self.index.remove_note(filename);
+        self.update_search();
+        Ok(())
+    }
+
+    pub fn rename_note(&mut self, old_filename: &str, new_title: &str) -> Result<String> {
+        let new_filename = self.note_store.rename_note(old_filename, new_title)?;
+        if let Ok(content) = self.note_store.load_note(&new_filename) {
+            self.index.rename_note(old_filename, new_filename.clone(), content);
+            self.update_search();
         }
+        Ok(new_filename)
     }
 
     /// # Errors
@@ -88,7 +143,12 @@ impl App<'_> {
 
         match self.focus {
             Focus::SearchBar => {
+                let old_query = self.search_bar.query();
                 self.search_bar.handle_key(key);
+                let new_query = self.search_bar.query();
+                if old_query != new_query {
+                    self.last_search_input = Some(Instant::now());
+                }
             }
             Focus::NoteList => {
                 if key.code == KeyCode::Down {
@@ -108,7 +168,15 @@ impl App<'_> {
     pub fn update(&mut self, action: Action) {
         match action {
             Action::Quit => self.should_quit = true,
-            Action::Tick | Action::Render | Action::Resize(_, _) => {}
+            Action::Tick => {
+                if let Some(last_input) = self.last_search_input {
+                    if last_input.elapsed().as_millis() >= 50 {
+                        self.update_search();
+                        self.last_search_input = None;
+                    }
+                }
+            }
+            Action::Render | Action::Resize(_, _) => {}
         }
     }
 

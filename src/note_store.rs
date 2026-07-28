@@ -208,6 +208,11 @@ impl NoteStore {
 
         Ok(new_filename)
     }
+
+    #[must_use]
+    pub fn filenames(&self) -> Vec<String> {
+        self.metadata.keys().cloned().collect()
+    }
 }
 
 #[cfg(test)]

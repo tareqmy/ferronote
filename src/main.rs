@@ -1,17 +1,8 @@
-pub mod action;
-pub mod app;
-pub mod components;
-pub mod config;
-pub mod event;
-pub mod focus;
-pub mod note_store;
-pub mod tui;
+use ferronote::{app::App, config::Config, event::EventHandler, note_store::NoteStore, tui::Tui};
 
 use clap::Parser;
 use color_eyre::Result;
 use std::path::PathBuf;
-
-use crate::{app::App, config::Config, event::EventHandler, note_store::NoteStore, tui::Tui};
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
@@ -42,7 +33,7 @@ async fn main() -> Result<()> {
 
     // 5. Create App and EventHandler
     let mut app = App::new(note_store);
-    let events = EventHandler::new(std::time::Duration::from_millis(250));
+    let events = EventHandler::new(std::time::Duration::from_millis(50));
 
     // 6. Run the main loop
     let result = app.run(tui, events).await;

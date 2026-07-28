@@ -1,5 +1,8 @@
 use color_eyre::Result;
+use crossterm::event::{DisableMouseCapture, EnableMouseCapture};
+use crossterm::execute;
 use ratatui::DefaultTerminal;
+use std::io::stdout;
 
 /// A thin wrapper around `ratatui::DefaultTerminal`
 pub struct Tui {
@@ -7,11 +10,12 @@ pub struct Tui {
 }
 
 impl Tui {
-    /// Initializes the terminal, entering alternate screen and raw mode.
+    /// Initializes the terminal, entering alternate screen, raw mode, and enabling mouse capture.
     /// # Errors
     /// Returns an error if terminal initialization fails.
     pub fn init() -> Result<Self> {
         let terminal = ratatui::init();
+        let _ = execute!(stdout(), EnableMouseCapture);
         Ok(Self { terminal })
     }
 
@@ -19,6 +23,7 @@ impl Tui {
     /// # Errors
     /// Returns an error if terminal restoration fails.
     pub fn restore() -> Result<()> {
+        let _ = execute!(stdout(), DisableMouseCapture);
         ratatui::restore();
         Ok(())
     }

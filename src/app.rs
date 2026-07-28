@@ -2,7 +2,7 @@ use color_eyre::Result;
 use ratatui::{
     Frame,
     crossterm::event::{KeyCode, KeyEvent},
-    layout::{Constraint, Direction, Layout},
+    layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
     text::{Line, Span},
     widgets::{Block, Borders, Clear, Paragraph},
@@ -36,6 +36,9 @@ pub struct App<'a> {
     pub show_settings: bool,
     pub settings_selected_index: usize,
     pub config: Config,
+    pub search_area: Rect,
+    pub list_area: Rect,
+    pub editor_area: Rect,
 }
 
 impl App<'_> {
@@ -67,6 +70,9 @@ impl App<'_> {
             show_settings: false,
             settings_selected_index: 0,
             config,
+            search_area: Rect::default(),
+            list_area: Rect::default(),
+            editor_area: Rect::default(),
         };
         app.update_search();
         app
@@ -252,9 +258,17 @@ impl App<'_> {
         match event {
             Event::Tick => Some(Action::Tick),
             Event::Key(key_event) => self.handle_key(key_event),
-            Event::Mouse(_) => None,
+            Event::Mouse(mouse_event) => self.handle_mouse(mouse_event),
             Event::Resize(w, h) => Some(Action::Resize(w, h)),
             Event::FileChanged(path) => Some(Action::FileChanged(path)),
+        }
+    }
+
+    fn handle_mouse(&mut self, mouse: crossterm::event::MouseEvent) -> Option<Action> {
+        if mouse.kind == crossterm::event::MouseEventKind::Down(crossterm::event::MouseButton::Left) {
+            Some(Action::MouseClick(mouse.column, mouse.row))
+        } else {
+            None
         }
     }
 
@@ -544,6 +558,52 @@ impl App<'_> {
                     }
                 }
             }
+            Action::MouseClick(x, y) => {
+                if self.show_help {
+                    self.show_help = false;
+                    return;
+                }
+                if self.show_about {
+                    self.show_about = false;
+                    return;
+                }
+                if self.show_settings {
+                    self.show_settings = false;
+                    return;
+                }
+
+                if x >= self.search_area.x
+                    && x < self.search_area.x + self.search_area.width
+                    && y >= self.search_area.y
+                    && y < self.search_area.y + self.search_area.height
+                {
+                    self.focus = Focus::SearchBar;
+                } else if x >= self.list_area.x
+                    && x < self.list_area.x + self.list_area.width
+                    && y >= self.list_area.y
+                    && y < self.list_area.y + self.list_area.height
+                {
+                    self.focus = Focus::NoteList;
+                    let relative_y = y.saturating_sub(self.list_area.y + 1);
+                    let item_idx = (relative_y / 2) as usize;
+                    if item_idx < self.note_list.items.len() {
+                        self.note_list.state.select(Some(item_idx));
+                        if let Some(selected) = self.note_list.selected_note() {
+                            if !selected.is_empty() {
+                                if let Ok(content) = self.note_store.load_note(&selected) {
+                                    self.editor.set_content(&selected, &content);
+                                }
+                            }
+                        }
+                    }
+                } else if x >= self.editor_area.x
+                    && x < self.editor_area.x + self.editor_area.width
+                    && y >= self.editor_area.y
+                    && y < self.editor_area.y + self.editor_area.height
+                {
+                    self.focus = Focus::Editor;
+                }
+            }
             Action::Render | Action::Resize(_, _) => {}
         }
     }
@@ -568,6 +628,10 @@ impl App<'_> {
                 Constraint::Percentage(100 - sidebar_width),
             ])
             .split(main_layout[1]);
+
+        self.search_area = main_layout[0];
+        self.list_area = content_layout[0];
+        self.editor_area = content_layout[1];
 
         // Render components
         self.search_bar.draw(
@@ -981,9 +1045,9 @@ mod tests {
             app.update(Action::NextSetting);
         }
         assert_eq!(app.settings_selected_index, 7);
-        assert!(app.config.show_modified_time);
+        let initial_mod_time = app.config.show_modified_time;
         app.update(Action::ChangeSettingOption(true));
-        assert!(!app.config.show_modified_time);
+        assert_eq!(app.config.show_modified_time, !initial_mod_time);
 
         app.update(Action::ToggleSettings);
         assert!(!app.show_settings);
@@ -1002,6 +1066,26 @@ mod tests {
 
         let action = app.handle_key(KeyEvent::new(KeyCode::Char('v'), KeyModifiers::CONTROL));
         assert_eq!(action, Some(Action::ToggleAbout));
+    }
+
+    #[test]
+    fn test_app_mouse_click_panel_focus() {
+        let (mut app, _temp_dir) = setup_test_app();
+        app.search_area = Rect::new(0, 0, 80, 3);
+        app.list_area = Rect::new(0, 3, 24, 20);
+        app.editor_area = Rect::new(24, 3, 56, 20);
+
+        // Click Search Bar area
+        app.update(Action::MouseClick(10, 1));
+        assert_eq!(app.focus, Focus::SearchBar);
+
+        // Click Note List area
+        app.update(Action::MouseClick(5, 5));
+        assert_eq!(app.focus, Focus::NoteList);
+
+        // Click Editor area
+        app.update(Action::MouseClick(30, 10));
+        assert_eq!(app.focus, Focus::Editor);
     }
 
     #[test]

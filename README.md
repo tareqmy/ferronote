@@ -63,7 +63,8 @@ cargo build --release
 | `Ctrl+P`            | Toggle Interactive Settings Overlay                 |
 | `Ctrl+V`            | Toggle About Application Overlay                    |
 | `?`                 | Toggle Help Overlay                                 |
-| `Esc`                      | Close overlay / Back to search                      |
+| `Mouse Click`       | Focus panel (Search/List/Editor) / select note item |
+| `Esc`               | Close overlay / Back to search                      |
 | `Ctrl+Q`                   | Quit application                                    |
 
 ## 🏗️ Architecture

@@ -44,7 +44,7 @@ The app has three focusable main regions:
 2. **Note List** — Arrow keys after typing in search
 3. **Editor** — Enter on a note to start editing
 
-Focus flows: `Search → List → Editor → (Esc) → Search` (cycled with `Tab` / `Shift+Tab`).
+Focus flows: `Search → List → Editor → (Esc) → Search` (cycled with `Tab` / `Shift+Tab` or clicked with Mouse).
 
 ### Settings Overlay (`Ctrl+P`)
 - Rendered as a centered modal popup box overlaying the main layout.

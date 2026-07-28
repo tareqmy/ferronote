@@ -29,6 +29,8 @@ pub enum Action {
     ChangeSettingOption(bool),
     /// File system change detected for file at path.
     FileChanged(std::path::PathBuf),
+    /// Mouse click at position (column, row).
+    MouseClick(u16, u16),
     /// Exit the application.
     Quit,
 }

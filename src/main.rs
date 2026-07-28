@@ -14,6 +14,14 @@ struct Args {
     /// Path to file, directory, or .zip archive to import
     #[arg(short, long)]
     import: Option<PathBuf>,
+
+    /// List trashed notes
+    #[arg(long)]
+    trash: bool,
+
+    /// Restore trashed note by filename
+    #[arg(long)]
+    restore: Option<String>,
 }
 
 #[tokio::main]
@@ -31,6 +39,25 @@ async fn main() -> Result<()> {
     }
 
     let mut note_store = NoteStore::new(config.notes_dir.clone())?;
+
+    if args.trash {
+        let trash_list = note_store.list_trash()?;
+        if trash_list.is_empty() {
+            println!("Trash is empty.");
+        } else {
+            println!("Trashed Notes ({} total):", trash_list.len());
+            for (filename, original) in trash_list {
+                println!("  - {} (Original: {})", filename, original);
+            }
+        }
+        return Ok(());
+    }
+
+    if let Some(trash_filename) = args.restore {
+        let restored = note_store.restore_note(&trash_filename)?;
+        println!("Successfully restored note as '{}'", restored);
+        return Ok(());
+    }
 
     if let Some(import_path) = args.import {
         let count = note_store.import_path(&import_path)?;

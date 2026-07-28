@@ -376,6 +376,85 @@ Happy note taking!
     }
 
     /// # Errors
+    /// Returns an error if reading trash directory fails.
+    pub fn list_trash(&self) -> Result<Vec<(String, String)>> {
+        let trash_dir = self.notes_dir.join("trash");
+        let mut list = Vec::new();
+        if trash_dir.exists() {
+            for entry in std::fs::read_dir(trash_dir)? {
+                let entry = entry?;
+                let filename = entry.file_name().to_string_lossy().to_string();
+                if filename.contains('-') {
+                    let original_title = filename
+                        .split_once('-')
+                        .map(|x| x.1)
+                        .unwrap_or(&filename)
+                        .strip_suffix(".md")
+                        .unwrap_or(&filename)
+                        .to_string();
+                    list.push((filename, original_title));
+                }
+            }
+        }
+        Ok(list)
+    }
+
+    /// # Errors
+    /// Returns an error if moving file from trash fails.
+    pub fn restore_note(&mut self, trash_filename: &str) -> Result<String> {
+        let trash_dir = self.notes_dir.join("trash");
+        let trash_path = trash_dir.join(trash_filename);
+        if !trash_path.exists() {
+            color_eyre::eyre::bail!("File not found in trash: {}", trash_filename);
+        }
+
+        let raw_title = trash_filename
+            .split_once('-')
+            .map(|x| x.1)
+            .unwrap_or(trash_filename);
+
+        let stem = raw_title.strip_suffix(".md").unwrap_or(raw_title);
+        let safe_title = stem.replace(['/', '\\'], "-");
+        let mut target_filename = format!("{safe_title}.md");
+        let mut counter = 1;
+
+        while self.notes_dir.join(&target_filename).exists() {
+            target_filename = format!("{safe_title} {counter}.md");
+            counter += 1;
+        }
+
+        let target_path = self.notes_dir.join(&target_filename);
+        std::fs::rename(trash_path, target_path)?;
+
+        let now = Utc::now();
+        self.metadata.insert(
+            target_filename.clone(),
+            NoteMetadata {
+                created_at: now,
+                modified_at: now,
+            },
+        );
+        self.save_metadata()?;
+
+        Ok(target_filename)
+    }
+
+    /// # Errors
+    /// Returns an error if removing trash files fails.
+    pub fn purge_trash(&mut self) -> Result<usize> {
+        let trash_dir = self.notes_dir.join("trash");
+        let mut count = 0;
+        if trash_dir.exists() {
+            for entry in std::fs::read_dir(trash_dir)? {
+                let entry = entry?;
+                std::fs::remove_file(entry.path())?;
+                count += 1;
+            }
+        }
+        Ok(count)
+    }
+
+    /// # Errors
     /// Returns an error if renaming fails.
     pub fn rename_note(&mut self, old_filename: &str, new_title: &str) -> Result<String> {
         let old_path = self.notes_dir.join(old_filename);
@@ -511,5 +590,28 @@ mod tests {
         assert_eq!(count, 2);
         assert!(store.load_note("imported_one.md").is_ok());
         assert!(store.load_note("imported_two.md").is_ok());
+    }
+
+    #[test]
+    fn test_restore_and_purge_trash() {
+        let dir = setup_test_dir("restore_purge");
+        let mut store = NoteStore::new(dir).unwrap();
+
+        let filename = store.create_note("Restore Me").unwrap();
+        store.delete_note(&filename).unwrap();
+
+        let trash_list = store.list_trash().unwrap();
+        assert_eq!(trash_list.len(), 1);
+        let trash_file = &trash_list[0].0;
+
+        let restored = store.restore_note(trash_file).unwrap();
+        assert_eq!(restored, "Restore Me.md");
+        assert!(store.metadata.contains_key("Restore Me.md"));
+
+        // Delete again and purge
+        store.delete_note(&restored).unwrap();
+        let purged_count = store.purge_trash().unwrap();
+        assert_eq!(purged_count, 1);
+        assert!(store.list_trash().unwrap().is_empty());
     }
 }

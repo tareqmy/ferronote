@@ -1,11 +1,11 @@
 use color_eyre::Result;
 use ratatui::{
+    Frame,
     crossterm::event::{KeyCode, KeyEvent},
     layout::{Constraint, Direction, Layout},
     style::{Color, Style},
     text::{Line, Span},
-    widgets::{Paragraph, Clear, Block, Borders},
-    Frame,
+    widgets::{Block, Borders, Clear, Paragraph},
 };
 
 use crate::{
@@ -37,7 +37,7 @@ impl App<'_> {
     #[must_use]
     pub fn new(note_store: NoteStore) -> Self {
         let mut index = Index::new();
-        
+
         for filename in note_store.filenames() {
             if let Ok(content) = note_store.load_note(&filename) {
                 let modified_at = note_store.get_modified_at(&filename).unwrap_or(0);
@@ -68,20 +68,23 @@ impl App<'_> {
         if !query.is_empty() {
             let exact_match = results.iter().any(|r| r.title.eq_ignore_ascii_case(&query));
             if !exact_match {
-                results.insert(0, crate::search::SearchResult {
-                    filename: String::new(),
-                    title: format!("Create new note: '{}'", query),
-                    score: i64::MAX,
-                    title_match_indices: Vec::new(),
-                    content_preview: None,
-                    is_create_prompt: true,
-                    modified_at: chrono::Utc::now().timestamp(),
-                });
+                results.insert(
+                    0,
+                    crate::search::SearchResult {
+                        filename: String::new(),
+                        title: format!("Create new note: '{}'", query),
+                        score: i64::MAX,
+                        title_match_indices: Vec::new(),
+                        content_preview: None,
+                        is_create_prompt: true,
+                        modified_at: chrono::Utc::now().timestamp(),
+                    },
+                );
             }
         }
 
         self.note_list.set_items(results);
-        
+
         let selected = self.note_list.selected_note();
         self.update(Action::SelectNote(selected));
     }
@@ -98,7 +101,8 @@ impl App<'_> {
     pub fn save_note(&mut self, filename: &str, content: &str) -> Result<()> {
         self.note_store.save_note(filename, content)?;
         let modified_at = self.note_store.get_modified_at(filename).unwrap_or(0);
-        self.index.add_note(filename.to_string(), content.to_string(), modified_at);
+        self.index
+            .add_note(filename.to_string(), content.to_string(), modified_at);
         self.update_search();
         Ok(())
     }
@@ -114,7 +118,8 @@ impl App<'_> {
         let new_filename = self.note_store.rename_note(old_filename, new_title)?;
         if let Ok(content) = self.note_store.load_note(&new_filename) {
             let modified_at = self.note_store.get_modified_at(&new_filename).unwrap_or(0);
-            self.index.rename_note(old_filename, new_filename.clone(), content, modified_at);
+            self.index
+                .rename_note(old_filename, new_filename.clone(), content, modified_at);
             self.update_search();
         }
         Ok(new_filename)
@@ -226,17 +231,17 @@ impl App<'_> {
                 } else if key.code == KeyCode::Enter {
                     if let Some(link) = self.editor.extract_wiki_link_at_cursor() {
                         self.update(Action::SaveNote);
-                        
+
                         let filename = format!("{}.md", link.replace(['/', '\\'], "-"));
                         if !self.note_store.filenames().contains(&filename) {
                             let _ = self.create_note(&link);
                         }
-                        
+
                         let mut ta = tui_textarea::TextArea::default();
                         ta.insert_str(&link);
                         self.search_bar.textarea = ta;
                         self.update_search();
-                        
+
                         return None;
                     }
                 }
@@ -263,7 +268,7 @@ impl App<'_> {
                         self.last_search_input = None;
                     }
                 }
-                
+
                 if let Some(last_edit) = self.editor.last_edit_time {
                     if last_edit.elapsed().as_secs() >= 1 && self.editor.has_unsaved_changes() {
                         self.update(Action::SaveNote);
@@ -292,7 +297,12 @@ impl App<'_> {
                         if !query.is_empty() {
                             if let Ok(filename) = self.create_note(&query) {
                                 // Select it explicitly in the list
-                                if let Some(idx) = self.note_list.items.iter().position(|r| r.filename == filename) {
+                                if let Some(idx) = self
+                                    .note_list
+                                    .items
+                                    .iter()
+                                    .position(|r| r.filename == filename)
+                                {
                                     self.note_list.state.select(Some(idx));
                                 }
                                 self.focus = Focus::Editor;
@@ -320,7 +330,7 @@ impl App<'_> {
                 if let Some(selected) = self.note_list.selected_note() {
                     if !selected.is_empty() {
                         let _ = self.delete_note(&selected);
-                        
+
                         // Select the next item in the list automatically
                         let new_selected = self.note_list.selected_note();
                         self.update(Action::SelectNote(new_selected));
@@ -333,9 +343,11 @@ impl App<'_> {
                         if let Some(filename) = path.file_name().and_then(|n| n.to_str()) {
                             let filename = filename.to_string();
                             if let Ok(content) = self.note_store.load_note(&filename) {
-                                let modified_at = self.note_store.get_modified_at(&filename).unwrap_or(0);
-                                self.index.add_note(filename.clone(), content.clone(), modified_at);
-                                
+                                let modified_at =
+                                    self.note_store.get_modified_at(&filename).unwrap_or(0);
+                                self.index
+                                    .add_note(filename.clone(), content.clone(), modified_at);
+
                                 if Some(&filename) == self.editor.current_note.as_ref() {
                                     if !self.editor.has_unsaved_changes() {
                                         self.editor.set_content(&filename, &content);
@@ -386,19 +398,35 @@ impl App<'_> {
         ];
 
         if self.focus == Focus::Editor {
-            spans.insert(2, Span::styled(" [Ctrl+Z] ", Style::default().fg(Color::Yellow)));
+            spans.insert(
+                2,
+                Span::styled(" [Ctrl+Z] ", Style::default().fg(Color::Yellow)),
+            );
             spans.insert(3, Span::raw("Undo  |"));
-            spans.insert(4, Span::styled(" [Ctrl+Y] ", Style::default().fg(Color::Yellow)));
+            spans.insert(
+                4,
+                Span::styled(" [Ctrl+Y] ", Style::default().fg(Color::Yellow)),
+            );
             spans.insert(5, Span::raw("Redo  |"));
-            
-            let stats = format!("  Words: {} | Chars: {}  |", self.editor.word_count(), self.editor.char_count());
+
+            let stats = format!(
+                "  Words: {} | Chars: {}  |",
+                self.editor.word_count(),
+                self.editor.char_count()
+            );
             spans.push(Span::raw(stats));
         } else {
             spans.insert(2, Span::styled(" [?] ", Style::default().fg(Color::Yellow)));
             spans.insert(3, Span::raw("Help  |"));
-            spans.insert(4, Span::styled(" [Enter] ", Style::default().fg(Color::Yellow)));
+            spans.insert(
+                4,
+                Span::styled(" [Enter] ", Style::default().fg(Color::Yellow)),
+            );
             spans.insert(5, Span::raw("Create/Edit Note  |"));
-            spans.insert(6, Span::styled(" [Ctrl+D] ", Style::default().fg(Color::Yellow)));
+            spans.insert(
+                6,
+                Span::styled(" [Ctrl+D] ", Style::default().fg(Color::Yellow)),
+            );
             spans.insert(7, Span::raw("Delete Note  |"));
         }
 
@@ -410,17 +438,44 @@ impl App<'_> {
         // Render Help Overlay
         if self.show_help {
             let help_text = vec![
-                Line::from(Span::styled("Ferronote Keybindings", Style::default().fg(Color::Yellow))),
+                Line::from(Span::styled(
+                    "Ferronote Keybindings",
+                    Style::default().fg(Color::Yellow),
+                )),
                 Line::from(""),
-                Line::from(vec![Span::styled("Tab / Esc", Style::default().fg(Color::Cyan)), Span::raw(" : Switch Focus")]),
-                Line::from(vec![Span::styled("Enter", Style::default().fg(Color::Cyan)), Span::raw("     : Create/Edit Note")]),
-                Line::from(vec![Span::styled("Up / Down", Style::default().fg(Color::Cyan)), Span::raw(" : Navigate Note List")]),
-                Line::from(vec![Span::styled("Ctrl+Z", Style::default().fg(Color::Cyan)), Span::raw("    : Undo (in Editor)")]),
-                Line::from(vec![Span::styled("Ctrl+Y", Style::default().fg(Color::Cyan)), Span::raw("    : Redo (in Editor)")]),
-                Line::from(vec![Span::styled("Ctrl+D", Style::default().fg(Color::Cyan)), Span::raw("    : Delete Selected Note")]),
-                Line::from(vec![Span::styled("Ctrl+Q", Style::default().fg(Color::Cyan)), Span::raw("    : Quit Application")]),
+                Line::from(vec![
+                    Span::styled("Tab / Esc", Style::default().fg(Color::Cyan)),
+                    Span::raw(" : Switch Focus"),
+                ]),
+                Line::from(vec![
+                    Span::styled("Enter", Style::default().fg(Color::Cyan)),
+                    Span::raw("     : Create/Edit Note"),
+                ]),
+                Line::from(vec![
+                    Span::styled("Up / Down", Style::default().fg(Color::Cyan)),
+                    Span::raw(" : Navigate Note List"),
+                ]),
+                Line::from(vec![
+                    Span::styled("Ctrl+Z", Style::default().fg(Color::Cyan)),
+                    Span::raw("    : Undo (in Editor)"),
+                ]),
+                Line::from(vec![
+                    Span::styled("Ctrl+Y", Style::default().fg(Color::Cyan)),
+                    Span::raw("    : Redo (in Editor)"),
+                ]),
+                Line::from(vec![
+                    Span::styled("Ctrl+D", Style::default().fg(Color::Cyan)),
+                    Span::raw("    : Delete Selected Note"),
+                ]),
+                Line::from(vec![
+                    Span::styled("Ctrl+Q", Style::default().fg(Color::Cyan)),
+                    Span::raw("    : Quit Application"),
+                ]),
                 Line::from(""),
-                Line::from(Span::styled("Press any key to close", Style::default().fg(Color::DarkGray))),
+                Line::from(Span::styled(
+                    "Press any key to close",
+                    Style::default().fg(Color::DarkGray),
+                )),
             ];
 
             let help_block = Paragraph::new(help_text)

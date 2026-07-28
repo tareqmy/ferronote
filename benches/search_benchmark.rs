@@ -1,4 +1,4 @@
-use criterion::{criterion_group, criterion_main, Criterion};
+use criterion::{Criterion, criterion_group, criterion_main};
 use ferronote::search::Index;
 
 fn build_mock_index(num_notes: usize) -> Index {
@@ -9,7 +9,7 @@ fn build_mock_index(num_notes: usize) -> Index {
             "This is the content of test note {}. It has some random words like rusty, blazing, fast, terminal. And more text to make it realistic. We also need some lines to test highlighting.\nThis is a new line.\nAnother line.",
             i
         );
-        index.add_note(format!("{}.md", title), content);
+        index.add_note(format!("{}.md", title), content, 0);
     }
     index
 }
@@ -19,7 +19,7 @@ fn bench_search(c: &mut Criterion) {
 
     c.bench_function("search 10000 notes", |b| {
         b.iter(|| {
-            index.search("rusty terminal fast");
+            let _ = index.search("rusty terminal fast");
         })
     });
 }

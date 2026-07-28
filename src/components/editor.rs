@@ -1,15 +1,15 @@
+use ratatui::crossterm::event::KeyCode;
 use ratatui::crossterm::event::KeyEvent;
+use ratatui::crossterm::event::KeyModifiers;
 use ratatui::{
     Frame,
     layout::Rect,
     style::{Color, Style},
     widgets::{Block, Borders},
 };
-use tui_textarea::TextArea;
 use std::collections::HashMap;
 use std::time::Instant;
-use ratatui::crossterm::event::KeyModifiers;
-use ratatui::crossterm::event::KeyCode;
+use tui_textarea::TextArea;
 
 #[derive(Debug, Clone)]
 pub struct Editor<'a> {
@@ -43,19 +43,21 @@ impl Editor<'_> {
         }
 
         self.current_note = Some(title.to_string());
-        
+
         if !self.textareas.contains_key(title) {
             let lines: Vec<String> = content.lines().map(ToString::to_string).collect();
             let ta = TextArea::new(lines);
             self.textareas.insert(title.to_string(), ta);
-            self.original_content.insert(title.to_string(), content.to_string());
+            self.original_content
+                .insert(title.to_string(), content.to_string());
         } else {
             // Check if we need to reload due to external change (e.g. content doesn't match and no unsaved changes)
             if !self.has_unsaved_changes() && self.content() != content {
                 let lines: Vec<String> = content.lines().map(ToString::to_string).collect();
                 let ta = TextArea::new(lines);
                 self.textareas.insert(title.to_string(), ta);
-                self.original_content.insert(title.to_string(), content.to_string());
+                self.original_content
+                    .insert(title.to_string(), content.to_string());
             }
         }
     }
@@ -63,9 +65,13 @@ impl Editor<'_> {
     pub fn handle_key(&mut self, key: KeyEvent) {
         if let Some(ref note) = self.current_note {
             if let Some(ta) = self.textareas.get_mut(note) {
-                let modified = if key.modifiers.contains(KeyModifiers::CONTROL) && key.code == KeyCode::Char('z') {
+                let modified = if key.modifiers.contains(KeyModifiers::CONTROL)
+                    && key.code == KeyCode::Char('z')
+                {
                     ta.undo()
-                } else if key.modifiers.contains(KeyModifiers::CONTROL) && key.code == KeyCode::Char('y') {
+                } else if key.modifiers.contains(KeyModifiers::CONTROL)
+                    && key.code == KeyCode::Char('y')
+                {
                     ta.redo()
                 } else {
                     ta.input(key)
@@ -135,7 +141,8 @@ impl Editor<'_> {
 
     pub fn mark_saved(&mut self) {
         if let Some(ref note) = self.current_note {
-            self.original_content.insert(note.to_string(), self.content());
+            self.original_content
+                .insert(note.to_string(), self.content());
             self.last_edit_time = None;
         }
     }
@@ -148,7 +155,10 @@ impl Editor<'_> {
     #[must_use]
     pub fn char_count(&self) -> usize {
         // Exclude newlines from char count to be more accurate to typical editors
-        self.content().chars().filter(|c| !c.is_whitespace() || *c == ' ').count()
+        self.content()
+            .chars()
+            .filter(|c| !c.is_whitespace() || *c == ' ')
+            .count()
     }
 
     pub fn extract_wiki_link_at_cursor(&self) -> Option<String> {
@@ -162,7 +172,7 @@ impl Editor<'_> {
                         if let Some(end) = line[start_idx..].find("]]") {
                             let end_idx = start_idx + end + 2;
                             if col >= start_idx && col <= end_idx {
-                                let link = &line[start_idx + 2 .. end_idx - 2];
+                                let link = &line[start_idx + 2..end_idx - 2];
                                 return Some(link.to_string());
                             }
                             current_idx = end_idx;
@@ -185,7 +195,7 @@ mod tests {
     fn test_extract_wiki_link_at_cursor() {
         let mut editor = Editor::new();
         editor.set_content("test.md", "Check out [[Project Ideas]] for details.");
-        
+
         // Place cursor inside the brackets
         if let Some(ref note) = editor.current_note {
             if let Some(ta) = editor.textareas.get_mut(note) {

@@ -99,7 +99,9 @@ impl NoteList {
                     let text = format!(" + {}", i.title);
                     return ListItem::new(Line::from(Span::styled(
                         text,
-                        Style::default().fg(Color::Green).add_modifier(Modifier::ITALIC),
+                        Style::default()
+                            .fg(Color::Green)
+                            .add_modifier(Modifier::ITALIC),
                     )));
                 }
 
@@ -111,9 +113,9 @@ impl NoteList {
                     }
                     spans.push(Span::styled(ch.to_string(), style));
                 }
-                
+
                 let mut lines = vec![Line::from(spans)];
-                
+
                 if let Some(preview) = &i.content_preview {
                     lines.push(Line::from(Span::styled(
                         preview.clone(),

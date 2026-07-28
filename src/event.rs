@@ -1,9 +1,9 @@
 use color_eyre::Result;
 use crossterm::event::{Event as CrosstermEvent, EventStream, KeyEvent, MouseEvent};
 use futures::{FutureExt, StreamExt};
-use tokio::sync::mpsc;
-use notify::{Watcher, RecommendedWatcher, RecursiveMode, Event as NotifyEvent};
+use notify::{Event as NotifyEvent, RecommendedWatcher, RecursiveMode, Watcher};
 use std::path::PathBuf;
+use tokio::sync::mpsc;
 
 #[derive(Clone, Debug)]
 pub enum Event {
@@ -28,15 +28,20 @@ impl EventHandler {
 
         let mut watcher = None;
         if let Some(dir) = watch_dir {
-            if let Ok(mut w) = notify::recommended_watcher(move |res: notify::Result<NotifyEvent>| {
-                if let Ok(event) = res {
-                    if event.kind.is_modify() || event.kind.is_create() || event.kind.is_remove() {
-                        for path in event.paths {
-                            let _ = sender_clone.send(Event::FileChanged(path));
+            if let Ok(mut w) =
+                notify::recommended_watcher(move |res: notify::Result<NotifyEvent>| {
+                    if let Ok(event) = res {
+                        if event.kind.is_modify()
+                            || event.kind.is_create()
+                            || event.kind.is_remove()
+                        {
+                            for path in event.paths {
+                                let _ = sender_clone.send(Event::FileChanged(path));
+                            }
                         }
                     }
-                }
-            }) {
+                })
+            {
                 let _ = w.watch(&dir, RecursiveMode::NonRecursive);
                 watcher = Some(w);
             }
@@ -78,7 +83,10 @@ impl EventHandler {
             }
         });
 
-        Self { receiver, _watcher: watcher }
+        Self {
+            receiver,
+            _watcher: watcher,
+        }
     }
 
     /// # Errors

@@ -23,7 +23,7 @@ impl NoteStore {
         if !notes_dir.exists() {
             std::fs::create_dir_all(&notes_dir)?;
         }
-        
+
         // Create trash directory directly in notes_dir
         let trash_dir = notes_dir.join("trash");
         if !trash_dir.exists() {
@@ -179,15 +179,15 @@ impl NoteStore {
         let file_path = self.notes_dir.join(filename);
         if file_path.exists() {
             let trash_dir = self.notes_dir.join("trash");
-            
+
             // Generate a unique filename for the trash to avoid overwriting previously deleted notes with the same name
             let timestamp = chrono::Utc::now().timestamp();
             let trash_filename = format!("{}-{}", timestamp, filename);
             let trash_path = trash_dir.join(trash_filename);
-            
+
             std::fs::rename(file_path, trash_path)?;
         }
-        
+
         self.metadata.remove(filename);
         self.save_metadata()?;
 
@@ -229,7 +229,9 @@ impl NoteStore {
 
     #[must_use]
     pub fn get_modified_at(&self, filename: &str) -> Option<i64> {
-        self.metadata.get(filename).map(|m| m.modified_at.timestamp())
+        self.metadata
+            .get(filename)
+            .map(|m| m.modified_at.timestamp())
     }
 }
 
@@ -282,12 +284,14 @@ mod tests {
         assert!(!store.notes_dir.join(&filename).exists());
 
         let trash_dir = store.notes_dir.join("trash");
-        let trash_files: Vec<_> = std::fs::read_dir(&trash_dir)
-            .unwrap()
-            .flatten()
-            .collect();
+        let trash_files: Vec<_> = std::fs::read_dir(&trash_dir).unwrap().flatten().collect();
         assert_eq!(trash_files.len(), 1);
-        assert!(trash_files[0].file_name().to_string_lossy().contains("Delete Me.md"));
+        assert!(
+            trash_files[0]
+                .file_name()
+                .to_string_lossy()
+                .contains("Delete Me.md")
+        );
     }
 
     #[test]

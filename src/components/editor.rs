@@ -180,6 +180,16 @@ impl Editor<'_> {
                     && key.code == KeyCode::Char('y')
                 {
                     ta.redo()
+                } else if key.code == KeyCode::PageDown {
+                    for _ in 0..10 {
+                        ta.move_cursor(tui_textarea::CursorMove::Down);
+                    }
+                    true
+                } else if key.code == KeyCode::PageUp {
+                    for _ in 0..10 {
+                        ta.move_cursor(tui_textarea::CursorMove::Up);
+                    }
+                    true
                 } else {
                     ta.input(key)
                 };
@@ -389,5 +399,32 @@ mod tests {
 
         let (row2, _col2) = map_cursor_to_wrapped(&lines, 1, 22, 20);
         assert_eq!(row2, 2);
+    }
+
+    #[test]
+    fn test_editor_page_up_page_down() {
+        let mut editor = Editor::new();
+        let content = (0..30).map(|i| format!("Line {i}")).collect::<Vec<_>>().join("\n");
+        editor.set_content("long.md", &content);
+
+        // Initial cursor at (0, 0)
+        if let Some(ref note) = editor.current_note {
+            let ta = editor.textareas.get(note).unwrap();
+            assert_eq!(ta.cursor(), (0, 0));
+        }
+
+        // Send PageDown
+        editor.handle_key(KeyEvent::new(KeyCode::PageDown, KeyModifiers::NONE));
+        if let Some(ref note) = editor.current_note {
+            let ta = editor.textareas.get(note).unwrap();
+            assert_eq!(ta.cursor(), (10, 0));
+        }
+
+        // Send PageUp
+        editor.handle_key(KeyEvent::new(KeyCode::PageUp, KeyModifiers::NONE));
+        if let Some(ref note) = editor.current_note {
+            let ta = editor.textareas.get(note).unwrap();
+            assert_eq!(ta.cursor(), (0, 0));
+        }
     }
 }

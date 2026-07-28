@@ -41,7 +41,44 @@ impl NoteStore {
         store.load_metadata()?;
         store.scan_directory()?;
 
+        if store.filenames().is_empty() {
+            let _ = store.create_default_welcome_note();
+        }
+
         Ok(store)
+    }
+
+    pub fn create_default_welcome_note(&mut self) -> Result<String> {
+        let title = "Welcome to Ferronote";
+        let filename = self.create_note(title)?;
+        let content = r#"# Welcome to Ferronote
+
+Ferronote is a blazing-fast terminal note-taking app inspired by Notational Velocity.
+
+## 🚀 Key Concept: "Search IS Create"
+You don't need a separate "New Note" button!
+1. Type a note title or search query in the top search bar.
+2. If a note with that title exists, it will filter and open it.
+3. If no matching note exists, press Enter to instantly create and edit a note with that title.
+
+## ⌨️ Essential Keybindings
+- Tab / Esc: Cycle focus between Search Bar, Note List, and Editor.
+- Up / Down: Navigate notes in the list.
+- PgUp / PgDn: Scroll note list page by page.
+- Home / End: Jump to top or bottom of notes list.
+- Ctrl+D: Soft delete selected note (moves file to trash).
+- Ctrl+Z / Ctrl+Y: Undo / Redo inside the editor.
+- Ctrl+Q: Quit Ferronote.
+- ?: Toggle Help Overlay.
+
+## 🏷️ Tags & Wiki-Links
+- #tags: Add inline tags like #todo or #ideas anywhere in your note, then search #todo to filter instantly.
+- [[Wiki-Links]]: Type [[Another Note]] inside a note, place your cursor on it, and press Enter to jump to or create the linked note!
+
+Happy note taking!
+"#;
+        self.save_note(&filename, content)?;
+        Ok(filename)
     }
 
     fn load_metadata(&mut self) -> Result<()> {
@@ -251,6 +288,9 @@ mod tests {
     fn test_create_and_load_note() {
         let dir = setup_test_dir("create_load");
         let mut store = NoteStore::new(dir).unwrap();
+        // Welcome note should be auto-created for empty store
+        assert_eq!(store.filenames().len(), 1);
+        assert_eq!(store.filenames()[0], "Welcome to Ferronote.md");
 
         let filename = store.create_note("Test Note").unwrap();
         assert_eq!(filename, "Test Note.md");

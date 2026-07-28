@@ -72,6 +72,36 @@ impl NoteList {
         self.state.select(Some(i));
     }
 
+    pub fn select_first(&mut self) {
+        if !self.items.is_empty() {
+            self.state.select(Some(0));
+        }
+    }
+
+    pub fn select_last(&mut self) {
+        if !self.items.is_empty() {
+            self.state.select(Some(self.items.len() - 1));
+        }
+    }
+
+    pub fn page_down(&mut self, page_size: usize) {
+        if self.items.is_empty() {
+            return;
+        }
+        let current = self.state.selected().unwrap_or(0);
+        let target = (current + page_size).min(self.items.len() - 1);
+        self.state.select(Some(target));
+    }
+
+    pub fn page_up(&mut self, page_size: usize) {
+        if self.items.is_empty() {
+            return;
+        }
+        let current = self.state.selected().unwrap_or(0);
+        let target = current.saturating_sub(page_size);
+        self.state.select(Some(target));
+    }
+
     #[must_use]
     pub fn selected_note(&self) -> Option<String> {
         self.state
@@ -143,5 +173,47 @@ impl NoteList {
             .highlight_symbol("> ");
 
         frame.render_stateful_widget(list, area, &mut self.state);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::search::SearchResult;
+
+    fn make_mock_results(count: usize) -> Vec<SearchResult> {
+        (0..count)
+            .map(|i| SearchResult {
+                filename: format!("note_{i}.md"),
+                title: format!("Note {i}"),
+                score: 0,
+                title_match_indices: Vec::new(),
+                content_preview: None,
+                is_create_prompt: false,
+                modified_at: 0,
+            })
+            .collect()
+    }
+
+    #[test]
+    fn test_note_list_navigation() {
+        let mut list = NoteList::new();
+        list.set_items(make_mock_results(25));
+        assert_eq!(list.state.selected(), Some(0));
+
+        list.page_down(10);
+        assert_eq!(list.state.selected(), Some(10));
+
+        list.page_down(10);
+        assert_eq!(list.state.selected(), Some(20));
+
+        list.select_last();
+        assert_eq!(list.state.selected(), Some(24));
+
+        list.page_up(10);
+        assert_eq!(list.state.selected(), Some(14));
+
+        list.select_first();
+        assert_eq!(list.state.selected(), Some(0));
     }
 }

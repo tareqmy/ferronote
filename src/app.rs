@@ -194,14 +194,17 @@ impl App<'_> {
             Focus::SearchBar => {
                 if key.code == KeyCode::Enter {
                     return Some(Action::SubmitSearch);
-                } else if key.code == KeyCode::Down || key.code == KeyCode::Up {
-                    // Let search bar down/up jump to note list if needed, or pass it to note_list?
-                    // NV behavior: Down arrow in search moves to NoteList.
+                } else if matches!(
+                    key.code,
+                    KeyCode::Down | KeyCode::Up | KeyCode::PageDown | KeyCode::PageUp
+                ) {
                     self.focus = Focus::NoteList;
-                    if key.code == KeyCode::Down {
-                        self.note_list.next();
-                    } else {
-                        self.note_list.previous();
+                    match key.code {
+                        KeyCode::Down => self.note_list.next(),
+                        KeyCode::Up => self.note_list.previous(),
+                        KeyCode::PageDown => self.note_list.page_down(10),
+                        KeyCode::PageUp => self.note_list.page_up(10),
+                        _ => {}
                     }
                     return Some(Action::SelectNote(self.note_list.selected_note()));
                 } else {
@@ -213,17 +216,34 @@ impl App<'_> {
                     }
                 }
             }
-            Focus::NoteList => {
-                if key.code == KeyCode::Enter {
-                    return Some(Action::SubmitSearch);
-                } else if key.code == KeyCode::Down {
+            Focus::NoteList => match key.code {
+                KeyCode::Enter => return Some(Action::SubmitSearch),
+                KeyCode::Down => {
                     self.note_list.next();
                     return Some(Action::SelectNote(self.note_list.selected_note()));
-                } else if key.code == KeyCode::Up {
+                }
+                KeyCode::Up => {
                     self.note_list.previous();
                     return Some(Action::SelectNote(self.note_list.selected_note()));
                 }
-            }
+                KeyCode::PageDown => {
+                    self.note_list.page_down(10);
+                    return Some(Action::SelectNote(self.note_list.selected_note()));
+                }
+                KeyCode::PageUp => {
+                    self.note_list.page_up(10);
+                    return Some(Action::SelectNote(self.note_list.selected_note()));
+                }
+                KeyCode::Home => {
+                    self.note_list.select_first();
+                    return Some(Action::SelectNote(self.note_list.selected_note()));
+                }
+                KeyCode::End => {
+                    self.note_list.select_last();
+                    return Some(Action::SelectNote(self.note_list.selected_note()));
+                }
+                _ => {}
+            },
             Focus::Editor => {
                 if key.code == KeyCode::Esc {
                     self.focus = Focus::NoteList;
@@ -454,6 +474,14 @@ impl App<'_> {
                 Line::from(vec![
                     Span::styled("Up / Down", Style::default().fg(Color::Cyan)),
                     Span::raw(" : Navigate Note List"),
+                ]),
+                Line::from(vec![
+                    Span::styled("PgUp / PgDn", Style::default().fg(Color::Cyan)),
+                    Span::raw(" : Scroll Note List Page"),
+                ]),
+                Line::from(vec![
+                    Span::styled("Home / End", Style::default().fg(Color::Cyan)),
+                    Span::raw("  : Jump to Top / Bottom"),
                 ]),
                 Line::from(vec![
                     Span::styled("Ctrl+Z", Style::default().fg(Color::Cyan)),

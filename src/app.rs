@@ -2,7 +2,7 @@ use color_eyre::Result;
 use ratatui::{
     Frame,
     crossterm::event::{KeyCode, KeyEvent},
-    layout::{Constraint, Direction, Layout, Rect},
+    layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
     text::{Line, Span},
     widgets::{Block, Borders, Clear, Paragraph},
@@ -614,11 +614,36 @@ impl App<'_> {
         let main_layout = Layout::default()
             .direction(Direction::Vertical)
             .constraints([
+                Constraint::Length(1), // Header bar (App Title & Version)
                 Constraint::Length(3), // Search bar
                 Constraint::Min(1),    // Main content
                 Constraint::Length(1), // Status bar
             ])
             .split(frame.area());
+
+        // Render top header bar (Title left, Version right)
+        let header_layout = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints([
+                Constraint::Percentage(50),
+                Constraint::Percentage(50),
+            ])
+            .split(main_layout[0]);
+
+        let title_p = Paragraph::new(Line::from(Span::styled(
+            " ⚡ Ferronote",
+            Style::default()
+                .fg(theme.title)
+                .add_modifier(Modifier::BOLD),
+        )));
+        let version_p = Paragraph::new(Line::from(Span::styled(
+            format!("v{} ", env!("CARGO_PKG_VERSION")),
+            Style::default().fg(Color::DarkGray),
+        )))
+        .alignment(Alignment::Right);
+
+        frame.render_widget(title_p, header_layout[0]);
+        frame.render_widget(version_p, header_layout[1]);
 
         let sidebar_width = self.config.sidebar_width_percent.clamp(10, 80);
         let content_layout = Layout::default()
@@ -627,16 +652,16 @@ impl App<'_> {
                 Constraint::Percentage(sidebar_width),
                 Constraint::Percentage(100 - sidebar_width),
             ])
-            .split(main_layout[1]);
+            .split(main_layout[2]);
 
-        self.search_area = main_layout[0];
+        self.search_area = main_layout[1];
         self.list_area = content_layout[0];
         self.editor_area = content_layout[1];
 
         // Render components
         self.search_bar.draw(
             frame,
-            main_layout[0],
+            main_layout[1],
             self.focus == Focus::SearchBar,
             &theme,
         );

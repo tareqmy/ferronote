@@ -3,7 +3,7 @@ use ratatui::{
     Frame,
     crossterm::event::{KeyCode, KeyEvent},
     layout::{Constraint, Direction, Layout},
-    style::{Color, Style},
+    style::{Color, Modifier, Style},
     text::{Line, Span},
     widgets::{Block, Borders, Clear, Paragraph},
 };
@@ -409,25 +409,31 @@ impl App<'_> {
         self.editor
             .draw(frame, content_layout[1], self.focus == Focus::Editor);
 
-        // Render dynamic status bar
+        // Render dynamic status bar with high-contrast theme
+        let key_style = Style::default()
+            .fg(Color::Black)
+            .bg(Color::Cyan)
+            .add_modifier(Modifier::BOLD);
+        let text_style = Style::default()
+            .fg(Color::White)
+            .add_modifier(Modifier::BOLD);
+        let sep_style = Style::default().fg(Color::Cyan);
+
         let mut spans = vec![
-            Span::styled(" [Tab/Esc] ", Style::default().fg(Color::Yellow)),
-            Span::raw("Switch Focus  |"),
-            Span::styled(" [Ctrl+Q] ", Style::default().fg(Color::Yellow)),
-            Span::raw("Quit"),
+            Span::styled(" Tab ", key_style),
+            Span::styled(" Switch ", text_style),
+            Span::styled("│", sep_style),
+            Span::styled(" Ctrl+Q ", key_style),
+            Span::styled(" Quit ", text_style),
         ];
 
         if self.focus == Focus::Editor {
-            spans.insert(
-                2,
-                Span::styled(" [Ctrl+Z] ", Style::default().fg(Color::Yellow)),
-            );
-            spans.insert(3, Span::raw("Undo  |"));
-            spans.insert(
-                4,
-                Span::styled(" [Ctrl+Y] ", Style::default().fg(Color::Yellow)),
-            );
-            spans.insert(5, Span::raw("Redo  |"));
+            spans.insert(2, Span::styled(" Ctrl+Z ", key_style));
+            spans.insert(3, Span::styled(" Undo ", text_style));
+            spans.insert(4, Span::styled("│", sep_style));
+            spans.insert(5, Span::styled(" Ctrl+Y ", key_style));
+            spans.insert(6, Span::styled(" Redo ", text_style));
+            spans.insert(7, Span::styled("│", sep_style));
 
             let backlinks_count = if let Some(ref note) = self.editor.current_note {
                 self.index.get_backlinks(note).len()
@@ -436,30 +442,33 @@ impl App<'_> {
             };
 
             let stats = format!(
-                "  Words: {} | Chars: {} | Backlinks: {}  |",
+                " Words: {} │ Chars: {} │ Backlinks: {} ",
                 self.editor.word_count(),
                 self.editor.char_count(),
                 backlinks_count
             );
-            spans.push(Span::raw(stats));
+            spans.push(Span::styled("│", sep_style));
+            spans.push(Span::styled(
+                stats,
+                Style::default()
+                    .fg(Color::Yellow)
+                    .add_modifier(Modifier::BOLD),
+            ));
         } else {
-            spans.insert(2, Span::styled(" [?] ", Style::default().fg(Color::Yellow)));
-            spans.insert(3, Span::raw("Help  |"));
-            spans.insert(
-                4,
-                Span::styled(" [Enter] ", Style::default().fg(Color::Yellow)),
-            );
-            spans.insert(5, Span::raw("Create/Edit Note  |"));
-            spans.insert(
-                6,
-                Span::styled(" [Ctrl+D] ", Style::default().fg(Color::Yellow)),
-            );
-            spans.insert(7, Span::raw("Delete Note  |"));
+            spans.insert(2, Span::styled(" ? ", key_style));
+            spans.insert(3, Span::styled(" Help ", text_style));
+            spans.insert(4, Span::styled("│", sep_style));
+            spans.insert(5, Span::styled(" Enter ", key_style));
+            spans.insert(6, Span::styled(" Open/Create ", text_style));
+            spans.insert(7, Span::styled("│", sep_style));
+            spans.insert(8, Span::styled(" Ctrl+D ", key_style));
+            spans.insert(9, Span::styled(" Delete ", text_style));
+            spans.insert(10, Span::styled("│", sep_style));
         }
 
         let status_text = Line::from(spans);
-        let status_bar = Paragraph::new(status_text)
-            .style(Style::default().bg(Color::DarkGray).fg(Color::White));
+        let status_bar =
+            Paragraph::new(status_text).style(Style::default().bg(Color::Blue).fg(Color::White));
         frame.render_widget(status_bar, main_layout[2]);
 
         // Render Help Overlay

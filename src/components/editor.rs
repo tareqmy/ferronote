@@ -176,3 +176,25 @@ impl Editor<'_> {
         None
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_extract_wiki_link_at_cursor() {
+        let mut editor = Editor::new();
+        editor.set_content("test.md", "Check out [[Project Ideas]] for details.");
+        
+        // Place cursor inside the brackets
+        if let Some(ref note) = editor.current_note {
+            if let Some(ta) = editor.textareas.get_mut(note) {
+                ta.move_cursor(tui_textarea::CursorMove::WordForward);
+                ta.move_cursor(tui_textarea::CursorMove::WordForward);
+            }
+        }
+
+        let link = editor.extract_wiki_link_at_cursor();
+        assert_eq!(link, Some("Project Ideas".to_string()));
+    }
+}

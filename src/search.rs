@@ -9,12 +9,14 @@ pub struct SearchResult {
     pub score: i64,
     pub title_match_indices: Vec<usize>,
     pub content_preview: Option<String>,
+    pub is_create_prompt: bool,
+    pub modified_at: i64,
 }
 
 pub struct Index {
     matcher: SkimMatcherV2,
-    // filename -> (title, content)
-    notes: HashMap<String, (String, String)>,
+    // filename -> (title, content, modified_at)
+    notes: HashMap<String, (String, String, i64)>,
 }
 
 impl std::fmt::Debug for Index {
@@ -40,39 +42,42 @@ impl Index {
         }
     }
 
-    pub fn add_note(&mut self, filename: String, content: String) {
+    pub fn add_note(&mut self, filename: String, content: String, modified_at: i64) {
         let title = filename.strip_suffix(".md").unwrap_or(&filename).to_string();
-        self.notes.insert(filename, (title, content));
+        self.notes.insert(filename, (title, content, modified_at));
     }
 
     pub fn remove_note(&mut self, filename: &str) {
         self.notes.remove(filename);
     }
 
-    pub fn rename_note(&mut self, old_filename: &str, new_filename: String, content: String) {
+    pub fn rename_note(&mut self, old_filename: &str, new_filename: String, content: String, modified_at: i64) {
         self.remove_note(old_filename);
-        self.add_note(new_filename, content);
+        self.add_note(new_filename, content, modified_at);
     }
 
     #[must_use]
     pub fn search(&self, query: &str) -> Vec<SearchResult> {
         if query.is_empty() {
-            // For empty query, return all notes with 0 score. 
-            // They will be sorted externally (e.g. by modified date)
-            return self.notes.iter().map(|(filename, (title, _))| {
+            // For empty query, return all notes sorted by modified date descending
+            let mut all_notes: Vec<_> = self.notes.iter().map(|(filename, (title, _, modified_at))| {
                 SearchResult {
                     filename: filename.clone(),
                     title: title.clone(),
                     score: 0,
                     title_match_indices: Vec::new(),
                     content_preview: None,
+                    is_create_prompt: false,
+                    modified_at: *modified_at,
                 }
             }).collect();
+            all_notes.sort_by(|a, b| b.modified_at.cmp(&a.modified_at));
+            return all_notes;
         }
 
         let mut matches = Vec::new();
 
-        for (filename, (title, content)) in &self.notes {
+        for (filename, (title, content, modified_at)) in &self.notes {
             let title_match = self.matcher.fuzzy_indices(title, query);
             let content_match = self.matcher.fuzzy_indices(content, query);
 
@@ -93,6 +98,7 @@ impl Index {
                 title_indices,
                 content_score > 0,
                 content_indices,
+                *modified_at,
             ));
         }
 
@@ -101,7 +107,7 @@ impl Index {
         matches
             .into_iter()
             .take(100)
-            .map(|(filename, title, content, score, title_match_indices, has_content_match, content_indices)| {
+            .map(|(filename, title, content, score, title_match_indices, has_content_match, content_indices, modified_at)| {
                 let mut content_preview = None;
                 if has_content_match {
                     if let Some(&first_idx) = content_indices.first() {
@@ -130,6 +136,8 @@ impl Index {
                     score,
                     title_match_indices,
                     content_preview,
+                    is_create_prompt: false,
+                    modified_at,
                 }
             })
             .collect()
@@ -143,19 +151,21 @@ mod tests {
     #[test]
     fn test_empty_query_returns_all() {
         let mut index = Index::new();
-        index.add_note("1.md".to_string(), "content".to_string());
-        index.add_note("2.md".to_string(), "content".to_string());
+        index.add_note("1.md".to_string(), "content".to_string(), 100);
+        index.add_note("2.md".to_string(), "content".to_string(), 200);
         
         let results = index.search("");
         assert_eq!(results.len(), 2);
-        assert_eq!(results[0].score, 0);
+        // Should sort by modified_at descending, so 2.md (200) is first
+        assert_eq!(results[0].filename, "2.md");
+        assert_eq!(results[1].filename, "1.md");
     }
 
     #[test]
     fn test_search_title_match_ranks_higher() {
         let mut index = Index::new();
-        index.add_note("rust-guide.md".to_string(), "some guide".to_string());
-        index.add_note("other.md".to_string(), "learn rust here".to_string());
+        index.add_note("rust-guide.md".to_string(), "some guide".to_string(), 0);
+        index.add_note("other.md".to_string(), "learn rust here".to_string(), 0);
         
         let results = index.search("rust");
         assert_eq!(results.len(), 2);
@@ -169,7 +179,7 @@ mod tests {
     fn test_search_content_snippet() {
         let mut index = Index::new();
         let content = "This is a long text containing the word blazing and some other stuff.";
-        index.add_note("test.md".to_string(), content.to_string());
+        index.add_note("test.md".to_string(), content.to_string(), 0);
         
         let results = index.search("blazing");
         assert_eq!(results.len(), 1);

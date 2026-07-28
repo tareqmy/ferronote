@@ -213,6 +213,11 @@ impl NoteStore {
     pub fn filenames(&self) -> Vec<String> {
         self.metadata.keys().cloned().collect()
     }
+
+    #[must_use]
+    pub fn get_modified_at(&self, filename: &str) -> Option<i64> {
+        self.metadata.get(filename).map(|m| m.modified_at.timestamp())
+    }
 }
 
 #[cfg(test)]

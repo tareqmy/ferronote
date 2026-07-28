@@ -97,15 +97,15 @@
 ## Phase 4 · Unified Create Flow (Milestone: "Search IS create")
 **Goal**: Implement the signature Notational Velocity behavior.
 
-- [ ] When search query has no exact title match:
-  - [ ] Show "Create new note: '[query]'" option at top of list
-  - [ ] Enter creates note with that title and opens editor
-- [ ] When search query matches an existing title exactly:
-  - [ ] Auto-select and preview that note
-  - [ ] Enter opens editor at that note
-- [ ] Empty search state:
-  - [ ] Show all notes sorted by last modified
-  - [ ] First note auto-previewed in editor pane
+- [x] When search query has no exact title match:
+  - [x] Show "Create new note: '[query]'" option at top of list
+  - [x] Enter creates note with that title and opens editor
+- [x] When search query matches an existing title exactly:
+  - [x] Auto-select and preview that note
+  - [x] Enter opens editor at that note
+- [x] Empty search state:
+  - [x] Show all notes sorted by last modified
+  - [x] First note auto-previewed in editor pane
 
 **Deliverable**: The core Notational Velocity interaction model working end-to-end.
 

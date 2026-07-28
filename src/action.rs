@@ -1,7 +1,9 @@
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Action {
     Tick,
     Render,
     Resize(u16, u16),
+    SelectNote(Option<String>),
+    SubmitSearch,
     Quit,
 }

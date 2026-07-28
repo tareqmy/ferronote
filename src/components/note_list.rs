@@ -95,6 +95,14 @@ impl NoteList {
             .items
             .iter()
             .map(|i| {
+                if i.is_create_prompt {
+                    let text = format!(" + {}", i.title);
+                    return ListItem::new(Line::from(Span::styled(
+                        text,
+                        Style::default().fg(Color::Green).add_modifier(Modifier::ITALIC),
+                    )));
+                }
+
                 let mut spans = Vec::new();
                 for (idx, ch) in i.title.chars().enumerate() {
                     let mut style = Style::default();

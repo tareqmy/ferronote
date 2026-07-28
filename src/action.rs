@@ -5,5 +5,7 @@ pub enum Action {
     Resize(u16, u16),
     SelectNote(Option<String>),
     SubmitSearch,
+    SaveNote,
+    FileChanged(std::path::PathBuf),
     Quit,
 }

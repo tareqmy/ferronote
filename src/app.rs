@@ -141,6 +141,7 @@ impl App<'_> {
             Event::Key(key_event) => self.handle_key(key_event),
             Event::Mouse(_) => None,
             Event::Resize(w, h) => Some(Action::Resize(w, h)),
+            Event::FileChanged(path) => Some(Action::FileChanged(path)),
         }
     }
 
@@ -199,6 +200,10 @@ impl App<'_> {
                 }
             }
             Focus::Editor => {
+                if key.code == KeyCode::Esc {
+                    self.focus = Focus::NoteList;
+                    return Some(Action::SaveNote);
+                }
                 self.editor.handle_key(key);
             }
         }
@@ -208,7 +213,10 @@ impl App<'_> {
 
     pub fn update(&mut self, action: Action) {
         match action {
-            Action::Quit => self.should_quit = true,
+            Action::Quit => {
+                self.update(Action::SaveNote);
+                self.should_quit = true;
+            }
             Action::Tick => {
                 if let Some(last_input) = self.last_search_input {
                     if last_input.elapsed().as_millis() >= 50 {
@@ -216,8 +224,15 @@ impl App<'_> {
                         self.last_search_input = None;
                     }
                 }
+                
+                if let Some(last_edit) = self.editor.last_edit_time {
+                    if last_edit.elapsed().as_secs() >= 1 && self.editor.has_unsaved_changes() {
+                        self.update(Action::SaveNote);
+                    }
+                }
             }
             Action::SelectNote(maybe_filename) => {
+                self.update(Action::SaveNote);
                 if let Some(filename) = maybe_filename {
                     if filename.is_empty() {
                         // This is a "Create new note" prompt, clear editor content
@@ -231,6 +246,7 @@ impl App<'_> {
                 }
             }
             Action::SubmitSearch => {
+                self.update(Action::SaveNote);
                 if let Some(selected) = self.note_list.selected_note() {
                     if selected.is_empty() {
                         // Create new note flow
@@ -249,6 +265,36 @@ impl App<'_> {
                         // Jump to existing note
                         self.focus = Focus::Editor;
                         self.update(Action::SelectNote(Some(selected)));
+                    }
+                }
+            }
+            Action::SaveNote => {
+                if self.editor.has_unsaved_changes() {
+                    if let Some(ref note) = self.editor.current_note.clone() {
+                        let content = self.editor.content();
+                        let _ = self.save_note(note, &content);
+                        self.editor.mark_saved();
+                    }
+                }
+            }
+            Action::FileChanged(path) => {
+                if let Some(ext) = path.extension().and_then(|e| e.to_str()) {
+                    if ext == "md" {
+                        if let Some(filename) = path.file_name().and_then(|n| n.to_str()) {
+                            let filename = filename.to_string();
+                            if let Ok(content) = self.note_store.load_note(&filename) {
+                                let modified_at = self.note_store.get_modified_at(&filename).unwrap_or(0);
+                                self.index.add_note(filename.clone(), content.clone(), modified_at);
+                                
+                                if Some(&filename) == self.editor.current_note.as_ref() {
+                                    if !self.editor.has_unsaved_changes() {
+                                        let title = filename.strip_suffix(".md").unwrap_or(&filename);
+                                        self.editor.set_content(title, &content);
+                                    }
+                                }
+                                self.update_search();
+                            }
+                        }
                     }
                 }
             }

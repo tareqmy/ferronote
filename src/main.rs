@@ -26,14 +26,14 @@ async fn main() -> Result<()> {
         config.notes_dir = custom_dir;
     }
 
-    let note_store = NoteStore::new(config.notes_dir)?;
+    let note_store = NoteStore::new(config.notes_dir.clone())?;
 
     // 4. Initialize terminal (enters alternate screen, raw mode, sets panic hook)
     let tui = Tui::init()?;
 
     // 5. Create App and EventHandler
     let mut app = App::new(note_store);
-    let events = EventHandler::new(std::time::Duration::from_millis(50));
+    let events = EventHandler::new(std::time::Duration::from_millis(50), Some(config.notes_dir));
 
     // 6. Run the main loop
     let result = app.run(tui, events).await;

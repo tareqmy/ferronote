@@ -2,24 +2,45 @@ use color_eyre::Result;
 use crossterm::event::{Event as CrosstermEvent, EventStream, KeyEvent, MouseEvent};
 use futures::{FutureExt, StreamExt};
 use tokio::sync::mpsc;
+use notify::{Watcher, RecommendedWatcher, RecursiveMode, Event as NotifyEvent};
+use std::path::PathBuf;
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
 pub enum Event {
     Tick,
     Key(KeyEvent),
     Mouse(MouseEvent),
     Resize(u16, u16),
+    FileChanged(PathBuf),
 }
 
 #[derive(Debug)]
 pub struct EventHandler {
     receiver: mpsc::UnboundedReceiver<Event>,
+    _watcher: Option<RecommendedWatcher>,
 }
 
 impl EventHandler {
     #[must_use]
-    pub fn new(tick_rate: std::time::Duration) -> Self {
+    pub fn new(tick_rate: std::time::Duration, watch_dir: Option<PathBuf>) -> Self {
         let (sender, receiver) = mpsc::unbounded_channel();
+        let sender_clone = sender.clone();
+
+        let mut watcher = None;
+        if let Some(dir) = watch_dir {
+            if let Ok(mut w) = notify::recommended_watcher(move |res: notify::Result<NotifyEvent>| {
+                if let Ok(event) = res {
+                    if event.kind.is_modify() || event.kind.is_create() || event.kind.is_remove() {
+                        for path in event.paths {
+                            let _ = sender_clone.send(Event::FileChanged(path));
+                        }
+                    }
+                }
+            }) {
+                let _ = w.watch(&dir, RecursiveMode::NonRecursive);
+                watcher = Some(w);
+            }
+        }
 
         tokio::spawn(async move {
             let mut reader = EventStream::new();
@@ -57,7 +78,7 @@ impl EventHandler {
             }
         });
 
-        Self { receiver }
+        Self { receiver, _watcher: watcher }
     }
 
     /// # Errors

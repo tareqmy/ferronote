@@ -6,11 +6,17 @@ use ratatui::{
     widgets::{Block, Borders},
 };
 use tui_textarea::TextArea;
+use std::collections::HashMap;
+use std::time::Instant;
+use ratatui::crossterm::event::KeyModifiers;
+use ratatui::crossterm::event::KeyCode;
 
 #[derive(Debug, Clone)]
 pub struct Editor<'a> {
-    pub textarea: TextArea<'a>,
+    pub textareas: HashMap<String, TextArea<'a>>,
     pub current_note: Option<String>,
+    pub last_edit_time: Option<Instant>,
+    pub original_content: HashMap<String, String>,
 }
 
 impl Default for Editor<'_> {
@@ -22,64 +28,115 @@ impl Default for Editor<'_> {
 impl Editor<'_> {
     #[must_use]
     pub fn new() -> Self {
-        let mut textarea = TextArea::default();
-        textarea.set_block(
-            Block::default()
-                .borders(Borders::ALL)
-                .title(" Editor ")
-                .border_style(Style::default().fg(Color::DarkGray)),
-        );
-
         Self {
-            textarea,
+            textareas: HashMap::new(),
             current_note: None,
+            last_edit_time: None,
+            original_content: HashMap::new(),
         }
     }
 
     pub fn set_content(&mut self, title: &str, content: &str) {
-        self.current_note = Some(title.to_string());
+        if title.is_empty() {
+            self.current_note = None;
+            return;
+        }
 
-        let lines: Vec<String> = content.lines().map(ToString::to_string).collect();
-        self.textarea = TextArea::new(lines);
+        self.current_note = Some(title.to_string());
+        
+        if !self.textareas.contains_key(title) {
+            let lines: Vec<String> = content.lines().map(ToString::to_string).collect();
+            let ta = TextArea::new(lines);
+            self.textareas.insert(title.to_string(), ta);
+            self.original_content.insert(title.to_string(), content.to_string());
+        } else {
+            // Check if we need to reload due to external change (e.g. content doesn't match and no unsaved changes)
+            if !self.has_unsaved_changes() && self.content() != content {
+                let lines: Vec<String> = content.lines().map(ToString::to_string).collect();
+                let ta = TextArea::new(lines);
+                self.textareas.insert(title.to_string(), ta);
+                self.original_content.insert(title.to_string(), content.to_string());
+            }
+        }
     }
 
     pub fn handle_key(&mut self, key: KeyEvent) {
-        self.textarea.input(key);
+        if let Some(ref note) = self.current_note {
+            if let Some(ta) = self.textareas.get_mut(note) {
+                let modified = if key.modifiers.contains(KeyModifiers::CONTROL) && key.code == KeyCode::Char('z') {
+                    ta.undo()
+                } else if key.modifiers.contains(KeyModifiers::CONTROL) && key.code == KeyCode::Char('y') {
+                    ta.redo()
+                } else {
+                    ta.input(key)
+                };
+
+                if modified {
+                    self.last_edit_time = Some(Instant::now());
+                }
+            }
+        }
     }
 
     pub fn draw(&self, frame: &mut Frame, area: Rect, is_focused: bool) {
-        let mut ta = self.textarea.clone();
-
         let title = if let Some(ref note) = self.current_note {
             format!(" {} ", note.strip_suffix(".md").unwrap_or(note))
         } else {
             " Editor ".to_string()
         };
 
+        let mut block = Block::default().borders(Borders::ALL).title(title.clone());
         if is_focused {
-            ta.set_cursor_style(Style::default().bg(Color::White).fg(Color::Black));
-            ta.set_block(
-                Block::default()
-                    .borders(Borders::ALL)
-                    .title(title)
-                    .border_style(Style::default().fg(Color::Blue)),
-            );
+            block = block.border_style(Style::default().fg(Color::Blue));
         } else {
-            // Hide cursor when not focused
-            ta.set_cursor_style(Style::default().bg(Color::Reset).fg(Color::Reset));
-            ta.set_block(
-                Block::default()
-                    .borders(Borders::ALL)
-                    .title(title)
-                    .border_style(Style::default().fg(Color::DarkGray)),
-            );
+            block = block.border_style(Style::default().fg(Color::DarkGray));
         }
 
-        frame.render_widget(&ta, area);
+        if let Some(ref note) = self.current_note {
+            if let Some(ta) = self.textareas.get(note) {
+                let mut ta_clone = ta.clone();
+                ta_clone.set_block(block);
+                if is_focused {
+                    ta_clone.set_cursor_style(Style::default().bg(Color::White).fg(Color::Black));
+                } else {
+                    ta_clone.set_cursor_style(Style::default().bg(Color::Reset).fg(Color::Reset));
+                }
+                frame.render_widget(&ta_clone, area);
+                return;
+            }
+        }
+
+        // Empty state
+        let mut empty_ta = TextArea::default();
+        empty_ta.set_block(block);
+        empty_ta.set_cursor_style(Style::default().bg(Color::Reset).fg(Color::Reset));
+        frame.render_widget(&empty_ta, area);
     }
 
     #[must_use]
     pub fn content(&self) -> String {
-        self.textarea.lines().join("\n")
+        if let Some(ref note) = self.current_note {
+            if let Some(ta) = self.textareas.get(note) {
+                return ta.lines().join("\n");
+            }
+        }
+        String::new()
+    }
+
+    #[must_use]
+    pub fn has_unsaved_changes(&self) -> bool {
+        if let Some(ref note) = self.current_note {
+            if let Some(orig) = self.original_content.get(note) {
+                return orig != &self.content();
+            }
+        }
+        false
+    }
+
+    pub fn mark_saved(&mut self) {
+        if let Some(ref note) = self.current_note {
+            self.original_content.insert(note.to_string(), self.content());
+            self.last_edit_time = None;
+        }
     }
 }

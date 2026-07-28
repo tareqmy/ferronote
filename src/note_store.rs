@@ -70,11 +70,17 @@ impl NoteStore {
             let entry = entry?;
             let path = entry.path();
 
-            if path.is_file()
-                && path.extension().is_some_and(|ext| ext == "md")
-                && let Some(name) = path.file_name().and_then(|n| n.to_str())
-            {
-                found_files.push(name.to_string());
+            if path.is_file() {
+                if let Some(ext) = path.extension().and_then(|e| e.to_str()) {
+                    if ext == "md" {
+                        if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
+                            found_files.push(name.to_string());
+                        }
+                    } else if ext == "tmp" && path.to_string_lossy().ends_with(".md.tmp") {
+                        // Orphaned temporary file from a crash
+                        let _ = std::fs::remove_file(&path);
+                    }
+                }
             }
         }
 

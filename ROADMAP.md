@@ -111,22 +111,22 @@
 
 ---
 
-## Phase 5 · Auto-Save & Reliability (Milestone: "It never loses data")
-**Goal**: Bulletproof data persistence.
+## Phase 5 · Auto-Save & Reliability (Milestone: "Bulletproof Data")
+**Goal**: Ensure notes are never lost.
 
-- [ ] Auto-save
-  - [ ] Save after 1 second of editor inactivity (debounced)
-  - [ ] Save on note switch, search focus, and quit
-  - [ ] Atomic writes (write to `.tmp`, then rename)
-- [ ] Crash recovery
-  - [ ] Detect orphaned `.tmp` files on startup → recover
-  - [ ] Panic hook saves current editor buffer before exit
-- [ ] File watching
-  - [ ] Detect external changes to notes directory
-  - [ ] Reload modified notes (with conflict resolution if editing)
-- [ ] Undo/Redo
-  - [ ] `tui-textarea` built-in undo support
-  - [ ] Per-note undo history (in-memory, lost on quit)
+- [x] Auto-save
+  - [x] Save after 1 second of editor inactivity (debounced)
+  - [x] Save on note switch, search focus, and quit
+  - [x] Atomic writes (write to `.tmp`, then rename)
+- [x] Crash recovery
+  - [x] Detect orphaned `.tmp` files on startup -> recover
+  - [x] Panic hook saves current editor buffer before exit (Optional/advanced?)
+- [x] File watching
+  - [x] Detect external changes to notes directory
+  - [x] Reload modified notes (with conflict resolution if editing)
+- [x] Undo/Redo
+  - [x] `tui-textarea` built-in undo support
+  - [x] Per-note undo history (in-memory, lost on quit)
 
 **Deliverable**: Users can trust Ferronote with their notes. No data loss scenarios.
 

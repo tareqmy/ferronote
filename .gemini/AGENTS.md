@@ -149,7 +149,11 @@ When modifying the codebase, **always** ensure these invariants hold:
 4. **No data loss**: Auto-save on every edit. If the app crashes, no more than 1 second
    of typing should be lost.
 5. **Startup speed**: Cold start must be under 100ms for up to 10,000 notes.
-6. **Default note sync**: Whenever documentation or keybindings are updated, ensure the default welcome note (`create_default_welcome_note` in `src/note_store.rs`) is also updated.
+6. **Shortcut & Feature Synchronization**: Whenever a new shortcut or keybinding is added or modified, you **must** update:
+   - The **Help Overlay** (`src/app.rs` `show_help` list)
+   - The **Documentation** (`README.md` keybindings table, `.gemini/STYLE_GUIDE.md`)
+   - The **Default Welcome Note** (`create_default_welcome_note` in `src/note_store.rs`)
+   - The **Status Bar** (`src/app.rs` footer key hints)
 
 ## Dependencies Policy
 

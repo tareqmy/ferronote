@@ -17,7 +17,12 @@
 6. **Use Conventional Commits** for all commit messages.
 7. **Modularity** — code must be separated into relevant modules/structs (Single Responsibility Principle).
 8. **Test Coverage** — code must be covered with test cases.
-9. **Synchronize Default Welcome Note** — whenever documentation or keybindings are updated, ensure the default welcome note (`create_default_welcome_note` in `src/note_store.rs`) is also updated.
+9. **Shortcut & Feature Synchronization** — Whenever a new shortcut or keybinding is added or modified in the application, you MUST update:
+   - The Help Overlay (`src/app.rs` `show_help` popup)
+   - The Documentation (`README.md` keybindings table, `.gemini/STYLE_GUIDE.md`, etc.)
+   - The Default Welcome Note (`create_default_welcome_note` in `src/note_store.rs`)
+   - The Status Bar (`src/app.rs` bottom footer hints)
+
 
 
 ## Preferred Patterns

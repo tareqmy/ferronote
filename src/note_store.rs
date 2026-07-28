@@ -167,6 +167,150 @@ Happy note taking!
     }
 
     /// # Errors
+    /// Returns an error if import fails.
+    pub fn import_path(&mut self, path: &std::path::Path) -> Result<usize> {
+        if !path.exists() {
+            color_eyre::eyre::bail!("Path does not exist: {:?}", path);
+        }
+
+        if path.is_file() {
+            let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("");
+            if ext == "zip" {
+                self.import_zip(path)
+            } else if ext == "md" || ext == "txt" {
+                self.import_file(path)?;
+                Ok(1)
+            } else {
+                color_eyre::eyre::bail!(
+                    "Unsupported file format. Please provide a .md, .txt, or .zip file."
+                );
+            }
+        } else if path.is_dir() {
+            self.import_directory(path)
+        } else {
+            color_eyre::eyre::bail!("Invalid path for import");
+        }
+    }
+
+    /// # Errors
+    /// Returns an error if file read or write fails.
+    pub fn import_file(&mut self, file_path: &std::path::Path) -> Result<String> {
+        let content = std::fs::read_to_string(file_path)?;
+        let stem = file_path
+            .file_stem()
+            .and_then(|s| s.to_str())
+            .unwrap_or("Imported Note");
+
+        let safe_title = stem.replace(['/', '\\'], "-");
+        let mut target_filename = format!("{safe_title}.md");
+        let mut counter = 1;
+
+        while self.notes_dir.join(&target_filename).exists() {
+            target_filename = format!("{safe_title} {counter}.md");
+            counter += 1;
+        }
+
+        let target_path = self.notes_dir.join(&target_filename);
+        std::fs::write(&target_path, &content)?;
+
+        let file_meta = std::fs::metadata(file_path)?;
+        let modified_at: DateTime<Utc> =
+            file_meta.modified().ok().map_or_else(Utc::now, Into::into);
+
+        self.metadata.insert(
+            target_filename.clone(),
+            NoteMetadata {
+                created_at: modified_at,
+                modified_at,
+            },
+        );
+        self.save_metadata()?;
+
+        Ok(target_filename)
+    }
+
+    /// # Errors
+    /// Returns an error if reading directory fails.
+    pub fn import_directory(&mut self, dir_path: &std::path::Path) -> Result<usize> {
+        let mut count = 0;
+        for entry in std::fs::read_dir(dir_path)? {
+            let entry = entry?;
+            let path = entry.path();
+            if path.is_file() {
+                let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("");
+                if ext == "md" || ext == "txt" {
+                    if self.import_file(&path).is_ok() {
+                        count += 1;
+                    }
+                }
+            } else if path.is_dir() {
+                let name = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
+                if !name.starts_with('.') && name != "trash" {
+                    if let Ok(c) = self.import_directory(&path) {
+                        count += c;
+                    }
+                }
+            }
+        }
+        Ok(count)
+    }
+
+    /// # Errors
+    /// Returns an error if reading or extracting zip fails.
+    pub fn import_zip(&mut self, zip_path: &std::path::Path) -> Result<usize> {
+        let file = std::fs::File::open(zip_path)?;
+        let mut archive = zip::ZipArchive::new(file)?;
+        let mut count = 0;
+
+        for i in 0..archive.len() {
+            let mut file = archive.by_index(i)?;
+            let outpath = match file.enclosed_name() {
+                Some(path) => path.to_owned(),
+                None => continue,
+            };
+
+            let ext = outpath.extension().and_then(|e| e.to_str()).unwrap_or("");
+            if !file.is_dir() && (ext == "md" || ext == "txt") {
+                let mut content = String::new();
+                use std::io::Read;
+                if file.read_to_string(&mut content).is_ok() {
+                    let stem = outpath
+                        .file_stem()
+                        .and_then(|s| s.to_str())
+                        .unwrap_or("Imported Note");
+
+                    let safe_title = stem.replace(['/', '\\'], "-");
+                    let mut target_filename = format!("{safe_title}.md");
+                    let mut counter = 1;
+
+                    while self.notes_dir.join(&target_filename).exists() {
+                        target_filename = format!("{safe_title} {counter}.md");
+                        counter += 1;
+                    }
+
+                    let target_path = self.notes_dir.join(&target_filename);
+                    if std::fs::write(&target_path, &content).is_ok() {
+                        let now = Utc::now();
+                        self.metadata.insert(
+                            target_filename,
+                            NoteMetadata {
+                                created_at: now,
+                                modified_at: now,
+                            },
+                        );
+                        count += 1;
+                    }
+                }
+            }
+        }
+
+        if count > 0 {
+            self.save_metadata()?;
+        }
+        Ok(count)
+    }
+
+    /// # Errors
     /// Returns an error if the file cannot be written.
     pub fn save_note(&mut self, filename: &str, content: &str) -> Result<()> {
         let path = self.notes_dir.join(filename);
@@ -277,10 +421,12 @@ mod tests {
     use super::*;
 
     fn setup_test_dir(name: &str) -> PathBuf {
-        let dir = std::env::temp_dir().join(format!("ferronote_test_{name}"));
-        if dir.exists() {
-            std::fs::remove_dir_all(&dir).unwrap();
-        }
+        let nanos = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_nanos())
+            .unwrap_or(0);
+        let dir = std::env::temp_dir().join(format!("ferronote_test_{name}_{nanos}"));
+        let _ = std::fs::create_dir_all(&dir);
         dir
     }
 
@@ -347,5 +493,23 @@ mod tests {
         assert!(store.notes_dir.join(&new_filename).exists());
         assert!(!store.metadata.contains_key(&filename));
         assert!(store.metadata.contains_key(&new_filename));
+    }
+
+    #[test]
+    fn test_import_file_and_directory() {
+        let store_dir = setup_test_dir("import_store");
+        let mut store = NoteStore::new(store_dir).unwrap();
+
+        let source_dir = setup_test_dir("import_source");
+        std::fs::create_dir_all(&source_dir).unwrap();
+        let file1 = source_dir.join("imported_one.md");
+        let file2 = source_dir.join("imported_two.txt");
+        std::fs::write(&file1, "# Note One").unwrap();
+        std::fs::write(&file2, "# Note Two").unwrap();
+
+        let count = store.import_directory(&source_dir).unwrap();
+        assert_eq!(count, 2);
+        assert!(store.load_note("imported_one.md").is_ok());
+        assert!(store.load_note("imported_two.md").is_ok());
     }
 }

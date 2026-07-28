@@ -10,6 +10,10 @@ struct Args {
     /// Optional custom notes directory
     #[arg(short, long)]
     dir: Option<PathBuf>,
+
+    /// Path to file, directory, or .zip archive to import
+    #[arg(short, long)]
+    import: Option<PathBuf>,
 }
 
 #[tokio::main]
@@ -26,7 +30,16 @@ async fn main() -> Result<()> {
         config.notes_dir = custom_dir;
     }
 
-    let note_store = NoteStore::new(config.notes_dir.clone())?;
+    let mut note_store = NoteStore::new(config.notes_dir.clone())?;
+
+    if let Some(import_path) = args.import {
+        let count = note_store.import_path(&import_path)?;
+        println!(
+            "Successfully imported {} note(s) into {:?}",
+            count, config.notes_dir
+        );
+        return Ok(());
+    }
 
     // 4. Initialize terminal (enters alternate screen, raw mode, sets panic hook)
     let tui = Tui::init()?;

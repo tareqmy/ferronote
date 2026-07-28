@@ -34,17 +34,23 @@ impl SearchBar<'_> {
         self.textarea.input(key);
     }
 
-    pub fn draw(&self, frame: &mut Frame, area: Rect, is_focused: bool) {
+    pub fn draw(
+        &self,
+        frame: &mut Frame,
+        area: Rect,
+        is_focused: bool,
+        theme: &crate::theme::ThemePalette,
+    ) {
         let mut ta = self.textarea.clone();
 
         if is_focused {
             ta.set_cursor_style(Style::default().bg(Color::White).fg(Color::Black));
-            ta.set_style(Style::default().fg(Color::Yellow)); // Yellow for search as per style guide
+            ta.set_style(Style::default().fg(theme.search_fg));
             ta.set_block(
                 Block::default()
                     .borders(Borders::ALL)
                     .title(" 🔍 Search / Create ")
-                    .border_style(Style::default().fg(Color::Yellow)),
+                    .border_style(Style::default().fg(theme.border_active)),
             );
         } else {
             ta.set_cursor_style(Style::default().bg(Color::Reset).fg(Color::Reset));
@@ -53,7 +59,7 @@ impl SearchBar<'_> {
                 Block::default()
                     .borders(Borders::ALL)
                     .title(" 🔍 Search / Create ")
-                    .border_style(Style::default().fg(Color::DarkGray)),
+                    .border_style(Style::default().fg(theme.border_inactive)),
             );
         }
 

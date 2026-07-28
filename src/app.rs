@@ -530,6 +530,8 @@ impl App<'_> {
     }
 
     pub fn draw(&mut self, frame: &mut Frame) {
+        let theme = crate::theme::ThemePalette::from_name(&self.config.theme);
+
         let main_layout = Layout::default()
             .direction(Direction::Vertical)
             .constraints([
@@ -539,28 +541,41 @@ impl App<'_> {
             ])
             .split(frame.area());
 
+        let sidebar_width = self.config.sidebar_width_percent.clamp(10, 80);
         let content_layout = Layout::default()
             .direction(Direction::Horizontal)
             .constraints([
-                Constraint::Percentage(30), // Note list
-                Constraint::Percentage(70), // Editor
+                Constraint::Percentage(sidebar_width),
+                Constraint::Percentage(100 - sidebar_width),
             ])
             .split(main_layout[1]);
 
         // Render components
-        self.search_bar
-            .draw(frame, main_layout[0], self.focus == Focus::SearchBar);
-        self.note_list
-            .draw(frame, content_layout[0], self.focus == Focus::NoteList);
-        self.editor
-            .draw(frame, content_layout[1], self.focus == Focus::Editor);
+        self.search_bar.draw(
+            frame,
+            main_layout[0],
+            self.focus == Focus::SearchBar,
+            &theme,
+        );
+        self.note_list.draw(
+            frame,
+            content_layout[0],
+            self.focus == Focus::NoteList,
+            &theme,
+        );
+        self.editor.draw(
+            frame,
+            content_layout[1],
+            self.focus == Focus::Editor,
+            &theme,
+        );
 
         // Render dynamic status bar (no background color, uses terminal default)
         let key_style = Style::default()
-            .fg(Color::Yellow)
+            .fg(theme.accent)
             .add_modifier(Modifier::BOLD);
         let text_style = Style::default().fg(Color::Reset);
-        let sep_style = Style::default().fg(Color::DarkGray);
+        let sep_style = Style::default().fg(theme.border_inactive);
 
         let mut spans = vec![
             Span::styled(" [Tab/Esc] ", key_style),

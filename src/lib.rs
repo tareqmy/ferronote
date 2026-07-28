@@ -6,4 +6,5 @@ pub mod event;
 pub mod focus;
 pub mod note_store;
 pub mod search;
+pub mod theme;
 pub mod tui;

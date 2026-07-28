@@ -5,6 +5,7 @@ use ratatui::{
     Frame,
     layout::Rect,
     style::{Color, Style},
+    text::Span,
     widgets::{Block, Borders},
 };
 use std::collections::HashMap;
@@ -84,19 +85,29 @@ impl Editor<'_> {
         }
     }
 
-    pub fn draw(&self, frame: &mut Frame, area: Rect, is_focused: bool) {
+    pub fn draw(
+        &self,
+        frame: &mut Frame,
+        area: Rect,
+        is_focused: bool,
+        theme: &crate::theme::ThemePalette,
+    ) {
         let title = if let Some(ref note) = self.current_note {
             format!(" {} ", note.strip_suffix(".md").unwrap_or(note))
         } else {
             " Editor ".to_string()
         };
 
-        let mut block = Block::default().borders(Borders::ALL).title(title.clone());
-        if is_focused {
-            block = block.border_style(Style::default().fg(Color::Blue));
+        let border_color = if is_focused {
+            theme.border_active
         } else {
-            block = block.border_style(Style::default().fg(Color::DarkGray));
-        }
+            theme.border_inactive
+        };
+
+        let block = Block::default()
+            .borders(Borders::ALL)
+            .border_style(Style::default().fg(border_color))
+            .title(Span::styled(title, Style::default().fg(theme.title)));
 
         if let Some(ref note) = self.current_note {
             if let Some(ta) = self.textareas.get(note) {

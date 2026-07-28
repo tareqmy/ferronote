@@ -109,11 +109,17 @@ impl NoteList {
             .and_then(|i| self.items.get(i).map(|res| res.filename.clone()))
     }
 
-    pub fn draw(&mut self, frame: &mut Frame, area: Rect, is_focused: bool) {
+    pub fn draw(
+        &mut self,
+        frame: &mut Frame,
+        area: Rect,
+        is_focused: bool,
+        theme: &crate::theme::ThemePalette,
+    ) {
         let border_color = if is_focused {
-            Color::Blue
+            theme.border_active
         } else {
-            Color::DarkGray
+            theme.border_inactive
         };
 
         let block = Block::default()
@@ -130,7 +136,7 @@ impl NoteList {
                     return ListItem::new(Line::from(Span::styled(
                         text,
                         Style::default()
-                            .fg(Color::Green)
+                            .fg(theme.search_match)
                             .add_modifier(Modifier::ITALIC),
                     )));
                 }
@@ -139,7 +145,7 @@ impl NoteList {
                 for (idx, ch) in i.title.chars().enumerate() {
                     let mut style = Style::default();
                     if i.title_match_indices.contains(&idx) {
-                        style = style.fg(Color::Yellow).add_modifier(Modifier::BOLD);
+                        style = style.fg(theme.search_match).add_modifier(Modifier::BOLD);
                     }
                     spans.push(Span::styled(ch.to_string(), style));
                 }
@@ -160,8 +166,8 @@ impl NoteList {
         // Style for selected item
         let highlight_style = if is_focused {
             Style::default()
-                .bg(Color::Blue) // #458588
-                .fg(Color::White)
+                .bg(theme.selection_bg)
+                .fg(theme.selection_fg)
                 .add_modifier(Modifier::BOLD)
         } else {
             Style::default().bg(Color::DarkGray).fg(Color::White)

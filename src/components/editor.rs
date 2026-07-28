@@ -62,6 +62,75 @@ pub fn wrap_text_to_width(lines: &[String], max_width: usize) -> Vec<String> {
     result
 }
 
+/// Maps an original line/column cursor position to a wrapped line/column position.
+#[must_use]
+pub fn map_cursor_to_wrapped(
+    lines: &[String],
+    orig_row: usize,
+    orig_col: usize,
+    max_width: usize,
+) -> (u16, u16) {
+    if max_width == 0 {
+        return (orig_row as u16, orig_col as u16);
+    }
+
+    let mut current_wrapped_row: u16 = 0;
+
+    for (r, line) in lines.iter().enumerate() {
+        let is_target_row = r == orig_row;
+        if line.chars().count() <= max_width {
+            if is_target_row {
+                return (current_wrapped_row, orig_col.min(line.chars().count()) as u16);
+            }
+            current_wrapped_row += 1;
+        } else {
+            let words: Vec<&str> = line.split(' ').collect();
+            let mut current_chunk = String::new();
+            let mut chunk_start_char = 0;
+            let mut char_count_in_orig = 0;
+
+            for (w_idx, word) in words.iter().enumerate() {
+                let add_len = if current_chunk.is_empty() {
+                    word.chars().count()
+                } else {
+                    1 + word.chars().count()
+                };
+
+                if !current_chunk.is_empty() && current_chunk.chars().count() + add_len > max_width {
+                    if is_target_row && orig_col >= chunk_start_char && orig_col < char_count_in_orig {
+                        let offset = orig_col - chunk_start_char;
+                        return (current_wrapped_row, offset as u16);
+                    }
+                    current_wrapped_row += 1;
+                    chunk_start_char = char_count_in_orig;
+                    current_chunk = word.to_string();
+                } else {
+                    if !current_chunk.is_empty() {
+                        current_chunk.push(' ');
+                    }
+                    current_chunk.push_str(word);
+                }
+
+                char_count_in_orig += word.chars().count();
+                if w_idx < words.len() - 1 {
+                    char_count_in_orig += 1;
+                }
+            }
+
+            if !current_chunk.is_empty() {
+                if is_target_row && orig_col >= chunk_start_char {
+                    let offset = orig_col.saturating_sub(chunk_start_char);
+                    let final_col = offset.min(current_chunk.chars().count());
+                    return (current_wrapped_row, final_col as u16);
+                }
+                current_wrapped_row += 1;
+            }
+        }
+    }
+
+    (orig_row as u16, orig_col as u16)
+}
+
 impl Editor<'_> {
     /// Creates a new empty `Editor` component.
     #[must_use]
@@ -152,7 +221,11 @@ impl Editor<'_> {
                 let mut ta_clone = if word_wrap {
                     let max_width = (area.width as usize).saturating_sub(2);
                     let wrapped_lines = wrap_text_to_width(ta.lines(), max_width);
-                    let wrapped_ta = TextArea::new(wrapped_lines);
+                    let (orig_row, orig_col) = ta.cursor();
+                    let (w_row, w_col) =
+                        map_cursor_to_wrapped(ta.lines(), orig_row, orig_col, max_width);
+                    let mut wrapped_ta = TextArea::new(wrapped_lines);
+                    wrapped_ta.move_cursor(tui_textarea::CursorMove::Jump(w_row, w_col));
                     wrapped_ta
                 } else {
                     ta.clone()
@@ -303,5 +376,18 @@ mod tests {
         for line in &wrapped {
             assert!(line.chars().count() <= 20);
         }
+    }
+
+    #[test]
+    fn test_map_cursor_to_wrapped() {
+        let lines = vec![
+            "Short line".to_string(),
+            "This is a longer line wrapped".to_string(),
+        ];
+        let (row, col) = map_cursor_to_wrapped(&lines, 0, 5, 20);
+        assert_eq!((row, col), (0, 5));
+
+        let (row2, _col2) = map_cursor_to_wrapped(&lines, 1, 22, 20);
+        assert_eq!(row2, 2);
     }
 }

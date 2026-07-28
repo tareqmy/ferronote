@@ -700,4 +700,28 @@ mod tests {
         assert!(count >= 1);
         assert!(zip_target.exists());
     }
+
+    #[test]
+    fn test_duplicate_create_title_and_zip_import() {
+        let dir = setup_test_dir("dup_and_zip");
+        let mut store = NoteStore::new(dir.clone()).unwrap();
+
+        let n1 = store.create_note("Test Title").unwrap();
+        assert_eq!(n1, "Test Title.md");
+
+        let err = store.create_note("Test Title");
+        assert!(err.is_err());
+
+        // Export vault to zip then import zip into a new store
+        let export_dir = setup_test_dir("dup_zip_export");
+        let zip_path = export_dir.join("backup.zip");
+        store.export_vault_to_zip(&zip_path).unwrap();
+
+        let import_dir = setup_test_dir("dup_zip_import");
+        let mut new_store = NoteStore::new(import_dir).unwrap();
+        let imported_count = new_store.import_zip(&zip_path).unwrap();
+        assert_eq!(imported_count, 2); // Welcome note + Test Title
+        assert!(new_store.filenames().contains(&"Test Title.md".to_string()));
+    }
 }
+

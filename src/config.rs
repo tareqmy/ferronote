@@ -133,4 +133,24 @@ mod tests {
         assert_eq!(config.default_extension, "md");
         assert_eq!(config.tab_size, 4);
     }
+
+    #[test]
+    fn test_config_save_and_reload() {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let mut config = Config::default();
+        config.notes_dir = temp_dir.path().to_path_buf();
+        config.theme = "nord".to_string();
+        config.tab_size = 2;
+
+        config.save().unwrap();
+
+        let config_path = temp_dir.path().join("config.json");
+        assert!(config_path.exists());
+
+        let loaded_json = std::fs::read_to_string(config_path).unwrap();
+        let reloaded_config: Config = serde_json::from_str(&loaded_json).unwrap();
+        assert_eq!(reloaded_config.theme, "nord");
+        assert_eq!(reloaded_config.tab_size, 2);
+    }
 }
+

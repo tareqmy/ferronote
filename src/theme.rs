@@ -59,3 +59,27 @@ impl ThemePalette {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_theme_palettes() {
+        let default_theme = ThemePalette::from_name("default");
+        assert_eq!(default_theme.border_active, Color::Blue);
+
+        let gruvbox = ThemePalette::from_name("gruvbox");
+        assert_eq!(gruvbox.border_active, Color::Rgb(250, 189, 47));
+
+        let nord = ThemePalette::from_name("nord");
+        assert_eq!(nord.border_active, Color::Rgb(136, 192, 208));
+
+        let dracula = ThemePalette::from_name("dracula");
+        assert_eq!(dracula.border_active, Color::Rgb(189, 147, 249));
+
+        let fallback = ThemePalette::from_name("non_existent_theme");
+        assert_eq!(fallback, default_theme);
+    }
+}
+

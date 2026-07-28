@@ -222,4 +222,33 @@ mod tests {
         list.select_first();
         assert_eq!(list.state.selected(), Some(0));
     }
+
+    #[test]
+    fn test_note_list_wrapping_and_empty() {
+        let mut list = NoteList::new();
+        // Empty list navigation
+        list.next();
+        assert_eq!(list.state.selected(), None);
+        list.previous();
+        assert_eq!(list.state.selected(), None);
+        assert_eq!(list.selected_note(), None);
+
+        // Wrapping navigation
+        list.set_items(make_mock_results(3));
+        assert_eq!(list.state.selected(), Some(0));
+        assert_eq!(list.selected_note(), Some("note_0.md".to_string()));
+
+        list.previous(); // wrap to last
+        assert_eq!(list.state.selected(), Some(2));
+        assert_eq!(list.selected_note(), Some("note_2.md".to_string()));
+
+        list.next(); // wrap to first
+        assert_eq!(list.state.selected(), Some(0));
+
+        // Setting fewer items rescales selection
+        list.state.select(Some(2));
+        list.set_items(make_mock_results(2));
+        assert_eq!(list.state.selected(), Some(1));
+    }
 }
+

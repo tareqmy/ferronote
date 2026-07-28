@@ -71,3 +71,26 @@ impl SearchBar<'_> {
         self.textarea.lines().first().cloned().unwrap_or_default()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use ratatui::crossterm::event::{KeyCode, KeyModifiers};
+
+    #[test]
+    fn test_search_bar_input_and_query() {
+        let mut search_bar = SearchBar::new();
+        assert_eq!(search_bar.query(), "");
+
+        search_bar.handle_key(KeyEvent::new(KeyCode::Char('r'), KeyModifiers::NONE));
+        search_bar.handle_key(KeyEvent::new(KeyCode::Char('u'), KeyModifiers::NONE));
+        search_bar.handle_key(KeyEvent::new(KeyCode::Char('s'), KeyModifiers::NONE));
+        search_bar.handle_key(KeyEvent::new(KeyCode::Char('t'), KeyModifiers::NONE));
+
+        assert_eq!(search_bar.query(), "rust");
+
+        search_bar.handle_key(KeyEvent::new(KeyCode::Backspace, KeyModifiers::NONE));
+        assert_eq!(search_bar.query(), "rus");
+    }
+}
+

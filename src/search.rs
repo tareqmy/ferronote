@@ -324,4 +324,32 @@ mod tests {
         assert_eq!(backlinks.len(), 1);
         assert_eq!(backlinks[0].filename, "source.md");
     }
+
+    #[test]
+    fn test_remove_and_rename_note_index() {
+        let mut index = Index::new();
+        index.add_note("old.md".to_string(), "Ferronote app #v1".to_string(), 100);
+
+        let results = index.search("Ferronote");
+        assert_eq!(results.len(), 1);
+
+        index.rename_note(
+            "old.md",
+            "new.md".to_string(),
+            "Ferronote app #v2".to_string(),
+            150,
+        );
+
+        let results_old = index.search("old");
+        assert!(results_old.iter().all(|r| r.filename != "old.md"));
+
+        let results_new = index.search("Ferronote");
+        assert_eq!(results_new.len(), 1);
+        assert_eq!(results_new[0].filename, "new.md");
+
+        index.remove_note("new.md");
+        let results_removed = index.search("Ferronote");
+        assert_eq!(results_removed.len(), 0);
+    }
 }
+

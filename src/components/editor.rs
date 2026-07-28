@@ -218,4 +218,35 @@ mod tests {
         let link = editor.extract_wiki_link_at_cursor();
         assert_eq!(link, Some("Project Ideas".to_string()));
     }
+
+    #[test]
+    fn test_editor_stats_and_save_state() {
+        let mut editor = Editor::new();
+        assert_eq!(editor.current_note, None);
+        assert_eq!(editor.word_count(), 0);
+        assert_eq!(editor.char_count(), 0);
+        assert!(!editor.has_unsaved_changes());
+
+        editor.set_content("note.md", "Hello world!");
+        assert_eq!(editor.current_note, Some("note.md".to_string()));
+        assert_eq!(editor.word_count(), 2);
+        assert_eq!(editor.char_count(), 12);
+        assert!(!editor.has_unsaved_changes());
+
+        // Reload with different content simulates edit
+        if let Some(ref note) = editor.current_note {
+            if let Some(orig) = editor.original_content.get_mut(note) {
+                *orig = "Different initial".to_string();
+            }
+        }
+        assert!(editor.has_unsaved_changes());
+
+        editor.mark_saved();
+        assert!(!editor.has_unsaved_changes());
+
+        // Setting empty title clears current_note
+        editor.set_content("", "");
+        assert_eq!(editor.current_note, None);
+    }
 }
+

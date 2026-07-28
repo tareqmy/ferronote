@@ -789,3 +789,126 @@ impl App<'_> {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+
+    fn setup_test_app() -> (App<'static>, tempfile::TempDir) {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let store = NoteStore::new(temp_dir.path().to_path_buf()).unwrap();
+        let app = App::new(store);
+        (app, temp_dir)
+    }
+
+    #[test]
+    fn test_app_initialization_and_create_note() {
+        let (mut app, _temp_dir) = setup_test_app();
+        assert_eq!(app.should_quit, false);
+        assert_eq!(app.focus, Focus::SearchBar);
+        // NoteStore creates default welcome note on empty directory
+        assert_eq!(app.note_list.items.len(), 1);
+        assert_eq!(app.note_list.items[0].title, "Welcome to Ferronote");
+
+        let filename = app.create_note("First Note").unwrap();
+        assert_eq!(filename, "First Note.md");
+        assert!(app.note_store.filenames().contains(&filename));
+        assert_eq!(app.note_list.items.len(), 2);
+    }
+
+    #[test]
+    fn test_app_submit_search_creates_note() {
+        let (mut app, _temp_dir) = setup_test_app();
+
+        // Type query into search bar
+        app.search_bar
+            .handle_key(KeyEvent::new(KeyCode::Char('N'), KeyModifiers::NONE));
+        app.search_bar
+            .handle_key(KeyEvent::new(KeyCode::Char('e'), KeyModifiers::NONE));
+        app.search_bar
+            .handle_key(KeyEvent::new(KeyCode::Char('w'), KeyModifiers::NONE));
+
+        app.update_search();
+        assert!(app.note_list.items[0].is_create_prompt);
+
+        // Submit search creates note and jumps to editor
+        app.update(Action::SubmitSearch);
+        assert_eq!(app.focus, Focus::Editor);
+        assert_eq!(app.editor.current_note, Some("New.md".to_string()));
+    }
+
+    #[test]
+    fn test_app_delete_note() {
+        let (mut app, _temp_dir) = setup_test_app();
+        let filename = app.create_note("To Delete").unwrap();
+        assert!(app.note_store.filenames().contains(&filename));
+
+        // Select the newly created note in the note_list
+        if let Some(idx) = app.note_list.items.iter().position(|r| r.filename == filename) {
+            app.note_list.state.select(Some(idx));
+        }
+
+        app.update(Action::DeleteNote);
+        assert!(!app.note_store.filenames().contains(&filename));
+        assert_eq!(app.note_store.list_trash().unwrap().len(), 1);
+    }
+
+    #[test]
+    fn test_app_settings_overlay_cycling() {
+        let (mut app, _temp_dir) = setup_test_app();
+        assert!(!app.show_settings);
+
+        app.update(Action::ToggleSettings);
+        assert!(app.show_settings);
+
+        let initial_ext = app.config.default_extension.clone();
+        app.update(Action::ChangeSettingOption(true));
+        assert_ne!(app.config.default_extension, initial_ext);
+
+        app.update(Action::NextSetting);
+        assert_eq!(app.settings_selected_index, 1);
+
+        app.update(Action::PrevSetting);
+        assert_eq!(app.settings_selected_index, 0);
+
+        app.update(Action::ToggleSettings);
+        assert!(!app.show_settings);
+    }
+
+    #[test]
+    fn test_app_help_overlay_toggle() {
+        let (mut app, _temp_dir) = setup_test_app();
+        assert!(!app.show_help);
+
+        app.update(Action::ToggleHelp);
+        assert!(app.show_help);
+
+        app.update(Action::ToggleHelp);
+        assert!(!app.show_help);
+    }
+
+    #[test]
+    fn test_app_auto_save_on_tick() {
+        let (mut app, _temp_dir) = setup_test_app();
+        let filename = app.create_note("AutoSave Test").unwrap();
+        app.editor.set_content(&filename, "# AutoSave Test\nExisting content");
+
+        // Simulate user typing in editor
+        if let Some(ref note) = app.editor.current_note {
+            if let Some(ta) = app.editor.textareas.get_mut(note) {
+                ta.insert_str("\nAppended edit.");
+            }
+        }
+        app.editor.last_edit_time = Some(Instant::now() - std::time::Duration::from_secs(2));
+        assert!(app.editor.has_unsaved_changes());
+
+        // Tick action should trigger auto-save
+        app.update(Action::Tick);
+        assert!(!app.editor.has_unsaved_changes());
+
+        let disk_content = app.note_store.load_note(&filename).unwrap();
+        assert!(disk_content.contains("Appended edit."));
+    }
+}
+

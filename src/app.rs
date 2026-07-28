@@ -168,10 +168,11 @@ impl App<'_> {
             return Some(Action::ToggleHelp);
         }
 
-        if key
+        if (key
             .modifiers
             .contains(crossterm::event::KeyModifiers::CONTROL)
-            && key.code == KeyCode::Char(',')
+            && key.code == KeyCode::Char('p'))
+            || key.code == KeyCode::F(2)
         {
             return Some(Action::ToggleSettings);
         }
@@ -528,6 +529,10 @@ impl App<'_> {
                     Span::raw("    : Delete Selected Note"),
                 ]),
                 Line::from(vec![
+                    Span::styled("F2 / Ctrl+P", Style::default().fg(Color::Cyan)),
+                    Span::raw(" : Settings Overlay"),
+                ]),
+                Line::from(vec![
                     Span::styled("Ctrl+Q", Style::default().fg(Color::Cyan)),
                     Span::raw("    : Quit Application"),
                 ]),
@@ -544,8 +549,8 @@ impl App<'_> {
 
             let area = frame.area();
             // Centered rect
-            let width = 40;
-            let height = 15;
+            let width = 42;
+            let height = 16;
             let x = (area.width.saturating_sub(width)) / 2;
             let y = (area.height.saturating_sub(height)) / 2;
             let popup_area = ratatui::layout::Rect::new(x, y, width, height);
@@ -599,7 +604,7 @@ impl App<'_> {
                 ]),
                 Line::from(""),
                 Line::from(Span::styled(
-                    "Press any key to close Settings",
+                    "Press any key to close Settings (F2 or Ctrl+P to open)",
                     Style::default().fg(Color::DarkGray),
                 )),
             ];

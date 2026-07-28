@@ -286,6 +286,14 @@ mod tests {
         store.delete_note(&filename).unwrap();
         assert!(!store.metadata.contains_key(&filename));
         assert!(!store.notes_dir.join(&filename).exists());
+
+        let trash_dir = store.notes_dir.join(".ferronote").join("trash");
+        let trash_files: Vec<_> = std::fs::read_dir(&trash_dir)
+            .unwrap()
+            .flatten()
+            .collect();
+        assert_eq!(trash_files.len(), 1);
+        assert!(trash_files[0].file_name().to_string_lossy().contains("Delete Me.md"));
     }
 
     #[test]

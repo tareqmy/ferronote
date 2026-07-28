@@ -1,8 +1,10 @@
-<div align="center">
-  <img src="assets/logo.jpg" alt="Ferronote Logo" width="220" />
-  <h1>🗒️ Ferronote</h1>
-  <p><b>Notes at the speed of thought</b> — a blazing-fast terminal note-taking app inspired by <a href="https://notational.net/">Notational Velocity</a>.</p>
-</div>
+<p align="center">
+  <img src="assets/logo.jpg" alt="Ferronote Logo" width="650" />
+</p>
+
+<p align="center">
+  <b>Notes at the speed of thought</b> — a blazing-fast terminal note-taking app inspired by <a href="https://notational.net/">Notational Velocity</a>.
+</p>
 
 Ferronote is a Rust TUI application that brings the elegance and speed of Notational Velocity to the modern terminal. Search, create, and edit notes without ever touching the mouse.
 

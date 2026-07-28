@@ -149,6 +149,7 @@ When modifying the codebase, **always** ensure these invariants hold:
 4. **No data loss**: Auto-save on every edit. If the app crashes, no more than 1 second
    of typing should be lost.
 5. **Startup speed**: Cold start must be under 100ms for up to 10,000 notes.
+6. **Default note sync**: Whenever documentation or keybindings are updated, ensure the default welcome note (`create_default_welcome_note` in `src/note_store.rs`) is also updated.
 
 ## Dependencies Policy
 

@@ -17,6 +17,8 @@
 6. **Use Conventional Commits** for all commit messages.
 7. **Modularity** — code must be separated into relevant modules/structs (Single Responsibility Principle).
 8. **Test Coverage** — code must be covered with test cases.
+9. **Synchronize Default Welcome Note** — whenever documentation or keybindings are updated, ensure the default welcome note (`create_default_welcome_note` in `src/note_store.rs`) is also updated.
+
 
 ## Preferred Patterns
 - Use `Action` enum for all state transitions (never mutate state directly from event handlers)

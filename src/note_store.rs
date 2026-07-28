@@ -68,8 +68,9 @@ You don't need a separate "New Note" button!
 - Home / End: Jump to top or bottom of notes list.
 - Ctrl+D: Soft delete selected note (moves file to trash).
 - Ctrl+Z / Ctrl+Y: Undo / Redo inside the editor.
-- Ctrl+Q: Quit Ferronote.
+- Ctrl+, / F2 / Ctrl+P: Toggle Interactive Settings Overlay.
 - ?: Toggle Help Overlay.
+- Ctrl+Q: Quit Ferronote.
 
 ## 🏷️ Tags & Wiki-Links
 - #tags: Add inline tags like #todo or #ideas anywhere in your note, then search #todo to filter instantly.

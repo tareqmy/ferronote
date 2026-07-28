@@ -14,7 +14,7 @@ use crate::{
     config::Config,
     event::{Event, EventHandler},
     focus::Focus,
-    note_store::NoteStore,
+    note_store::{NoteStore, format_timestamp},
     search::Index,
     tui::Tui,
 };
@@ -596,18 +596,34 @@ impl App<'_> {
             spans.push(Span::styled("Quit", text_style));
             spans.push(Span::styled(" │", sep_style));
 
-            let backlinks_count = if let Some(ref note) = self.editor.current_note {
-                self.index.get_backlinks(note).len()
+            let (backlinks_count, modified_str) = if let Some(ref note) = self.editor.current_note {
+                let count = self.index.get_backlinks(note).len();
+                let mod_time = self
+                    .note_store
+                    .get_modified_at(note)
+                    .map(format_timestamp)
+                    .unwrap_or_default();
+                (count, mod_time)
             } else {
-                0
+                (0, String::new())
             };
 
-            let stats = format!(
-                " Words: {} │ Chars: {} │ Backlinks: {} ",
-                self.editor.word_count(),
-                self.editor.char_count(),
-                backlinks_count
-            );
+            let stats = if modified_str.is_empty() {
+                format!(
+                    " Words: {} │ Chars: {} │ Backlinks: {} ",
+                    self.editor.word_count(),
+                    self.editor.char_count(),
+                    backlinks_count
+                )
+            } else {
+                format!(
+                    " Modified: {} │ Words: {} │ Chars: {} │ Backlinks: {} ",
+                    modified_str,
+                    self.editor.word_count(),
+                    self.editor.char_count(),
+                    backlinks_count
+                )
+            };
             spans.push(Span::styled(stats, Style::default().fg(Color::Yellow)));
         } else {
             spans.push(Span::styled(" [?] ", key_style));
@@ -624,6 +640,16 @@ impl App<'_> {
 
             spans.push(Span::styled(" [Ctrl+Q] ", key_style));
             spans.push(Span::styled("Quit", text_style));
+
+            if let Some(selected) = self.note_list.selected_note() {
+                if let Some(ts) = self.note_store.get_modified_at(&selected) {
+                    let date_str = format_timestamp(ts);
+                    if !date_str.is_empty() {
+                        spans.push(Span::styled(" │", sep_style));
+                        spans.push(Span::styled(format!(" Modified: {date_str} "), Style::default().fg(Color::Yellow)));
+                    }
+                }
+            }
         }
 
         let status_text = Line::from(spans);

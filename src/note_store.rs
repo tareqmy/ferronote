@@ -576,6 +576,21 @@ Happy note taking!
     }
 }
 
+/// Formats a Unix timestamp into a human-readable local date and time string (`YYYY-MM-DD HH:MM`).
+#[must_use]
+pub fn format_timestamp(timestamp: i64) -> String {
+    if timestamp <= 0 {
+        return String::new();
+    }
+    if let Some(dt) = chrono::DateTime::from_timestamp(timestamp, 0) {
+        let local_dt: chrono::DateTime<chrono::Local> = chrono::DateTime::from(dt);
+        local_dt.format("%Y-%m-%d %H:%M").to_string()
+    } else {
+        String::new()
+    }
+}
+
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -588,6 +603,16 @@ mod tests {
         let dir = std::env::temp_dir().join(format!("ferronote_test_{name}_{nanos}"));
         let _ = std::fs::create_dir_all(&dir);
         dir
+    }
+
+    #[test]
+    fn test_format_timestamp() {
+        assert_eq!(format_timestamp(0), "");
+        assert_eq!(format_timestamp(-100), "");
+        let ts = 1753723200; // 2025-07-28 approx
+        let formatted = format_timestamp(ts);
+        assert!(!formatted.is_empty());
+        assert!(formatted.contains("-"));
     }
 
     #[test]

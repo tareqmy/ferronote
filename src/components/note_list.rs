@@ -1,3 +1,4 @@
+use crate::note_store::format_timestamp;
 use crate::search::SearchResult;
 use ratatui::{
     Frame,
@@ -157,7 +158,18 @@ impl NoteList {
 
                 let mut lines = vec![Line::from(spans)];
 
-                if let Some(preview) = &i.content_preview {
+                let date_str = format_timestamp(i.modified_at);
+                if !date_str.is_empty() {
+                    let sub_text = if let Some(preview) = &i.content_preview {
+                        format!("{} · {}", date_str, preview)
+                    } else {
+                        date_str
+                    };
+                    lines.push(Line::from(Span::styled(
+                        sub_text,
+                        Style::default().fg(Color::DarkGray),
+                    )));
+                } else if let Some(preview) = &i.content_preview {
                     lines.push(Line::from(Span::styled(
                         preview.clone(),
                         Style::default().fg(Color::DarkGray),

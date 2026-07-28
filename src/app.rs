@@ -752,7 +752,7 @@ impl App<'_> {
                 Line::from(""),
                 Line::from(vec![
                     Span::styled("  Creator   : ", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
-                    Span::styled("Tareq M Y ", Style::default().fg(Color::White)),
+                    Span::styled("Tareq Mohammad Yousuf ", Style::default().fg(Color::White)),
                     Span::styled("(https://tareqmy.com)", Style::default().fg(Color::Blue)),
                 ]),
                 Line::from(vec![

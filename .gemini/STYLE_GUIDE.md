@@ -53,7 +53,7 @@ Focus flows: `Search → List → Editor → (Esc) → Search` (cycled with `Tab
 
 ### About Overlay (`Ctrl+V`)
 - Rendered as a centered modal popup box.
-- Displays app version (`v0.1.0`), creator (`Tareq M Y` / `tareqmy.com`), contact email (`tareq.y@gmail.com`), GitHub repo URL, and license.
+- Displays app version (`v0.1.0`), creator (`Tareq Mohammad Yousuf` / `tareqmy.com`), contact email (`tareq.y@gmail.com`), GitHub repo URL, and license.
 - Pressing `Esc` or any key closes the modal.
 
 ### Search Behavior

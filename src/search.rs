@@ -227,4 +227,23 @@ mod tests {
         let preview = results[0].content_preview.as_ref().unwrap();
         assert!(preview.contains("blazing"));
     }
+
+    #[test]
+    fn test_tag_search_filter() {
+        let mut index = Index::new();
+        index.add_note("todo.md".to_string(), "Finish project #todo #urgent".to_string(), 100);
+        index.add_note("ideas.md".to_string(), "New ideas #ideas".to_string(), 200);
+
+        let results = index.search("#todo");
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0].filename, "todo.md");
+
+        let results_urgent = index.search("#urgent");
+        assert_eq!(results_urgent.len(), 1);
+        assert_eq!(results_urgent[0].filename, "todo.md");
+
+        let results_ideas = index.search("#ideas");
+        assert_eq!(results_ideas.len(), 1);
+        assert_eq!(results_ideas[0].filename, "ideas.md");
+    }
 }

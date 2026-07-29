@@ -10,7 +10,7 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  check:
+  code-quality-and-tests:
     name: Code Quality & Test Suite
     runs-on: ubuntu-latest
     steps:
@@ -32,3 +32,33 @@ jobs:
 
       - name: Run Unit & Integration Tests
         run: cargo test --all-targets --all-features
+
+  cross-platform-matrix:
+    name: Cross-Platform Build (${{ matrix.target }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+          - os: macos-latest
+            target: aarch64-apple-darwin
+          - os: macos-13
+            target: x86_64-apple-darwin
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Target Rust Toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Cache Cargo Dependencies
+        uses: Swatinem/rust-cache@v2
+
+      - name: Cargo Check Target
+        run: cargo check --target ${{ matrix.target }} --all-features

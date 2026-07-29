@@ -80,7 +80,10 @@ pub fn map_cursor_to_wrapped(
         let is_target_row = r == orig_row;
         if line.chars().count() <= max_width {
             if is_target_row {
-                return (current_wrapped_row, orig_col.min(line.chars().count()) as u16);
+                return (
+                    current_wrapped_row,
+                    orig_col.min(line.chars().count()) as u16,
+                );
             }
             current_wrapped_row += 1;
         } else {
@@ -96,8 +99,12 @@ pub fn map_cursor_to_wrapped(
                     1 + word.chars().count()
                 };
 
-                if !current_chunk.is_empty() && current_chunk.chars().count() + add_len > max_width {
-                    if is_target_row && orig_col >= chunk_start_char && orig_col < char_count_in_orig {
+                if !current_chunk.is_empty() && current_chunk.chars().count() + add_len > max_width
+                {
+                    if is_target_row
+                        && orig_col >= chunk_start_char
+                        && orig_col < char_count_in_orig
+                    {
                         let offset = orig_col - chunk_start_char;
                         return (current_wrapped_row, offset as u16);
                     }
@@ -404,7 +411,10 @@ mod tests {
     #[test]
     fn test_editor_page_up_page_down() {
         let mut editor = Editor::new();
-        let content = (0..30).map(|i| format!("Line {i}")).collect::<Vec<_>>().join("\n");
+        let content = (0..30)
+            .map(|i| format!("Line {i}"))
+            .collect::<Vec<_>>()
+            .join("\n");
         editor.set_content("long.md", &content);
 
         // Initial cursor at (0, 0)

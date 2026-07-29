@@ -38,7 +38,6 @@ impl SearchBar<'_> {
         self.textarea.input(key);
     }
 
-
     pub fn draw(
         &self,
         frame: &mut Frame,
@@ -98,4 +97,3 @@ mod tests {
         assert_eq!(search_bar.query(), "rus");
     }
 }
-

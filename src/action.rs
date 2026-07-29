@@ -34,4 +34,3 @@ pub enum Action {
     /// Exit the application.
     Quit,
 }
-

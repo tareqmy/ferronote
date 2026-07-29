@@ -268,7 +268,8 @@ impl App<'_> {
     }
 
     fn handle_mouse(&mut self, mouse: crossterm::event::MouseEvent) -> Option<Action> {
-        if mouse.kind == crossterm::event::MouseEventKind::Down(crossterm::event::MouseButton::Left) {
+        if mouse.kind == crossterm::event::MouseEventKind::Down(crossterm::event::MouseButton::Left)
+        {
             Some(Action::MouseClick(mouse.column, mouse.row))
         } else {
             None
@@ -588,7 +589,8 @@ impl App<'_> {
                 {
                     self.focus = Focus::NoteList;
                     if let Some(selected) =
-                        self.note_list.click_at(y, self.list_area, self.config.show_modified_time)
+                        self.note_list
+                            .click_at(y, self.list_area, self.config.show_modified_time)
                     {
                         if !selected.is_empty() {
                             if let Ok(content) = self.note_store.load_note(&selected) {
@@ -626,10 +628,7 @@ impl App<'_> {
         // Render top header bar (Title left, Version right)
         let header_layout = Layout::default()
             .direction(Direction::Horizontal)
-            .constraints([
-                Constraint::Percentage(50),
-                Constraint::Percentage(50),
-            ])
+            .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
             .split(main_layout[0]);
 
         let title_p = Paragraph::new(Line::from(Span::styled(
@@ -762,7 +761,10 @@ impl App<'_> {
                     let date_str = format_timestamp(ts);
                     if !date_str.is_empty() {
                         spans.push(Span::styled(" │", sep_style));
-                        spans.push(Span::styled(format!(" Modified: {date_str} "), Style::default().fg(Color::Yellow)));
+                        spans.push(Span::styled(
+                            format!(" Modified: {date_str} "),
+                            Style::default().fg(Color::Yellow),
+                        ));
                     }
                 }
             }
@@ -801,7 +803,12 @@ impl App<'_> {
 
             for (key, action) in keybindings_data {
                 lines.push(Line::from(vec![
-                    Span::styled(format!("  {:<14} ", key), Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
+                    Span::styled(
+                        format!("  {:<14} ", key),
+                        Style::default()
+                            .fg(Color::Cyan)
+                            .add_modifier(Modifier::BOLD),
+                    ),
                     Span::styled("│ ", Style::default().fg(Color::DarkGray)),
                     Span::styled(action, Style::default().fg(Color::White)),
                 ]));
@@ -847,20 +854,43 @@ impl App<'_> {
                 )),
                 Line::from(""),
                 Line::from(vec![
-                    Span::styled("  Creator   : ", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
+                    Span::styled(
+                        "  Creator   : ",
+                        Style::default()
+                            .fg(Color::Cyan)
+                            .add_modifier(Modifier::BOLD),
+                    ),
                     Span::styled("Tareq Mohammad Yousuf ", Style::default().fg(Color::White)),
                     Span::styled("(https://tareqmy.com)", Style::default().fg(Color::Blue)),
                 ]),
                 Line::from(vec![
-                    Span::styled("  Contact   : ", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
+                    Span::styled(
+                        "  Contact   : ",
+                        Style::default()
+                            .fg(Color::Cyan)
+                            .add_modifier(Modifier::BOLD),
+                    ),
                     Span::styled("tareq.y@gmail.com", Style::default().fg(Color::White)),
                 ]),
                 Line::from(vec![
-                    Span::styled("  GitHub    : ", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
-                    Span::styled("https://github.com/tareqmy/ferronote", Style::default().fg(Color::Blue)),
+                    Span::styled(
+                        "  GitHub    : ",
+                        Style::default()
+                            .fg(Color::Cyan)
+                            .add_modifier(Modifier::BOLD),
+                    ),
+                    Span::styled(
+                        "https://github.com/tareqmy/ferronote",
+                        Style::default().fg(Color::Blue),
+                    ),
                 ]),
                 Line::from(vec![
-                    Span::styled("  License   : ", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
+                    Span::styled(
+                        "  License   : ",
+                        Style::default()
+                            .fg(Color::Cyan)
+                            .add_modifier(Modifier::BOLD),
+                    ),
                     Span::styled("MIT License", Style::default().fg(Color::White)),
                 ]),
                 Line::from(""),
@@ -1011,14 +1041,21 @@ mod tests {
         let (mut app, _temp_dir) = setup_test_app();
         assert_eq!(app.should_quit, false);
         assert_eq!(app.focus, Focus::SearchBar);
-        // NoteStore creates default welcome note on empty directory
-        assert_eq!(app.note_list.items.len(), 1);
-        assert_eq!(app.note_list.items[0].title, "Welcome to Ferronote");
+        // NoteStore creates default notes on empty directory
+        assert_eq!(app.note_list.items.len(), 2);
+        let titles: Vec<_> = app
+            .note_list
+            .items
+            .iter()
+            .map(|i| i.title.as_str())
+            .collect();
+        assert!(titles.contains(&"Welcome to Ferronote"));
+        assert!(titles.contains(&"Lorem Ipsum"));
 
         let filename = app.create_note("First Note").unwrap();
         assert_eq!(filename, "First Note.md");
         assert!(app.note_store.filenames().contains(&filename));
-        assert_eq!(app.note_list.items.len(), 2);
+        assert_eq!(app.note_list.items.len(), 3);
     }
 
     #[test]
@@ -1049,7 +1086,12 @@ mod tests {
         assert!(app.note_store.filenames().contains(&filename));
 
         // Select the newly created note in the note_list
-        if let Some(idx) = app.note_list.items.iter().position(|r| r.filename == filename) {
+        if let Some(idx) = app
+            .note_list
+            .items
+            .iter()
+            .position(|r| r.filename == filename)
+        {
             app.note_list.state.select(Some(idx));
         }
 
@@ -1147,7 +1189,11 @@ mod tests {
     fn test_app_auto_save_on_tick() {
         let (mut app, _temp_dir) = setup_test_app();
         let filename = app.create_note("AutoSave Test").unwrap();
-        app.editor.set_content(&filename, "# AutoSave Test\nExisting content");
+        app.editor
+            .set_content(&filename, "# AutoSave Test\nExisting content");
+
+        // Clear any pending search debouncing from note creation
+        app.last_search_input = None;
 
         // Simulate user typing in editor
         if let Some(ref note) = app.editor.current_note {
@@ -1166,4 +1212,3 @@ mod tests {
         assert!(disk_content.contains("Appended edit."));
     }
 }
-

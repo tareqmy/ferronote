@@ -93,4 +93,3 @@ mod tests {
         assert_eq!(fallback, default_theme);
     }
 }
-

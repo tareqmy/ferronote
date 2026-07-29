@@ -367,4 +367,3 @@ mod tests {
         assert_eq!(results_removed.len(), 0);
     }
 }
-

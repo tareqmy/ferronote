@@ -22,7 +22,6 @@ impl Focus {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -42,4 +41,3 @@ mod tests {
         assert_eq!(focus, Focus::SearchBar);
     }
 }
-

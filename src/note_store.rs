@@ -42,6 +42,7 @@ impl NoteStore {
         store.scan_directory()?;
 
         let _ = store.create_default_welcome_note();
+        let _ = store.create_default_lorem_ipsum_note();
 
         Ok(store)
     }
@@ -93,9 +94,42 @@ You don't need a separate "New Note" button!
 
 ## 🏷️ Tags & Wiki-Links
 - #tags: Add inline tags like #todo or #ideas anywhere in your note, then search #todo to filter instantly.
-- [[Wiki-Links]]: Type [[Another Note]] inside a note, place your cursor on it, and press Enter to jump to or create the linked note!
+- [[Wiki-Links]]: Type [[Another Note]] inside a note, place your cursor on it, and press Enter to jump to or create the linked note! Check out [[Lorem Ipsum]] for an example.
 
 Happy note taking!
+"#;
+        self.save_note(&filename, content)?;
+        Ok(filename)
+    }
+
+    /// Creates or updates the default secondary note with Lorem Ipsum text.
+    /// # Errors
+    /// Returns an error if saving the note fails.
+    pub fn create_default_lorem_ipsum_note(&mut self) -> Result<String> {
+        let title = "Lorem Ipsum";
+        let filename = format!("{title}.md");
+        let path = self.notes_dir.join(&filename);
+
+        if !path.exists() {
+            let content = format!("# {title}\n\n");
+            std::fs::write(&path, content)?;
+
+            let now = Utc::now();
+            self.metadata.insert(
+                filename.clone(),
+                NoteMetadata {
+                    created_at: now,
+                    modified_at: now,
+                },
+            );
+            self.save_metadata()?;
+        }
+
+        let content = r#"# Lorem Ipsum
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+
+Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
 "#;
         self.save_note(&filename, content)?;
         Ok(filename)
@@ -591,7 +625,6 @@ pub fn format_timestamp(timestamp: i64) -> String {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -620,9 +653,14 @@ mod tests {
     fn test_create_and_load_note() {
         let dir = setup_test_dir("create_load");
         let mut store = NoteStore::new(dir).unwrap();
-        // Welcome note should be auto-created for empty store
-        assert_eq!(store.filenames().len(), 1);
-        assert_eq!(store.filenames()[0], "Welcome to Ferronote.md");
+        // Default notes should be auto-created for empty store
+        assert_eq!(store.filenames().len(), 2);
+        assert!(
+            store
+                .filenames()
+                .contains(&"Welcome to Ferronote.md".to_string())
+        );
+        assert!(store.filenames().contains(&"Lorem Ipsum.md".to_string()));
 
         let filename = store.create_note("Test Note").unwrap();
         assert_eq!(filename, "Test Note.md");
@@ -649,8 +687,25 @@ mod tests {
         assert!(content.contains("# Welcome to Ferronote"));
         assert!(content.contains("Ctrl+P"));
         assert!(content.contains("Ctrl+V"));
+        assert!(content.contains("[[Lorem Ipsum]]"));
     }
 
+    #[test]
+    fn test_default_lorem_ipsum_note_and_backlink() {
+        let dir = setup_test_dir("lorem_ipsum_test");
+        let store = NoteStore::new(dir).unwrap();
+        let welcome_content = store.load_note("Welcome to Ferronote.md").unwrap();
+        assert!(welcome_content.contains("[[Lorem Ipsum]]"));
+
+        let lorem_content = store.load_note("Lorem Ipsum.md").unwrap();
+        assert!(lorem_content.contains("# Lorem Ipsum"));
+        assert!(lorem_content.contains("Lorem ipsum dolor sit amet"));
+
+        let app = crate::app::App::new(store);
+        let backlinks = app.index.get_backlinks("Lorem Ipsum");
+        assert_eq!(backlinks.len(), 1);
+        assert_eq!(backlinks[0].filename, "Welcome to Ferronote.md");
+    }
 
     #[test]
     fn test_save_note() {
@@ -786,8 +841,7 @@ mod tests {
         let import_dir = setup_test_dir("dup_zip_import");
         let mut new_store = NoteStore::new(import_dir).unwrap();
         let imported_count = new_store.import_zip(&zip_path).unwrap();
-        assert_eq!(imported_count, 2); // Welcome note + Test Title
+        assert_eq!(imported_count, 3); // Welcome note + Lorem Ipsum + Test Title
         assert!(new_store.filenames().contains(&"Test Title.md".to_string()));
     }
 }
-

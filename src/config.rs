@@ -88,7 +88,6 @@ pub struct Config {
     pub word_wrap: bool,
 }
 
-
 impl Default for Config {
     fn default() -> Self {
         Self {
@@ -183,4 +182,3 @@ mod tests {
         assert_eq!(reloaded_config.tab_size, 2);
     }
 }
-

@@ -1,6 +1,4 @@
-use ferronote::{
-    action::Action, app::App, config::Config, focus::Focus, note_store::NoteStore,
-};
+use ferronote::{action::Action, app::App, config::Config, focus::Focus, note_store::NoteStore};
 use std::fs;
 use tempfile::tempdir;
 
@@ -54,8 +52,15 @@ fn test_end_to_end_note_lifecycle() {
     app.update(Action::SubmitSearch);
 
     assert_eq!(app.focus, Focus::Editor);
-    assert_eq!(app.editor.current_note, Some("Brand New Note.md".to_string()));
-    assert!(app.note_store.filenames().contains(&"Brand New Note.md".to_string()));
+    assert_eq!(
+        app.editor.current_note,
+        Some("Brand New Note.md".to_string())
+    );
+    assert!(
+        app.note_store
+            .filenames()
+            .contains(&"Brand New Note.md".to_string())
+    );
 
     // 6. Soft Delete and Trash Management
     let initial_count = app.note_store.filenames().len();
@@ -73,7 +78,13 @@ fn test_end_to_end_note_lifecycle() {
     assert_eq!(app.note_store.filenames().len(), initial_count);
 
     // Soft delete again and Purge trash
-    let (to_delete, _) = app.note_store.list_trash().unwrap().first().cloned().unwrap_or_default();
+    let (to_delete, _) = app
+        .note_store
+        .list_trash()
+        .unwrap()
+        .first()
+        .cloned()
+        .unwrap_or_default();
     if to_delete.is_empty() {
         app.note_store.delete_note("Brand New Note.md").unwrap();
     }
@@ -104,14 +115,18 @@ fn test_export_and_import_vault_workflow() {
     // Export entire vault to ZIP
     let zip_path = export_dir.path().join("vault.zip");
     let count = store.export_vault_to_zip(&zip_path).unwrap();
-    assert!(count >= 2); // Welcome note + Document One
+    assert!(count >= 3); // Welcome note + Lorem Ipsum + Document One
 
     // Import ZIP into fresh vault
     let target_vault = tempdir().unwrap();
     let mut new_store = NoteStore::new(target_vault.path().to_path_buf()).unwrap();
     let imported_count = new_store.import_zip(&zip_path).unwrap();
     assert_eq!(imported_count, count);
-    assert!(new_store.filenames().contains(&"Document One.md".to_string()));
+    assert!(
+        new_store
+            .filenames()
+            .contains(&"Document One.md".to_string())
+    );
 }
 
 #[test]

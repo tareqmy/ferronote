@@ -27,7 +27,6 @@ impl NoteList {
         }
     }
 
-
     pub fn set_items(&mut self, items: Vec<SearchResult>) {
         self.items = items;
         // Reset selection if out of bounds
@@ -346,4 +345,3 @@ mod tests {
         assert_eq!(list.state.selected(), Some(1));
     }
 }
-

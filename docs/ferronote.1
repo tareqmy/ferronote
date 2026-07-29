@@ -1,0 +1,66 @@
+.TH FERRONOTE 1 "July 2026" "ferronote 0.1.0" "User Commands"
+.SH NAME
+ferronote \- a blazing-fast terminal note-taking app inspired by Notational Velocity
+.SH SYNOPSIS
+.B ferronote
+[\fIOPTIONS\fR]
+.SH DESCRIPTION
+\fBferronote\fR is a Rust TUI application that brings the modeless search-first philosophy of Notational Velocity to the terminal.
+Searching and note creation are unified into a single input bar.
+.SH OPTIONS
+.TP
+\fB\-d\fR, \fB\-\-dir\fR \fIPATH\fR
+Specify custom notes directory (default: ~/.ferronotes/ or config location).
+.TP
+\fB\-i\fR, \fB\-\-import\fR \fIPATH\fR
+Import notes from a file (.md/.txt), a directory, or a .zip archive.
+.TP
+\fB\-e\fR, \fB\-\-export\fR \fIPATH\fR
+Export full vault to a .zip archive or a single note to an HTML file.
+.TP
+\fB\-\-trash\fR
+List soft-deleted notes currently in the trash.
+.TP
+\fB\-\-restore\fR \fIFILENAME\fR
+Restore a soft-deleted note from the trash by filename.
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Print help information.
+.TP
+\fB\-V\fR, \fB\-\-version\fR
+Print version information.
+.SH KEYBINDINGS
+.TP
+\fB/\fR or \fBCtrl+L\fR
+Focus search bar.
+.TP
+\fBCtrl+N\fR
+Clear search bar and start a new note.
+.TP
+\fBTab / Shift+Tab / Esc\fR
+Cycle focus between Search Bar, Note List, and Editor.
+.TP
+\fBEnter\fR
+Open selected note / Create note / Follow [[Wiki-Link]].
+.TP
+\fBCtrl+S\fR
+Force save current note.
+.TP
+\fBCtrl+D\fR
+Soft delete selected note.
+.TP
+\fBCtrl+P\fR
+Toggle Interactive Settings Overlay.
+.TP
+\fBCtrl+V\fR
+Toggle About Overlay.
+.TP
+\fB?\fR
+Toggle Help Overlay.
+.TP
+\fBCtrl+Q\fR
+Quit application.
+.SH AUTHORS
+Tareq Mohammad Yousuf <tareq.y@gmail.com> (https://tareqmy.com)
+.SH LICENSE
+MIT License

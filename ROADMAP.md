@@ -196,7 +196,7 @@
   - [x] Cross-compilation matrix (Linux, macOS, Windows)
   - [x] Automated release workflow
 - [ ] **Documentation**
-  - [ ] `man` page
+  - [x] `man` page
   - [ ] Website / landing page
   - [x] `CONTRIBUTING.md`
   - [ ] Architecture decision records (ADRs)

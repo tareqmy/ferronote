@@ -93,8 +93,8 @@ impl Index {
     /// Returns a list of notes containing wiki-style links (`[[note_title]]`) pointing to `note_title`.
     #[must_use]
     pub fn get_backlinks(&self, note_title: &str) -> Vec<SearchResult> {
-        let clean_title = note_title.strip_suffix(".md").unwrap_or(note_title);
-        let link_pattern = format!("[[{}]]", clean_title.to_lowercase());
+        let clean_title = note_title.strip_suffix(".md").unwrap_or(note_title).trim();
+        let target_title_lower = clean_title.to_lowercase();
 
         let mut backlinks = Vec::new();
 
@@ -103,7 +103,26 @@ impl Index {
                 continue;
             }
 
-            if content.to_lowercase().contains(&link_pattern) {
+            let content_lower = content.to_lowercase();
+            let mut current_idx = 0;
+            let mut matches = false;
+
+            while let Some(start) = content_lower[current_idx..].find("[[") {
+                let start_idx = current_idx + start;
+                if let Some(end) = content_lower[start_idx..].find("]]") {
+                    let link_text = &content_lower[start_idx + 2..start_idx + end];
+                    let clean_link = link_text.strip_suffix(".md").unwrap_or(link_text).trim();
+                    if clean_link == target_title_lower {
+                        matches = true;
+                        break;
+                    }
+                    current_idx = start_idx + end + 2;
+                } else {
+                    break;
+                }
+            }
+
+            if matches {
                 backlinks.push(SearchResult {
                     filename: filename.clone(),
                     title: title.clone(),

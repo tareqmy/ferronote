@@ -130,6 +130,9 @@ Happy note taking!
 Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
 
 Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+
+---
+💡 Referencing [[Welcome to Ferronote]]
 "#;
         self.save_note(&filename, content)?;
         Ok(filename)
@@ -699,12 +702,16 @@ mod tests {
 
         let lorem_content = store.load_note("Lorem Ipsum.md").unwrap();
         assert!(lorem_content.contains("# Lorem Ipsum"));
-        assert!(lorem_content.contains("Lorem ipsum dolor sit amet"));
+        assert!(lorem_content.contains("[[Welcome to Ferronote]]"));
 
         let app = crate::app::App::new(store);
-        let backlinks = app.index.get_backlinks("Lorem Ipsum");
-        assert_eq!(backlinks.len(), 1);
-        assert_eq!(backlinks[0].filename, "Welcome to Ferronote.md");
+        let backlinks_lorem = app.index.get_backlinks("Lorem Ipsum");
+        assert_eq!(backlinks_lorem.len(), 1);
+        assert_eq!(backlinks_lorem[0].filename, "Welcome to Ferronote.md");
+
+        let backlinks_welcome = app.index.get_backlinks("Welcome to Ferronote");
+        assert_eq!(backlinks_welcome.len(), 1);
+        assert_eq!(backlinks_welcome[0].filename, "Lorem Ipsum.md");
     }
 
     #[test]

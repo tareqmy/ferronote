@@ -6,14 +6,15 @@ INSTALL_DIR="${INSTALL_DIR:-/usr/local/bin}"
 
 # Handle uninstall flag or environment variable
 if [ "$1" = "--uninstall" ] || [ "$1" = "-u" ] || [ "$1" = "uninstall" ] || [ "$UNINSTALL" = "true" ]; then
-  echo "🗑️ Uninstalling Ferronote from ${INSTALL_DIR}/ferronote..."
+  echo "🗑️ Uninstalling Ferronote from ${INSTALL_DIR}..."
   TARGET_BIN="${INSTALL_DIR}/ferronote"
-  if [ -f "$TARGET_BIN" ]; then
+  ALIAS_BIN="${INSTALL_DIR}/fnt"
+  if [ -f "$TARGET_BIN" ] || [ -f "$ALIAS_BIN" ] || [ -L "$ALIAS_BIN" ]; then
     if [ -w "$INSTALL_DIR" ]; then
-      rm -f "$TARGET_BIN"
+      rm -f "$TARGET_BIN" "$ALIAS_BIN"
     else
-      echo "🔒 Sudo permissions required to remove $TARGET_BIN..."
-      sudo rm -f "$TARGET_BIN"
+      echo "🔒 Sudo permissions required to remove $TARGET_BIN and $ALIAS_BIN..."
+      sudo rm -f "$TARGET_BIN" "$ALIAS_BIN"
     fi
     echo "✨ Ferronote successfully uninstalled!"
   else
@@ -71,12 +72,14 @@ tar -xzf "$TMP_DIR/$FILE_NAME" -C "$TMP_DIR"
 
 if [ -w "$INSTALL_DIR" ]; then
   mv "$TMP_DIR/ferronote" "$INSTALL_DIR/ferronote"
+  ln -sf "$INSTALL_DIR/ferronote" "$INSTALL_DIR/fnt"
 else
   echo "🔒 Sudo permissions required to install to $INSTALL_DIR..."
   sudo mv "$TMP_DIR/ferronote" "$INSTALL_DIR/ferronote"
+  sudo ln -sf "$INSTALL_DIR/ferronote" "$INSTALL_DIR/fnt"
 fi
 
 chmod +x "$INSTALL_DIR/ferronote"
 
-echo "✨ Ferronote ${TAG} successfully installed to ${INSTALL_DIR}/ferronote!"
-echo "Run 'ferronote' to start taking notes at the speed of thought."
+echo "✨ Ferronote ${TAG} successfully installed to ${INSTALL_DIR}/ferronote (with 'fnt' shortcut)!"
+echo "Run 'ferronote' or 'fnt' to start taking notes at the speed of thought."

@@ -60,6 +60,11 @@ Write-Host "📦 Extracting archive to $InstallDir..." -ForegroundColor Yellow
 Expand-Archive -Path $TempZip -DestinationPath $InstallDir -Force
 Remove-Item -Path $TempZip -Force
 
+# Create fnt.exe shortcut copy
+if (Test-Path "$InstallDir\ferronote.exe") {
+    Copy-Item -Path "$InstallDir\ferronote.exe" -Destination "$InstallDir\fnt.exe" -Force
+}
+
 # Add InstallDir to User PATH environment variable if not already present
 $UserPath = [Environment]::GetEnvironmentVariable("PATH", "User")
 if ($UserPath -notlike "*$InstallDir*") {
@@ -69,5 +74,5 @@ if ($UserPath -notlike "*$InstallDir*") {
     Write-Host "🔗 Added $InstallDir to User PATH." -ForegroundColor Green
 }
 
-Write-Host "`n✨ Ferronote $Tag successfully installed to $InstallDir\ferronote.exe!" -ForegroundColor Green
-Write-Host "Open a new terminal window and run 'ferronote' to start taking notes." -ForegroundColor White
+Write-Host "`n✨ Ferronote $Tag successfully installed to $InstallDir\ferronote.exe (with 'fnt' shortcut)!" -ForegroundColor Green
+Write-Host "Open a new terminal window and run 'ferronote' or 'fnt' to start taking notes." -ForegroundColor White

@@ -67,14 +67,14 @@ $env:UNINSTALL='true'; irm https://raw.githubusercontent.com/tareqmy/ferronote/m
 
 | Command / Flag | Description | Example Usage |
 | :--- | :--- | :--- |
-| `ferronote` | Launch interactive TUI | `ferronote` |
-| `-d`, `--dir <PATH>` | Specify custom notes directory | `ferronote --dir ~/notes` |
-| `-i`, `--import <PATH>` | Import `.md`, `.txt`, directory, or `.zip` archive | `ferronote --import ~/backup/notes.zip` |
-| `-e`, `--export <PATH>` | Export vault to `.zip` or single note to `.html` | `ferronote --export ~/exports/note.html` |
-| `--trash` | List soft-deleted notes in trash | `ferronote --trash` |
-| `--restore <FILENAME>` | Restore a trashed note by filename | `ferronote --restore "deleted-note.md"` |
-| `-h`, `--help` | Display CLI help documentation | `ferronote --help` |
-| `-V`, `--version` | Display version information | `ferronote --version` |
+| `ferronote` / `fnt` | Launch interactive TUI (supports `fnt` shortcut) | `ferronote` or `fnt` |
+| `-d`, `--dir <PATH>` | Specify custom notes directory | `fnt --dir ~/notes` |
+| `-i`, `--import <PATH>` | Import `.md`, `.txt`, directory, or `.zip` archive | `fnt --import ~/backup/notes.zip` |
+| `-e`, `--export <PATH>` | Export vault to `.zip` or single note to `.html` | `fnt --export ~/exports/note.html` |
+| `--trash` | List soft-deleted notes in trash | `fnt --trash` |
+| `--restore <FILENAME>` | Restore a trashed note by filename | `fnt --restore "deleted-note.md"` |
+| `-h`, `--help` | Display CLI help documentation | `fnt --help` |
+| `-V`, `--version` | Display version information | `fnt --version` |
 
 ## ⌨️ Keybindings
 

@@ -193,7 +193,7 @@
   - [x] Pre-built binaries (GitHub Releases via `cargo-dist`)
 - [ ] **CI/CD**
   - [x] GitHub Actions: `cargo fmt --check`, `cargo clippy`, `cargo test`
-  - [ ] Cross-compilation matrix (Linux, macOS, Windows)
+  - [x] Cross-compilation matrix (Linux, macOS, Windows)
   - [ ] Automated release workflow
 - [ ] **Documentation**
   - [ ] `man` page

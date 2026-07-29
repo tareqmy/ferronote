@@ -81,10 +81,13 @@ You don't need a separate "New Note" button!
 3. If no matching note exists, press Enter to instantly create and edit a note with that title.
 
 ## ⌨️ Essential Keybindings
+- / or Ctrl+L: Focus search bar.
+- Ctrl+N: Clear search bar and start a new note.
 - Tab / Esc: Cycle focus between Search Bar, Note List, and Editor.
 - Up / Down: Navigate notes in the list.
 - PgUp / PgDn: Scroll note list page by page.
 - Home / End: Jump to top or bottom of notes list.
+- Ctrl+S: Force save current note.
 - Ctrl+D: Soft delete selected note (moves file to trash).
 - Ctrl+Z / Ctrl+Y: Undo / Redo inside the editor.
 - Ctrl+P: Toggle Interactive Settings Overlay.
@@ -165,8 +168,8 @@ Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu 
             let entry = entry?;
             let path = entry.path();
 
-            if path.is_file() {
-                if let Some(ext) = path.extension().and_then(|e| e.to_str()) {
+            if path.is_file()
+                && let Some(ext) = path.extension().and_then(|e| e.to_str()) {
                     if ext == "md" {
                         if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
                             found_files.push(name.to_string());
@@ -176,7 +179,6 @@ Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu 
                         let _ = std::fs::remove_file(&path);
                     }
                 }
-            }
         }
 
         let now = Utc::now();
@@ -295,18 +297,16 @@ Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu 
             let path = entry.path();
             if path.is_file() {
                 let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("");
-                if ext == "md" || ext == "txt" {
-                    if self.import_file(&path).is_ok() {
+                if (ext == "md" || ext == "txt")
+                    && self.import_file(&path).is_ok() {
                         count += 1;
                     }
-                }
             } else if path.is_dir() {
                 let name = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
-                if !name.starts_with('.') && name != "trash" {
-                    if let Ok(c) = self.import_directory(&path) {
+                if !name.starts_with('.') && name != "trash"
+                    && let Ok(c) = self.import_directory(&path) {
                         count += c;
                     }
-                }
             }
         }
         Ok(count)

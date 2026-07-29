@@ -164,7 +164,11 @@ impl Index {
                     modified_at: *modified_at,
                 })
                 .collect();
-            all_notes.sort_by_key(|b| std::cmp::Reverse(b.modified_at));
+            all_notes.sort_by(|a, b| {
+                b.modified_at
+                    .cmp(&a.modified_at)
+                    .then_with(|| a.filename.cmp(&b.filename))
+            });
             return all_notes;
         }
 
@@ -214,7 +218,11 @@ impl Index {
             ));
         }
 
-        matches.sort_by_key(|b| std::cmp::Reverse(b.3));
+        matches.sort_by(|a, b| {
+            b.3.cmp(&a.3)
+                .then_with(|| b.7.cmp(&a.7))
+                .then_with(|| a.0.cmp(b.0))
+        });
 
         matches
             .into_iter()
@@ -231,8 +239,8 @@ impl Index {
                     modified_at,
                 )| {
                     let mut content_preview = None;
-                    if has_content_match {
-                        if let Some(&first_idx) = content_indices.first() {
+                    if has_content_match
+                        && let Some(&first_idx) = content_indices.first() {
                             let start = first_idx.saturating_sub(15);
                             let end = (first_idx + 40).min(content.len());
 
@@ -255,7 +263,6 @@ impl Index {
                                 suffix
                             ));
                         }
-                    }
 
                     SearchResult {
                         filename: filename.clone(),

@@ -177,8 +177,8 @@ impl Editor<'_> {
     }
 
     pub fn handle_key(&mut self, key: KeyEvent) {
-        if let Some(ref note) = self.current_note {
-            if let Some(ta) = self.textareas.get_mut(note) {
+        if let Some(ref note) = self.current_note
+            && let Some(ta) = self.textareas.get_mut(note) {
                 let modified = if key.modifiers.contains(KeyModifiers::CONTROL)
                     && key.code == KeyCode::Char('z')
                 {
@@ -205,7 +205,6 @@ impl Editor<'_> {
                     self.last_edit_time = Some(Instant::now());
                 }
             }
-        }
     }
 
     pub fn draw(
@@ -233,8 +232,8 @@ impl Editor<'_> {
             .border_style(Style::default().fg(border_color))
             .title(Span::styled(title, Style::default().fg(theme.title)));
 
-        if let Some(ref note) = self.current_note {
-            if let Some(ta) = self.textareas.get(note) {
+        if let Some(ref note) = self.current_note
+            && let Some(ta) = self.textareas.get(note) {
                 let mut ta_clone = if word_wrap {
                     let max_width = (area.width as usize).saturating_sub(2);
                     let wrapped_lines = wrap_text_to_width(ta.lines(), max_width);
@@ -257,7 +256,6 @@ impl Editor<'_> {
                 frame.render_widget(&ta_clone, area);
                 return;
             }
-        }
 
         // Empty state
         let mut empty_ta = TextArea::default();
@@ -268,21 +266,19 @@ impl Editor<'_> {
 
     #[must_use]
     pub fn content(&self) -> String {
-        if let Some(ref note) = self.current_note {
-            if let Some(ta) = self.textareas.get(note) {
+        if let Some(ref note) = self.current_note
+            && let Some(ta) = self.textareas.get(note) {
                 return ta.lines().join("\n");
             }
-        }
         String::new()
     }
 
     #[must_use]
     pub fn has_unsaved_changes(&self) -> bool {
-        if let Some(ref note) = self.current_note {
-            if let Some(orig) = self.original_content.get(note) {
+        if let Some(ref note) = self.current_note
+            && let Some(orig) = self.original_content.get(note) {
                 return orig != &self.content();
             }
-        }
         false
     }
 
@@ -309,8 +305,8 @@ impl Editor<'_> {
     }
 
     pub fn extract_wiki_link_at_cursor(&self) -> Option<String> {
-        if let Some(ref note) = self.current_note {
-            if let Some(ta) = self.textareas.get(note) {
+        if let Some(ref note) = self.current_note
+            && let Some(ta) = self.textareas.get(note) {
                 let (row, col) = ta.cursor();
                 if let Some(line) = ta.lines().get(row) {
                     let mut current_idx = 0;
@@ -329,7 +325,6 @@ impl Editor<'_> {
                     }
                 }
             }
-        }
         None
     }
 }
@@ -344,12 +339,11 @@ mod tests {
         editor.set_content("test.md", "Check out [[Project Ideas]] for details.");
 
         // Place cursor inside the brackets
-        if let Some(ref note) = editor.current_note {
-            if let Some(ta) = editor.textareas.get_mut(note) {
+        if let Some(ref note) = editor.current_note
+            && let Some(ta) = editor.textareas.get_mut(note) {
                 ta.move_cursor(tui_textarea::CursorMove::WordForward);
                 ta.move_cursor(tui_textarea::CursorMove::WordForward);
             }
-        }
 
         let link = editor.extract_wiki_link_at_cursor();
         assert_eq!(link, Some("Project Ideas".to_string()));
@@ -370,11 +364,10 @@ mod tests {
         assert!(!editor.has_unsaved_changes());
 
         // Reload with different content simulates edit
-        if let Some(ref note) = editor.current_note {
-            if let Some(orig) = editor.original_content.get_mut(note) {
+        if let Some(ref note) = editor.current_note
+            && let Some(orig) = editor.original_content.get_mut(note) {
                 *orig = "Different initial".to_string();
             }
-        }
         assert!(editor.has_unsaved_changes());
 
         editor.mark_saved();

@@ -321,33 +321,31 @@ impl App<'_> {
         if key
             .modifiers
             .contains(crossterm::event::KeyModifiers::CONTROL)
-            && key.code == KeyCode::Char('v')
         {
-            return Some(Action::ToggleAbout);
-        }
-
-        if key
-            .modifiers
-            .contains(crossterm::event::KeyModifiers::CONTROL)
-            && key.code == KeyCode::Char('p')
-        {
-            return Some(Action::ToggleSettings);
+            match key.code {
+                KeyCode::Char('v') => return Some(Action::ToggleAbout),
+                KeyCode::Char('p') => return Some(Action::ToggleSettings),
+                KeyCode::Char('q') => return Some(Action::Quit),
+                KeyCode::Char('d') => return Some(Action::DeleteNote),
+                KeyCode::Char('s') => return Some(Action::SaveNote),
+                KeyCode::Char('n') => {
+                    self.search_bar.clear();
+                    self.update_search();
+                    self.focus = Focus::SearchBar;
+                    return Some(Action::SaveNote);
+                }
+                KeyCode::Char('l') => {
+                    self.focus = Focus::SearchBar;
+                    return None;
+                }
+                _ => {}
+            }
         }
 
         match key.code {
-            KeyCode::Char('q')
-                if key
-                    .modifiers
-                    .contains(crossterm::event::KeyModifiers::CONTROL) =>
-            {
-                return Some(Action::Quit);
-            }
-            KeyCode::Char('d')
-                if key
-                    .modifiers
-                    .contains(crossterm::event::KeyModifiers::CONTROL) =>
-            {
-                return Some(Action::DeleteNote);
+            KeyCode::Char('/') if self.focus != Focus::Editor => {
+                self.focus = Focus::SearchBar;
+                return None;
             }
             KeyCode::Tab => {
                 self.focus = self.focus.next();
@@ -423,8 +421,8 @@ impl App<'_> {
                 if key.code == KeyCode::Esc {
                     self.focus = Focus::NoteList;
                     return Some(Action::SaveNote);
-                } else if key.code == KeyCode::Enter {
-                    if let Some(link) = self.editor.extract_wiki_link_at_cursor() {
+                } else if key.code == KeyCode::Enter
+                    && let Some(link) = self.editor.extract_wiki_link_at_cursor() {
                         self.update(Action::SaveNote);
 
                         let filename = format!("{}.md", link.replace(['/', '\\'], "-"));
@@ -439,7 +437,6 @@ impl App<'_> {
 
                         return None;
                     }
-                }
                 self.editor.handle_key(key);
             }
         }
@@ -474,17 +471,18 @@ impl App<'_> {
                 self.should_quit = true;
             }
             Action::Tick => {
-                if let Some(last_input) = self.last_search_input {
-                    if last_input.elapsed().as_millis() >= 50 {
-                        self.update_search();
-                        self.last_search_input = None;
-                    }
+                if let Some(last_input) = self.last_search_input
+                    && last_input.elapsed().as_millis() >= 50
+                {
+                    self.update_search();
+                    self.last_search_input = None;
                 }
 
-                if let Some(last_edit) = self.editor.last_edit_time {
-                    if last_edit.elapsed().as_secs() >= 1 && self.editor.has_unsaved_changes() {
-                        self.update(Action::SaveNote);
-                    }
+                if let Some(last_edit) = self.editor.last_edit_time
+                    && last_edit.elapsed().as_millis() >= u128::from(self.config.auto_save_delay_ms)
+                    && self.editor.has_unsaved_changes()
+                {
+                    self.update(Action::SaveNote);
                 }
             }
             Action::SelectNote(maybe_filename) => {
@@ -506,8 +504,8 @@ impl App<'_> {
                     if selected.is_empty() {
                         // Create new note flow
                         let query = self.search_bar.query();
-                        if !query.is_empty() {
-                            if let Ok(filename) = self.create_note(&query) {
+                        if !query.is_empty()
+                            && let Ok(filename) = self.create_note(&query) {
                                 // Select it explicitly in the list
                                 if let Some(idx) = self
                                     .note_list
@@ -520,7 +518,6 @@ impl App<'_> {
                                 self.focus = Focus::Editor;
                                 self.update(Action::SelectNote(Some(filename)));
                             }
-                        }
                     } else {
                         // Jump to existing note
                         self.focus = Focus::Editor;
@@ -529,30 +526,28 @@ impl App<'_> {
                 }
             }
             Action::SaveNote => {
-                if self.editor.has_unsaved_changes() {
-                    if let Some(ref note) = self.editor.current_note.clone() {
+                if self.editor.has_unsaved_changes()
+                    && let Some(ref note) = self.editor.current_note.clone() {
                         let content = self.editor.content();
                         self.editor.mark_saved();
                         let _ = self.save_note(note, &content);
                     }
-                }
             }
             Action::DeleteNote => {
                 // Delete currently selected note
-                if let Some(selected) = self.note_list.selected_note() {
-                    if !selected.is_empty() {
+                if let Some(selected) = self.note_list.selected_note()
+                    && !selected.is_empty() {
                         let _ = self.delete_note(&selected);
 
                         // Select the next item in the list automatically
                         let new_selected = self.note_list.selected_note();
                         self.update(Action::SelectNote(new_selected));
                     }
-                }
             }
             Action::FileChanged(path) => {
-                if let Some(ext) = path.extension().and_then(|e| e.to_str()) {
-                    if ext == "md" {
-                        if let Some(filename) = path.file_name().and_then(|n| n.to_str()) {
+                if let Some(ext) = path.extension().and_then(|e| e.to_str())
+                    && ext == "md"
+                        && let Some(filename) = path.file_name().and_then(|n| n.to_str()) {
                             let filename = filename.to_string();
                             if let Ok(content) = self.note_store.load_note(&filename) {
                                 let modified_at =
@@ -560,16 +555,13 @@ impl App<'_> {
                                 self.index
                                     .add_note(filename.clone(), content.clone(), modified_at);
 
-                                if Some(&filename) == self.editor.current_note.as_ref() {
-                                    if !self.editor.has_unsaved_changes() {
+                                if Some(&filename) == self.editor.current_note.as_ref()
+                                    && !self.editor.has_unsaved_changes() {
                                         self.editor.set_content(&filename, &content);
                                     }
-                                }
                                 self.update_search();
                             }
                         }
-                    }
-                }
             }
             Action::MouseClick(x, y) => {
                 if self.show_help {
@@ -771,8 +763,8 @@ impl App<'_> {
             spans.push(Span::styled(" [Ctrl+Q] ", key_style));
             spans.push(Span::styled("Quit", text_style));
 
-            if let Some(selected) = self.note_list.selected_note() {
-                if let Some(ts) = self.note_store.get_modified_at(&selected) {
+            if let Some(selected) = self.note_list.selected_note()
+                && let Some(ts) = self.note_store.get_modified_at(&selected) {
                     let date_str = format_timestamp(ts);
                     if !date_str.is_empty() {
                         spans.push(Span::styled(" │", sep_style));
@@ -782,7 +774,6 @@ impl App<'_> {
                         ));
                     }
                 }
-            }
         }
 
         let status_text = Line::from(spans);
@@ -792,11 +783,14 @@ impl App<'_> {
         // Render Help Overlay
         if self.show_help {
             let keybindings_data = [
+                ("/ or Ctrl+L", "Focus search bar"),
+                ("Ctrl+N", "New note / Clear search bar"),
                 ("Tab / Esc", "Switch Focus (Search → List → Editor)"),
                 ("Enter", "Open selected note / Create / Wiki-link"),
                 ("Up / Down", "Navigate note list"),
                 ("PgUp / PgDn", "Scroll note list page by page"),
                 ("Home / End", "Jump to top / bottom of note list"),
+                ("Ctrl+S", "Force save current note"),
                 ("Ctrl+Z", "Undo in editor"),
                 ("Ctrl+Y", "Redo in editor"),
                 ("Ctrl+D", "Delete selected note (moves to trash)"),
@@ -1062,7 +1056,7 @@ mod tests {
     #[test]
     fn test_app_initialization_and_create_note() {
         let (mut app, _temp_dir) = setup_test_app();
-        assert_eq!(app.should_quit, false);
+        assert!(!app.should_quit);
         assert_eq!(app.focus, Focus::SearchBar);
         // NoteStore creates default notes on empty directory
         assert_eq!(app.note_list.items.len(), 2);
@@ -1173,13 +1167,13 @@ mod tests {
     #[test]
     fn test_app_about_overlay_toggle() {
         let (mut app, _temp_dir) = setup_test_app();
-        assert_eq!(app.show_about, false);
+        assert!(!app.show_about);
 
         app.update(Action::ToggleAbout);
-        assert_eq!(app.show_about, true);
+        assert!(app.show_about);
 
         app.update(Action::ToggleAbout);
-        assert_eq!(app.show_about, false);
+        assert!(!app.show_about);
 
         let action = app.handle_key(KeyEvent::new(KeyCode::Char('v'), KeyModifiers::CONTROL));
         assert_eq!(action, Some(Action::ToggleAbout));
@@ -1221,6 +1215,7 @@ mod tests {
     fn test_app_auto_save_on_tick() {
         let (mut app, _temp_dir) = setup_test_app();
         let filename = app.create_note("AutoSave Test").unwrap();
+        app.update(Action::SelectNote(Some(filename.clone())));
         app.editor
             .set_content(&filename, "# AutoSave Test\nExisting content");
 
@@ -1228,11 +1223,10 @@ mod tests {
         app.last_search_input = None;
 
         // Simulate user typing in editor
-        if let Some(ref note) = app.editor.current_note {
-            if let Some(ta) = app.editor.textareas.get_mut(note) {
+        if let Some(ref note) = app.editor.current_note
+            && let Some(ta) = app.editor.textareas.get_mut(note) {
                 ta.insert_str("\nAppended edit.");
             }
-        }
         app.editor.last_edit_time = Some(Instant::now() - std::time::Duration::from_secs(2));
         assert!(app.editor.has_unsaved_changes());
 
@@ -1257,6 +1251,28 @@ mod tests {
         let action = app.handle_key(KeyEvent::new(KeyCode::Esc, KeyModifiers::NONE));
         assert_eq!(action, Some(Action::SaveNote));
         assert_eq!(app.search_bar.query(), "");
+        assert_eq!(app.focus, Focus::SearchBar);
+    }
+
+    #[test]
+    fn test_app_keyboard_shortcuts() {
+        let (mut app, _temp_dir) = setup_test_app();
+
+        // Test Ctrl+S -> SaveNote
+        let action = app.handle_key(KeyEvent::new(KeyCode::Char('s'), KeyModifiers::CONTROL));
+        assert_eq!(action, Some(Action::SaveNote));
+
+        // Test Ctrl+N -> New Note focus
+        app.search_bar.textarea.insert_str("draft note");
+        let action = app.handle_key(KeyEvent::new(KeyCode::Char('n'), KeyModifiers::CONTROL));
+        assert_eq!(action, Some(Action::SaveNote));
+        assert_eq!(app.search_bar.query(), "");
+        assert_eq!(app.focus, Focus::SearchBar);
+
+        // Test Ctrl+L / / -> Focus SearchBar
+        app.focus = Focus::NoteList;
+        let action = app.handle_key(KeyEvent::new(KeyCode::Char('/'), KeyModifiers::NONE));
+        assert_eq!(action, None);
         assert_eq!(app.focus, Focus::SearchBar);
     }
 }

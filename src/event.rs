@@ -35,25 +35,23 @@ impl EventHandler {
         let sender_clone = sender.clone();
 
         let mut watcher = None;
-        if let Some(dir) = watch_dir {
-            if let Ok(mut w) =
+        if let Some(dir) = watch_dir
+            && let Ok(mut w) =
                 notify::recommended_watcher(move |res: notify::Result<NotifyEvent>| {
-                    if let Ok(event) = res {
-                        if event.kind.is_modify()
+                    if let Ok(event) = res
+                        && (event.kind.is_modify()
                             || event.kind.is_create()
-                            || event.kind.is_remove()
+                            || event.kind.is_remove())
                         {
                             for path in event.paths {
                                 let _ = sender_clone.send(Event::FileChanged(path));
                             }
                         }
-                    }
                 })
             {
                 let _ = w.watch(&dir, RecursiveMode::NonRecursive);
                 watcher = Some(w);
             }
-        }
 
         tokio::spawn(async move {
             let mut reader = EventStream::new();

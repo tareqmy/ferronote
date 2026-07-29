@@ -159,8 +159,8 @@ mod tests {
         assert_eq!(config.theme, "default");
         assert_eq!(config.default_sort, "modified_desc");
         assert_eq!(config.auto_purge_days, 30);
-        assert_eq!(config.show_modified_time, true);
-        assert_eq!(config.word_wrap, true);
+        assert!(config.show_modified_time);
+        assert!(config.word_wrap);
         assert_eq!(config.notes_list_position, "top");
     }
 
@@ -176,10 +176,12 @@ mod tests {
     #[test]
     fn test_config_save_and_reload() {
         let temp_dir = tempfile::tempdir().unwrap();
-        let mut config = Config::default();
-        config.notes_dir = temp_dir.path().to_path_buf();
-        config.theme = "nord".to_string();
-        config.tab_size = 2;
+        let config = Config {
+            notes_dir: temp_dir.path().to_path_buf(),
+            theme: "nord".to_string(),
+            tab_size: 2,
+            ..Default::default()
+        };
 
         config.save().unwrap();
 

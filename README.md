@@ -36,8 +36,11 @@ curl -fsSL https://raw.githubusercontent.com/tareqmy/ferronote/master/install.sh
 # Uninstall on Windows (PowerShell)
 $env:UNINSTALL='true'; irm https://raw.githubusercontent.com/tareqmy/ferronote/master/install.ps1 | iex
 
-# Or install via cargo
+# Install via Cargo (crates.io)
 cargo install ferronote
+
+# Or install directly from GitHub via Cargo
+cargo install --git https://github.com/tareqmy/ferronote
 
 # Run interactive TUI
 ./target/release/ferronote

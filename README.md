@@ -21,44 +21,60 @@ Ferronote is a Rust TUI application that brings the elegance and speed of Notati
 - **🗑️ Trash & Recovery** — Soft delete prevents accidental loss with list and restore capabilities.
 - **📦 Import & Export** — Export single notes to HTML or full vaults to `.zip` archives; import `.md`, directories, or `.zip` files seamlessly.
 
-## 🚀 Quick Start & CLI Options
+## 🚀 Installation & Quick Start
+
+### ⚡ Instant Install
+
+#### Linux / macOS (Shell)
+```bash
+curl -fsSL https://raw.githubusercontent.com/tareqmy/ferronote/master/install.sh | sh
+```
+
+#### Windows (PowerShell)
+```powershell
+irm https://raw.githubusercontent.com/tareqmy/ferronote/master/install.ps1 | iex
+```
+
+### 🦀 Package Managers
 
 ```bash
-# Instant install on Linux / macOS (curl to sh)
-curl -fsSL https://raw.githubusercontent.com/tareqmy/ferronote/master/install.sh | sh
-
-# Instant install on Windows (PowerShell)
-irm https://raw.githubusercontent.com/tareqmy/ferronote/master/install.ps1 | iex
-
-# Uninstall on Linux / macOS
-curl -fsSL https://raw.githubusercontent.com/tareqmy/ferronote/master/install.sh | UNINSTALL=true sh
-
-# Uninstall on Windows (PowerShell)
-$env:UNINSTALL='true'; irm https://raw.githubusercontent.com/tareqmy/ferronote/master/install.ps1 | iex
-
-# Install via Cargo (crates.io)
+# Cargo (crates.io)
 cargo install ferronote
 
-# Or install directly from GitHub via Cargo
+# Cargo (direct from git)
 cargo install --git https://github.com/tareqmy/ferronote
 
-# Run interactive TUI
-./target/release/ferronote
+# Homebrew (macOS / Linux)
+brew install tareqmy/tap/ferronote
 
-# Specify a custom notes directory
-./target/release/ferronote --dir ~/notes
-
-# Import notes from a file, directory, or zip archive
-./target/release/ferronote --import ~/backup/notes.zip
-
-# Export current vault to zip archive or single note to HTML
-./target/release/ferronote --export ~/backup/vault.zip
-./target/release/ferronote --export ~/exports/note.html
-
-# List or restore trashed notes
-./target/release/ferronote --trash
-./target/release/ferronote --restore "deleted-note.md"
+# Arch Linux (AUR)
+yay -S ferronote
 ```
+
+### 🗑️ Uninstalling
+
+```bash
+# Linux / macOS
+curl -fsSL https://raw.githubusercontent.com/tareqmy/ferronote/master/install.sh | UNINSTALL=true sh
+
+# Windows (PowerShell)
+$env:UNINSTALL='true'; irm https://raw.githubusercontent.com/tareqmy/ferronote/master/install.ps1 | iex
+```
+
+---
+
+## 💻 CLI Commands & Options
+
+| Command / Flag | Description | Example Usage |
+| :--- | :--- | :--- |
+| `ferronote` | Launch interactive TUI | `ferronote` |
+| `-d`, `--dir <PATH>` | Specify custom notes directory | `ferronote --dir ~/notes` |
+| `-i`, `--import <PATH>` | Import `.md`, `.txt`, directory, or `.zip` archive | `ferronote --import ~/backup/notes.zip` |
+| `-e`, `--export <PATH>` | Export vault to `.zip` or single note to `.html` | `ferronote --export ~/exports/note.html` |
+| `--trash` | List soft-deleted notes in trash | `ferronote --trash` |
+| `--restore <FILENAME>` | Restore a trashed note by filename | `ferronote --restore "deleted-note.md"` |
+| `-h`, `--help` | Display CLI help documentation | `ferronote --help` |
+| `-V`, `--version` | Display version information | `ferronote --version` |
 
 ## ⌨️ Keybindings
 

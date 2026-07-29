@@ -2,6 +2,7 @@
 name = "ferronote"
 version = "1.0.5"
 edition = "2024"
+default-run = "ferronote"
 authors = ["Tareq M Y"]
 description = "A blazing-fast terminal note-taking app inspired by Notational Velocity"
 license = "MIT"

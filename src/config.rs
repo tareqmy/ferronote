@@ -44,6 +44,10 @@ fn default_word_wrap() -> bool {
     true
 }
 
+fn default_notes_list_position() -> String {
+    "top".to_string()
+}
+
 /// User preferences and application configuration persisted in `config.json`.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Config {
@@ -86,6 +90,10 @@ pub struct Config {
     /// Whether word wrap is enabled in the Markdown editor.
     #[serde(default = "default_word_wrap")]
     pub word_wrap: bool,
+
+    /// Note list position relative to editor (`top`, `left`).
+    #[serde(default = "default_notes_list_position")]
+    pub notes_list_position: String,
 }
 
 impl Default for Config {
@@ -101,6 +109,7 @@ impl Default for Config {
             auto_purge_days: default_auto_purge_days(),
             show_modified_time: default_show_modified_time(),
             word_wrap: default_word_wrap(),
+            notes_list_position: default_notes_list_position(),
         }
     }
 }
@@ -152,6 +161,7 @@ mod tests {
         assert_eq!(config.auto_purge_days, 30);
         assert_eq!(config.show_modified_time, true);
         assert_eq!(config.word_wrap, true);
+        assert_eq!(config.notes_list_position, "top");
     }
 
     #[test]

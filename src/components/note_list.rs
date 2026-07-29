@@ -118,7 +118,7 @@ impl NoteList {
         &mut self,
         y: u16,
         list_area: Rect,
-        show_modified_time: bool,
+        _show_modified_time: bool,
     ) -> Option<String> {
         let border_offset = 1;
         if y <= list_area.y || y >= list_area.y + list_area.height.saturating_sub(border_offset) {
@@ -130,11 +130,7 @@ impl NoteList {
 
         let mut current_line = 0;
         for (i, item) in self.items.iter().enumerate().skip(scroll_offset) {
-            let has_sub_text = if show_modified_time && item.modified_at > 0 {
-                true
-            } else {
-                item.content_preview.is_some()
-            };
+            let has_sub_text = item.content_preview.is_some();
 
             let item_lines = if item.is_create_prompt {
                 1
@@ -174,6 +170,8 @@ impl NoteList {
             .border_style(Style::default().fg(border_color))
             .title(" Notes ");
 
+        let available_width = (area.width as usize).saturating_sub(4);
+
         let items: Vec<ListItem> = self
             .items
             .iter()
@@ -197,24 +195,31 @@ impl NoteList {
                     spans.push(Span::styled(ch.to_string(), style));
                 }
 
-                let mut lines = vec![Line::from(spans)];
-
                 let date_str = if show_modified_time {
                     format_timestamp(i.modified_at)
                 } else {
                     String::new()
                 };
+
                 if !date_str.is_empty() {
-                    let sub_text = if let Some(preview) = &i.content_preview {
-                        format!("{} · {}", date_str, preview)
+                    let title_len = i.title.chars().count();
+                    let date_len = date_str.chars().count();
+                    let padding = available_width.saturating_sub(title_len + date_len);
+
+                    if padding > 0 {
+                        spans.push(Span::raw(" ".repeat(padding)));
                     } else {
-                        date_str
-                    };
-                    lines.push(Line::from(Span::styled(
-                        sub_text,
+                        spans.push(Span::raw(" "));
+                    }
+                    spans.push(Span::styled(
+                        date_str,
                         Style::default().fg(Color::DarkGray),
-                    )));
-                } else if let Some(preview) = &i.content_preview {
+                    ));
+                }
+
+                let mut lines = vec![Line::from(spans)];
+
+                if let Some(preview) = &i.content_preview {
                     lines.push(Line::from(Span::styled(
                         preview.clone(),
                         Style::default().fg(Color::DarkGray),

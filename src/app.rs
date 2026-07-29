@@ -235,6 +235,13 @@ impl App<'_> {
             8 => {
                 self.config.word_wrap = !self.config.word_wrap;
             }
+            9 => {
+                self.config.notes_list_position = if self.config.notes_list_position == "top" {
+                    "left".to_string()
+                } else {
+                    "top".to_string()
+                };
+            }
             _ => {}
         }
         let _ = self.config.save();
@@ -446,7 +453,7 @@ impl App<'_> {
                 self.show_settings = !self.show_settings;
             }
             Action::NextSetting => {
-                if self.settings_selected_index < 8 {
+                if self.settings_selected_index < 9 {
                     self.settings_selected_index += 1;
                 }
             }
@@ -648,12 +655,18 @@ impl App<'_> {
         frame.render_widget(title_p, header_layout[0]);
         frame.render_widget(version_p, header_layout[1]);
 
-        let sidebar_width = self.config.sidebar_width_percent.clamp(10, 80);
+        let sidebar_size = self.config.sidebar_width_percent.clamp(10, 80);
+        let direction = if self.config.notes_list_position == "left" {
+            Direction::Horizontal
+        } else {
+            Direction::Vertical
+        };
+
         let content_layout = Layout::default()
-            .direction(Direction::Horizontal)
+            .direction(direction)
             .constraints([
-                Constraint::Percentage(sidebar_width),
-                Constraint::Percentage(100 - sidebar_width),
+                Constraint::Percentage(sidebar_size),
+                Constraint::Percentage(100 - sidebar_size),
             ])
             .split(main_layout[2]);
 
@@ -962,6 +975,14 @@ impl App<'_> {
                         "Disabled".to_string()
                     },
                 ),
+                (
+                    "Note List Position",
+                    if self.config.notes_list_position == "top" {
+                        "Top".to_string()
+                    } else {
+                        "Left".to_string()
+                    },
+                ),
             ];
 
             let mut lines = vec![
@@ -1015,7 +1036,7 @@ impl App<'_> {
 
             let area = frame.area();
             let width = 64;
-            let height = 16;
+            let height = 17;
             let x = (area.width.saturating_sub(width)) / 2;
             let y = (area.height.saturating_sub(height)) / 2;
             let popup_area = ratatui::layout::Rect::new(x, y, width, height);
@@ -1135,6 +1156,15 @@ mod tests {
         let initial_word_wrap = app.config.word_wrap;
         app.update(Action::ChangeSettingOption(true));
         assert_eq!(app.config.word_wrap, !initial_word_wrap);
+
+        // Navigate to Note List Position (option 9)
+        app.update(Action::NextSetting);
+        assert_eq!(app.settings_selected_index, 9);
+        assert_eq!(app.config.notes_list_position, "top");
+        app.update(Action::ChangeSettingOption(true));
+        assert_eq!(app.config.notes_list_position, "left");
+        app.update(Action::ChangeSettingOption(true));
+        assert_eq!(app.config.notes_list_position, "top");
 
         app.update(Action::ToggleSettings);
         assert!(!app.show_settings);

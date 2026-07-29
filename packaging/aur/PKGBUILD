@@ -1,0 +1,29 @@
+# Maintainer: Tareq M Y <tareq.y@gmail.com>
+pkgname=ferronote
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="Blazing-fast terminal note-taking app inspired by Notational Velocity"
+arch=('x86_64' 'aarch64')
+url="https://github.com/tareqmy/ferronote"
+license=('MIT')
+depends=('gcc-libs')
+makedepends=('cargo')
+source=("$pkgname-$pkgver.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz")
+sha256sums=('SKIP')
+
+build() {
+  cd "$pkgname-$pkgver"
+  cargo build --release --locked
+}
+
+check() {
+  cd "$pkgname-$pkgver"
+  cargo test --release --locked
+}
+
+package() {
+  cd "$pkgname-$pkgver"
+  install -Dm755 "target/release/$pkgname" "$pkgdir/usr/bin/$pkgname"
+  install -Dm644 "LICENSE" "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+  install -Dm644 "README.md" "$pkgdir/usr/share/doc/$pkgname/README.md"
+}

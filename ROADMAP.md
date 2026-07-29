@@ -188,7 +188,7 @@
 - [ ] **Packaging**
   - [x] `cargo install ferronote` (publish to crates.io)
   - [x] Homebrew formula
-  - [ ] AUR package
+  - [x] AUR package
   - [ ] Nix flake
   - [ ] Pre-built binaries (GitHub Releases via `cargo-dist`)
 - [ ] **CI/CD**

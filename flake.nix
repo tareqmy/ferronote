@@ -14,7 +14,7 @@
       {
         packages.default = pkgs.rustPlatform.buildRustPackage {
           pname = "ferronote";
-          version = "1.0.3";
+          version = pkgs.lib.strings.trim (builtins.readFile ./.version);
 
           src = ./.;
 

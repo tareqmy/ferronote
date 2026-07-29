@@ -48,7 +48,11 @@ echo "⚡ Installing Ferronote for ${OS} (${ARCH})..."
 if [ -z "$VERSION" ]; then
   TAG="$(curl -s "https://api.github.com/repos/${REPO}/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')"
   if [ -z "$TAG" ]; then
-    TAG="v1.0.3"
+    if [ -f ".version" ]; then
+      TAG="v$(tr -d '\r\n' < .version)"
+    else
+      TAG="v1.0.3"
+    fi
   fi
 else
   TAG="$VERSION"

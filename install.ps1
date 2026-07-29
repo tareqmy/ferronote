@@ -36,7 +36,12 @@ try {
     $ReleaseApi = Invoke-RestMethod -Uri "https://api.github.com/repos/$Repo/releases/latest" -UseBasicParsing
     $Tag = $ReleaseApi.tag_name
 } catch {
-    $Tag = "v1.0.3"
+    if (Test-Path ".version") {
+        $Ver = (Get-Content .version).Trim()
+        $Tag = "v$Ver"
+    } else {
+        $Tag = "v1.0.3"
+    }
 }
 
 $ZipName = "ferronote-windows-amd64.zip"

@@ -112,3 +112,67 @@ jobs:
         run: |
           cargo package --allow-dirty
           cargo publish --token $CARGO_REGISTRY_TOKEN --allow-dirty
+
+  publish-homebrew:
+    name: Publish to Homebrew Tap
+    needs: publish-release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Token Presence
+        id: check-token
+        run: |
+          if [ -z "${{ secrets.TAP_GITHUB_TOKEN }}" ]; then
+            echo "::warning::TAP_GITHUB_TOKEN secret is not set. Skipping Homebrew publication."
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Update Homebrew Formula
+        if: steps.check-token.outputs.skip == 'false'
+        run: |
+          VERSION="${{ github.ref_name }}"
+          VERSION_NUM="${VERSION#v}"
+
+          git clone "https://oauth2:${{ secrets.TAP_GITHUB_TOKEN }}@github.com/tareqmy/homebrew-tap.git" homebrew-tap || {
+            echo "Clone failed. Initializing new local repository..."
+            mkdir homebrew-tap
+            cd homebrew-tap
+            git init
+            git checkout -b main
+            git remote add origin "https://oauth2:${{ secrets.TAP_GITHUB_TOKEN }}@github.com/tareqmy/homebrew-tap.git"
+            cd ..
+          }
+
+          curl -LO "https://github.com/tareqmy/ferronote/archive/refs/tags/${VERSION}.tar.gz"
+          SOURCE_SHA=$(sha256sum "${VERSION}.tar.gz" | cut -d' ' -f1)
+
+          mkdir -p homebrew-tap/Formula
+
+          cat <<EOF > homebrew-tap/Formula/ferronote.rb
+          class Ferronote < Formula
+            desc "Blazing-fast terminal note-taking app inspired by Notational Velocity"
+            homepage "https://github.com/tareqmy/ferronote"
+            url "https://github.com/tareqmy/ferronote/archive/refs/tags/${VERSION}.tar.gz"
+            sha256 "${SOURCE_SHA}"
+            license "MIT"
+
+            depends_on "rust" => :build
+
+            def install
+              system "cargo", "install", *std_cargo_args
+            end
+
+            test do
+              assert_match "ferronote", shell_output("#{bin}/ferronote --version")
+            end
+          end
+          EOF
+
+          cd homebrew-tap
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Formula/ferronote.rb
+          git commit -m "Update ferronote to ${VERSION}" || echo "No changes to commit"
+          git push origin main || git push origin master || echo "No changes to push"
+

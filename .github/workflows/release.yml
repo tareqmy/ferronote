@@ -5,9 +5,12 @@ on:
     tags:
       - "v*"
 
+permissions:
+  contents: write
+
 jobs:
-  release:
-    name: Build & Release Binaries
+  build-artifacts:
+    name: Build (${{ matrix.target }})
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -15,12 +18,15 @@ jobs:
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
             artifact_name: ferronote-linux-amd64.tar.gz
+            binary_name: ferronote
           - os: macos-latest
             target: aarch64-apple-darwin
             artifact_name: ferronote-macos-arm64.tar.gz
+            binary_name: ferronote
           - os: windows-latest
             target: x86_64-pc-windows-msvc
             artifact_name: ferronote-windows-amd64.zip
+            binary_name: ferronote.exe
 
     steps:
       - uses: actions/checkout@v4
@@ -37,17 +43,37 @@ jobs:
         if: matrix.os != 'windows-latest'
         run: |
           cd target/${{ matrix.target }}/release
-          tar -czf ../../../${{ matrix.artifact_name }} ferronote
+          tar -czf ../../../${{ matrix.artifact_name }} ${{ matrix.binary_name }}
 
       - name: Package Binary (Windows)
         if: matrix.os == 'windows-latest'
         run: |
           cd target/${{ matrix.target }}/release
-          7z a ../../../${{ matrix.artifact_name }} ferronote.exe
+          7z a ../../../${{ matrix.artifact_name }} ${{ matrix.binary_name }}
 
-      - name: Upload Release Asset
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: ${{ matrix.artifact_name }}
+
+  publish-release:
+    name: Create GitHub Release
+    needs: build-artifacts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download All Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+          merge-multiple: true
+
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: ${{ matrix.artifact_name }}
+          files: release-assets/*
+          generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

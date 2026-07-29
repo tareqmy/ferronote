@@ -197,7 +197,7 @@
   - [x] Automated release workflow
 - [ ] **Documentation**
   - [x] `man` page
-  - [ ] Website / landing page
+  - [x] Website / landing page
   - [x] `CONTRIBUTING.md`
   - [ ] Architecture decision records (ADRs)
 - [ ] **Community**

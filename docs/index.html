@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ferronote — Notes at the Speed of Thought</title>
+  <meta name="description" content="A blazing-fast terminal note-taking app inspired by Notational Velocity built in Rust.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #0f1419;
+      --bg-card: #151d28;
+      --bg-code: #1c2533;
+      --accent: #5e81ac;
+      --accent-bright: #88c0d0;
+      --text-main: #e5e9f0;
+      --text-muted: #4c566a;
+      --text-sub: #d8dee9;
+      --border: #2e3440;
+      --green: #a3be8c;
+      --yellow: #ebcb8b;
+      --purple: #b48ead;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      line-height: 1.6;
+      padding-bottom: 4rem;
+    }
+
+    header {
+      border-bottom: 1px solid var(--border);
+      padding: 1.5rem 2rem;
+      background: rgba(15, 20, 25, 0.85);
+      backdrop-filter: blur(10px);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .nav-container {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .brand {
+      font-weight: 800;
+      font-size: 1.4rem;
+      color: var(--accent-bright);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .nav-links a {
+      color: var(--text-sub);
+      text-decoration: none;
+      margin-left: 1.5rem;
+      font-size: 0.95rem;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+
+    .nav-links a:hover {
+      color: var(--accent-bright);
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+    }
+
+    .hero {
+      text-align: center;
+      padding: 5rem 1rem 3rem 1rem;
+    }
+
+    .hero h1 {
+      font-size: 3.5rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      margin-bottom: 1rem;
+      background: linear-gradient(135deg, #88c0d0 0%, #b48ead 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero p {
+      font-size: 1.25rem;
+      color: var(--text-sub);
+      max-width: 700px;
+      margin: 0 auto 2.5rem auto;
+    }
+
+    .cta-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      padding: 0.8rem 1.6rem;
+      border-radius: 8px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-bright);
+      transform: translateY(-2px);
+    }
+
+    .btn-secondary {
+      background: var(--bg-card);
+      color: var(--text-main);
+      border: 1px solid var(--border);
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--accent-bright);
+      transform: translateY(-2px);
+    }
+
+    .terminal-preview {
+      margin: 3rem auto;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+    }
+
+    .terminal-header {
+      background: #1e2736;
+      padding: 0.75rem 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
+    .dot-red { background: #bf616a; }
+    .dot-yellow { background: #ebcb8b; }
+    .dot-green { background: #a3be8c; }
+
+    .terminal-body {
+      padding: 1.5rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.9rem;
+      color: var(--text-main);
+      overflow-x: auto;
+      white-space: pre;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+      margin: 4rem 0;
+    }
+
+    .feature-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 2rem;
+      transition: border-color 0.2s;
+    }
+
+    .feature-card:hover {
+      border-color: var(--accent-bright);
+    }
+
+    .feature-card h3 {
+      font-size: 1.25rem;
+      margin-bottom: 0.75rem;
+      color: var(--accent-bright);
+    }
+
+    .feature-card p {
+      color: var(--text-sub);
+      font-size: 0.95rem;
+    }
+
+    .install-section {
+      margin: 4rem 0;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 2.5rem;
+    }
+
+    .install-section h2 {
+      margin-bottom: 1.5rem;
+      font-size: 1.8rem;
+    }
+
+    .code-block {
+      background: var(--bg-code);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.9rem;
+      color: var(--green);
+      margin-bottom: 1rem;
+      overflow-x: auto;
+    }
+
+    footer {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: var(--text-muted);
+      border-top: 1px solid var(--border);
+      margin-top: 5rem;
+      font-size: 0.9rem;
+    }
+
+    footer a { color: var(--accent-bright); text-decoration: none; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="nav-container">
+      <a href="#" class="brand">⚡ Ferronote</a>
+      <div class="nav-links">
+        <a href="#features">Features</a>
+        <a href="#install">Install</a>
+        <a href="#keybindings">Keybindings</a>
+        <a href="https://github.com/tareqmy/ferronote" target="_blank">GitHub</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="hero">
+      <h1>Notes at the speed of thought</h1>
+      <p>A blazing-fast terminal note-taking app inspired by Notational Velocity. Modeless, keyboard-first, plain Markdown notes.</p>
+      <div class="cta-buttons">
+        <a href="#install" class="btn btn-primary">🚀 Quick Start</a>
+        <a href="https://github.com/tareqmy/ferronote" class="btn btn-secondary" target="_blank">⭐ View on GitHub</a>
+      </div>
+    </section>
+
+    <section class="terminal-preview">
+      <div class="terminal-header">
+        <span class="dot dot-red"></span>
+        <span class="dot dot-yellow"></span>
+        <span class="dot dot-green"></span>
+        <span style="margin-left: 0.5rem; font-size: 0.8rem; color: #88c0d0;">ferronote — tui</span>
+      </div>
+      <div class="terminal-body">
+🔍 Search / Create: <span style="color: #ebcb8b;">project ideas</span>
+────────────────────────────────────────────────────────────────────────
+ > <span style="color: #88c0d0;">Project Ideas.md</span>     │ <span style="color: #88c0d0;"># Project Ideas</span>
+   Meeting Notes.md     │ 
+   Todo List.md         │ Check out [[Welcome to Ferronote]] for setup!
+                        │ - #ideas Build Rust TUI apps
+────────────────────────────────────────────────────────────────────────
+[Ctrl+N] New  [Ctrl+S] Save  [Ctrl+D] Del  [Ctrl+P] Settings  [?] Help  [Ctrl+Q] Quit
+      </div>
+    </section>
+
+    <section id="features" class="features-grid">
+      <div class="feature-card">
+        <h3>🔍 Modeless Search & Create</h3>
+        <p>The search bar IS the creation bar. Type to search instantly; if no note matches, press Enter to create it immediately.</p>
+      </div>
+      <div class="feature-card">
+        <h3>⚡ Sub-millisecond Speed</h3>
+        <p>Built in Rust with <code>ratatui</code> and <code>fuzzy-matcher</code> for instant cold startup and sub-millisecond search across thousands of notes.</p>
+      </div>
+      <div class="feature-card">
+        <h3>🔗 Wiki-Links & Tags</h3>
+        <p>Link notes with <code>[[Wiki-Link]]</code> syntax, jump between links with Enter, and filter notes with inline <code>#tag</code> annotations.</p>
+      </div>
+      <div class="feature-card">
+        <h3>🎨 Custom TUI Themes</h3>
+        <p>Switch between pre-built color themes (<code>default</code>, <code>gruvbox</code>, <code>nord</code>, <code>dracula</code>) via the interactive Settings modal (<code>Ctrl+P</code>).</p>
+      </div>
+      <div class="feature-card">
+        <h3>🗑️ Trash & Data Protection</h3>
+        <p>Soft-delete prevents accidental data loss. List and restore deleted notes anytime with CLI <code>--trash</code> and <code>--restore</code> commands.</p>
+      </div>
+      <div class="feature-card">
+        <h3>📦 Multi-Format Import & Export</h3>
+        <p>Import <code>.md</code>, <code>.txt</code>, directories, or <code>.zip</code> archives; export individual notes to HTML or full vaults to <code>.zip</code>.</p>
+      </div>
+    </section>
+
+    <section id="install" class="install-section">
+      <h2>🚀 Installation Options</h2>
+
+      <p style="margin-bottom: 0.5rem; font-weight: 600;">Via Cargo (crates.io)</p>
+      <div class="code-block">cargo install ferronote</div>
+
+      <p style="margin-bottom: 0.5rem; font-weight: 600;">Via Homebrew (macOS / Linux)</p>
+      <div class="code-block">brew install tareqmy/tap/ferronote</div>
+
+      <p style="margin-bottom: 0.5rem; font-weight: 600;">Via Arch Linux (AUR)</p>
+      <div class="code-block">yay -S ferronote</div>
+
+      <p style="margin-bottom: 0.5rem; font-weight: 600;">Via Nix Flake</p>
+      <div class="code-block">nix run github:tareqmy/ferronote</div>
+    </section>
+  </main>
+
+  <footer>
+    <p>Built with ❤️ in Rust by <a href="https://tareqmy.com" target="_blank">Tareq Mohammad Yousuf</a>. Released under the MIT License.</p>
+  </footer>
+</body>
+</html>

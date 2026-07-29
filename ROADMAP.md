@@ -195,11 +195,11 @@
   - [x] GitHub Actions: `cargo fmt --check`, `cargo clippy`, `cargo test`
   - [x] Cross-compilation matrix (Linux, macOS, Windows)
   - [x] Automated release workflow
-- [ ] **Documentation**
+- [x] **Documentation**
   - [x] `man` page
   - [x] Website / landing page
   - [x] `CONTRIBUTING.md`
-  - [ ] Architecture decision records (ADRs)
+  - [x] Architecture decision records (ADRs)
 - [ ] **Community**
   - [ ] Issue templates
   - [ ] PR template

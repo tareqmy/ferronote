@@ -35,7 +35,18 @@ curl -fsSL https://raw.githubusercontent.com/tareqmy/ferronote/master/install.sh
 irm https://raw.githubusercontent.com/tareqmy/ferronote/master/install.ps1 | iex
 ```
 
-### 🦀 Package Managers
+### 🍺 Homebrew (macOS / Linux)
+
+```bash
+# Direct install (recommended)
+brew install tareqmy/tap/ferronote
+
+# Or tap first:
+brew tap tareqmy/tap
+brew install ferronote
+```
+
+### 🦀 Other Package Managers
 
 ```bash
 # Cargo (crates.io)
@@ -43,9 +54,6 @@ cargo install ferronote
 
 # Cargo (direct from git)
 cargo install --git https://github.com/tareqmy/ferronote
-
-# Homebrew (macOS / Linux)
-brew install tareqmy/tap/ferronote
 
 # Arch Linux (AUR)
 yay -S ferronote

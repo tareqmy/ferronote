@@ -2,7 +2,10 @@
 set -e
 
 REPO="tareqmy/ferronote"
-INSTALL_DIR="${INSTALL_DIR:-/usr/local/bin}"
+INSTALL_DIR="${INSTALL_DIR:-$HOME/.local/bin}"
+
+# Ensure install directory exists
+mkdir -p "$INSTALL_DIR"
 
 # Handle uninstall flag or environment variable
 if [ "$1" = "--uninstall" ] || [ "$1" = "-u" ] || [ "$1" = "uninstall" ] || [ "$UNINSTALL" = "true" ]; then
@@ -82,4 +85,18 @@ fi
 chmod +x "$INSTALL_DIR/ferronote"
 
 echo "✨ Ferronote ${TAG} successfully installed to ${INSTALL_DIR}/ferronote (with 'fnt' shortcut)!"
+
+# Check if INSTALL_DIR is in PATH
+case ":$PATH:" in
+  *":$INSTALL_DIR:"*) ;;
+  *)
+    echo ""
+    echo "⚠️  Note: ${INSTALL_DIR} is not in your \$PATH."
+    echo "    To run 'ferronote' or 'fnt' from anywhere, add this to your shell profile (~/.zshrc or ~/.bashrc):"
+    echo "        export PATH=\"${INSTALL_DIR}:\$PATH\""
+    ;;
+esac
+
+echo ""
 echo "Run 'ferronote' or 'fnt' to start taking notes at the speed of thought."
+

@@ -10,6 +10,10 @@ Ferronote can be installed via instant installation scripts, Homebrew, Cargo, or
 ```bash
 curl -fsSL https://raw.githubusercontent.com/tareqmy/ferronote/master/install.sh | sh
 ```
+*Installs binary and `fnt` shortcut to `~/.local/bin` without requiring `sudo` privileges. To install to a custom directory (e.g. `/usr/local/bin`), pass `INSTALL_DIR`:*
+```bash
+INSTALL_DIR=/usr/local/bin curl -fsSL https://raw.githubusercontent.com/tareqmy/ferronote/master/install.sh | sh
+```
 
 ### Windows (PowerShell)
 ```powershell

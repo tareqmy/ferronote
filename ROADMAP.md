@@ -185,12 +185,12 @@
 ## Phase 8 · Distribution & Community (Milestone: "Others can use it")
 **Goal**: Make Ferronote easy to install and contribute to.
 
-- [ ] **Packaging**
+- [x] **Packaging**
   - [x] `cargo install ferronote` (publish to crates.io)
   - [x] Homebrew formula
   - [x] AUR package
   - [x] Nix flake
-  - [ ] Pre-built binaries (GitHub Releases via `cargo-dist`)
+  - [x] Pre-built binaries (GitHub Releases via `cargo-dist`)
 - [ ] **CI/CD**
   - [ ] GitHub Actions: `cargo fmt --check`, `cargo clippy`, `cargo test`
   - [ ] Cross-compilation matrix (Linux, macOS, Windows)

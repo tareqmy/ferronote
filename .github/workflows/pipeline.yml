@@ -110,5 +110,5 @@ jobs:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
         if: env.CARGO_REGISTRY_TOKEN != ''
         run: |
-          cargo package
-          cargo publish --token $CARGO_REGISTRY_TOKEN
+          cargo package --allow-dirty
+          cargo publish --token $CARGO_REGISTRY_TOKEN --allow-dirty

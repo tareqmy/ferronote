@@ -1,7 +1,33 @@
+param (
+    [switch]$Uninstall
+)
+
 $ErrorActionPreference = 'Stop'
 
 $Repo = "tareqmy/ferronote"
 $InstallDir = "$env:LocalAppData\Programs\ferronote"
+
+# Handle uninstall flag or environment variable
+if ($Uninstall -or $env:UNINSTALL -eq 'true') {
+    Write-Host "🗑️ Uninstalling Ferronote..." -ForegroundColor Yellow
+    if (Test-Path $InstallDir) {
+        Remove-Item -Path $InstallDir -Recurse -Force
+        Write-Host "Removed $InstallDir." -ForegroundColor Green
+    } else {
+        Write-Host "Ferronote directory not found at $InstallDir." -ForegroundColor DarkGray
+    }
+
+    # Remove from User PATH
+    $UserPath = [Environment]::GetEnvironmentVariable("PATH", "User")
+    if ($UserPath -like "*$InstallDir*") {
+        $NewPath = ($UserPath -split ';' | Where-Object { $_ -and $_ -ne $InstallDir }) -join ';'
+        [Environment]::SetEnvironmentVariable("PATH", $NewPath, "User")
+        Write-Host "Removed $InstallDir from User PATH." -ForegroundColor Green
+    }
+
+    Write-Host "`n✨ Ferronote successfully uninstalled!" -ForegroundColor Green
+    exit 0
+}
 
 Write-Host "⚡ Installing Ferronote for Windows..." -ForegroundColor Cyan
 

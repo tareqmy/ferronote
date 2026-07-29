@@ -30,6 +30,12 @@ curl -fsSL https://raw.githubusercontent.com/tareqmy/ferronote/master/install.sh
 # Instant install on Windows (PowerShell)
 irm https://raw.githubusercontent.com/tareqmy/ferronote/master/install.ps1 | iex
 
+# Uninstall on Linux / macOS
+curl -fsSL https://raw.githubusercontent.com/tareqmy/ferronote/master/install.sh | UNINSTALL=true sh
+
+# Uninstall on Windows (PowerShell)
+$env:UNINSTALL='true'; irm https://raw.githubusercontent.com/tareqmy/ferronote/master/install.ps1 | iex
+
 # Or install via cargo
 cargo install ferronote
 

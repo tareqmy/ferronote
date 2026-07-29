@@ -4,6 +4,24 @@ set -e
 REPO="tareqmy/ferronote"
 INSTALL_DIR="${INSTALL_DIR:-/usr/local/bin}"
 
+# Handle uninstall flag or environment variable
+if [ "$1" = "--uninstall" ] || [ "$1" = "-u" ] || [ "$1" = "uninstall" ] || [ "$UNINSTALL" = "true" ]; then
+  echo "🗑️ Uninstalling Ferronote from ${INSTALL_DIR}/ferronote..."
+  TARGET_BIN="${INSTALL_DIR}/ferronote"
+  if [ -f "$TARGET_BIN" ]; then
+    if [ -w "$INSTALL_DIR" ]; then
+      rm -f "$TARGET_BIN"
+    else
+      echo "🔒 Sudo permissions required to remove $TARGET_BIN..."
+      sudo rm -f "$TARGET_BIN"
+    fi
+    echo "✨ Ferronote successfully uninstalled!"
+  else
+    echo "⚠️ Ferronote binary not found at ${TARGET_BIN}."
+  fi
+  exit 0
+fi
+
 # Detect OS
 OS="$(uname -s)"
 case "$OS" in

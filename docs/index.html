@@ -319,6 +319,12 @@
       <p style="margin-bottom: 0.5rem; font-weight: 600;">Instant PowerShell Install (Windows)</p>
       <div class="code-block">irm https://raw.githubusercontent.com/tareqmy/ferronote/master/install.ps1 | iex</div>
 
+      <p style="margin-bottom: 0.5rem; font-weight: 600;">Uninstall (Linux / macOS)</p>
+      <div class="code-block">curl -fsSL https://raw.githubusercontent.com/tareqmy/ferronote/master/install.sh | UNINSTALL=true sh</div>
+
+      <p style="margin-bottom: 0.5rem; font-weight: 600;">Uninstall (Windows PowerShell)</p>
+      <div class="code-block">$env:UNINSTALL='true'; irm https://raw.githubusercontent.com/tareqmy/ferronote/master/install.ps1 | iex</div>
+
       <p style="margin-bottom: 0.5rem; font-weight: 600;">Via Cargo (crates.io)</p>
       <div class="code-block">cargo install ferronote</div>
 

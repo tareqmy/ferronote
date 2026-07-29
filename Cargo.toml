@@ -1,6 +1,6 @@
 [package]
 name = "ferronote"
-version = "0.1.0"
+version = "1.0.1"
 edition = "2024"
 authors = ["Tareq M Y"]
 description = "A blazing-fast terminal note-taking app inspired by Notational Velocity"

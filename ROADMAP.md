@@ -192,7 +192,7 @@
   - [x] Nix flake
   - [x] Pre-built binaries (GitHub Releases via `cargo-dist`)
 - [ ] **CI/CD**
-  - [ ] GitHub Actions: `cargo fmt --check`, `cargo clippy`, `cargo test`
+  - [x] GitHub Actions: `cargo fmt --check`, `cargo clippy`, `cargo test`
   - [ ] Cross-compilation matrix (Linux, macOS, Windows)
   - [ ] Automated release workflow
 - [ ] **Documentation**

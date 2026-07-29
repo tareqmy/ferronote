@@ -1,4 +1,4 @@
-name: Release Pipeline
+name: Ferronote Release Pipeline
 
 on:
   push:
@@ -9,8 +9,32 @@ permissions:
   contents: write
 
 jobs:
+  ci-quality-and-tests:
+    name: Code Quality & Test Suite
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust Stable Toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+
+      - name: Cache Rust Dependencies
+        uses: Swatinem/rust-cache@v2
+
+      - name: Check Formatting
+        run: cargo fmt --check
+
+      - name: Run Clippy Linter
+        run: cargo clippy --all-targets --all-features -- -D warnings
+
+      - name: Run Unit & Integration Tests
+        run: cargo test --all-targets --all-features
+
   build-binaries:
     name: Build Binary (${{ matrix.target }})
+    needs: ci-quality-and-tests
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -57,7 +81,7 @@ jobs:
           name: ${{ matrix.artifact_name }}
           path: ${{ matrix.artifact_name }}
 
-  publish-github-release:
+  publish-release:
     name: Create GitHub Release & Crates.io Publish
     needs: build-binaries
     runs-on: ubuntu-latest

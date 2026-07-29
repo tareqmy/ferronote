@@ -178,33 +178,34 @@ impl Editor<'_> {
 
     pub fn handle_key(&mut self, key: KeyEvent) {
         if let Some(ref note) = self.current_note
-            && let Some(ta) = self.textareas.get_mut(note) {
-                let modified = if key.modifiers.contains(KeyModifiers::CONTROL)
-                    && key.code == KeyCode::Char('z')
-                {
-                    ta.undo()
-                } else if key.modifiers.contains(KeyModifiers::CONTROL)
-                    && key.code == KeyCode::Char('y')
-                {
-                    ta.redo()
-                } else if key.code == KeyCode::PageDown {
-                    for _ in 0..10 {
-                        ta.move_cursor(tui_textarea::CursorMove::Down);
-                    }
-                    true
-                } else if key.code == KeyCode::PageUp {
-                    for _ in 0..10 {
-                        ta.move_cursor(tui_textarea::CursorMove::Up);
-                    }
-                    true
-                } else {
-                    ta.input(key)
-                };
-
-                if modified {
-                    self.last_edit_time = Some(Instant::now());
+            && let Some(ta) = self.textareas.get_mut(note)
+        {
+            let modified = if key.modifiers.contains(KeyModifiers::CONTROL)
+                && key.code == KeyCode::Char('z')
+            {
+                ta.undo()
+            } else if key.modifiers.contains(KeyModifiers::CONTROL)
+                && key.code == KeyCode::Char('y')
+            {
+                ta.redo()
+            } else if key.code == KeyCode::PageDown {
+                for _ in 0..10 {
+                    ta.move_cursor(tui_textarea::CursorMove::Down);
                 }
+                true
+            } else if key.code == KeyCode::PageUp {
+                for _ in 0..10 {
+                    ta.move_cursor(tui_textarea::CursorMove::Up);
+                }
+                true
+            } else {
+                ta.input(key)
+            };
+
+            if modified {
+                self.last_edit_time = Some(Instant::now());
             }
+        }
     }
 
     pub fn draw(
@@ -233,29 +234,30 @@ impl Editor<'_> {
             .title(Span::styled(title, Style::default().fg(theme.title)));
 
         if let Some(ref note) = self.current_note
-            && let Some(ta) = self.textareas.get(note) {
-                let mut ta_clone = if word_wrap {
-                    let max_width = (area.width as usize).saturating_sub(2);
-                    let wrapped_lines = wrap_text_to_width(ta.lines(), max_width);
-                    let (orig_row, orig_col) = ta.cursor();
-                    let (w_row, w_col) =
-                        map_cursor_to_wrapped(ta.lines(), orig_row, orig_col, max_width);
-                    let mut wrapped_ta = TextArea::new(wrapped_lines);
-                    wrapped_ta.move_cursor(tui_textarea::CursorMove::Jump(w_row, w_col));
-                    wrapped_ta
-                } else {
-                    ta.clone()
-                };
+            && let Some(ta) = self.textareas.get(note)
+        {
+            let mut ta_clone = if word_wrap {
+                let max_width = (area.width as usize).saturating_sub(2);
+                let wrapped_lines = wrap_text_to_width(ta.lines(), max_width);
+                let (orig_row, orig_col) = ta.cursor();
+                let (w_row, w_col) =
+                    map_cursor_to_wrapped(ta.lines(), orig_row, orig_col, max_width);
+                let mut wrapped_ta = TextArea::new(wrapped_lines);
+                wrapped_ta.move_cursor(tui_textarea::CursorMove::Jump(w_row, w_col));
+                wrapped_ta
+            } else {
+                ta.clone()
+            };
 
-                ta_clone.set_block(block);
-                if is_focused {
-                    ta_clone.set_cursor_style(Style::default().bg(Color::White).fg(Color::Black));
-                } else {
-                    ta_clone.set_cursor_style(Style::default().bg(Color::Reset).fg(Color::Reset));
-                }
-                frame.render_widget(&ta_clone, area);
-                return;
+            ta_clone.set_block(block);
+            if is_focused {
+                ta_clone.set_cursor_style(Style::default().bg(Color::White).fg(Color::Black));
+            } else {
+                ta_clone.set_cursor_style(Style::default().bg(Color::Reset).fg(Color::Reset));
             }
+            frame.render_widget(&ta_clone, area);
+            return;
+        }
 
         // Empty state
         let mut empty_ta = TextArea::default();
@@ -267,18 +269,20 @@ impl Editor<'_> {
     #[must_use]
     pub fn content(&self) -> String {
         if let Some(ref note) = self.current_note
-            && let Some(ta) = self.textareas.get(note) {
-                return ta.lines().join("\n");
-            }
+            && let Some(ta) = self.textareas.get(note)
+        {
+            return ta.lines().join("\n");
+        }
         String::new()
     }
 
     #[must_use]
     pub fn has_unsaved_changes(&self) -> bool {
         if let Some(ref note) = self.current_note
-            && let Some(orig) = self.original_content.get(note) {
-                return orig != &self.content();
-            }
+            && let Some(orig) = self.original_content.get(note)
+        {
+            return orig != &self.content();
+        }
         false
     }
 
@@ -306,25 +310,26 @@ impl Editor<'_> {
 
     pub fn extract_wiki_link_at_cursor(&self) -> Option<String> {
         if let Some(ref note) = self.current_note
-            && let Some(ta) = self.textareas.get(note) {
-                let (row, col) = ta.cursor();
-                if let Some(line) = ta.lines().get(row) {
-                    let mut current_idx = 0;
-                    while let Some(start) = line[current_idx..].find("[[") {
-                        let start_idx = current_idx + start;
-                        if let Some(end) = line[start_idx..].find("]]") {
-                            let end_idx = start_idx + end + 2;
-                            if col >= start_idx && col <= end_idx {
-                                let link = &line[start_idx + 2..end_idx - 2];
-                                return Some(link.to_string());
-                            }
-                            current_idx = end_idx;
-                        } else {
-                            break;
+            && let Some(ta) = self.textareas.get(note)
+        {
+            let (row, col) = ta.cursor();
+            if let Some(line) = ta.lines().get(row) {
+                let mut current_idx = 0;
+                while let Some(start) = line[current_idx..].find("[[") {
+                    let start_idx = current_idx + start;
+                    if let Some(end) = line[start_idx..].find("]]") {
+                        let end_idx = start_idx + end + 2;
+                        if col >= start_idx && col <= end_idx {
+                            let link = &line[start_idx + 2..end_idx - 2];
+                            return Some(link.to_string());
                         }
+                        current_idx = end_idx;
+                    } else {
+                        break;
                     }
                 }
             }
+        }
         None
     }
 }
@@ -340,10 +345,11 @@ mod tests {
 
         // Place cursor inside the brackets
         if let Some(ref note) = editor.current_note
-            && let Some(ta) = editor.textareas.get_mut(note) {
-                ta.move_cursor(tui_textarea::CursorMove::WordForward);
-                ta.move_cursor(tui_textarea::CursorMove::WordForward);
-            }
+            && let Some(ta) = editor.textareas.get_mut(note)
+        {
+            ta.move_cursor(tui_textarea::CursorMove::WordForward);
+            ta.move_cursor(tui_textarea::CursorMove::WordForward);
+        }
 
         let link = editor.extract_wiki_link_at_cursor();
         assert_eq!(link, Some("Project Ideas".to_string()));
@@ -365,9 +371,10 @@ mod tests {
 
         // Reload with different content simulates edit
         if let Some(ref note) = editor.current_note
-            && let Some(orig) = editor.original_content.get_mut(note) {
-                *orig = "Different initial".to_string();
-            }
+            && let Some(orig) = editor.original_content.get_mut(note)
+        {
+            *orig = "Different initial".to_string();
+        }
         assert!(editor.has_unsaved_changes());
 
         editor.mark_saved();

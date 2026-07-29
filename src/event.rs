@@ -42,16 +42,16 @@ impl EventHandler {
                         && (event.kind.is_modify()
                             || event.kind.is_create()
                             || event.kind.is_remove())
-                        {
-                            for path in event.paths {
-                                let _ = sender_clone.send(Event::FileChanged(path));
-                            }
+                    {
+                        for path in event.paths {
+                            let _ = sender_clone.send(Event::FileChanged(path));
                         }
+                    }
                 })
-            {
-                let _ = w.watch(&dir, RecursiveMode::NonRecursive);
-                watcher = Some(w);
-            }
+        {
+            let _ = w.watch(&dir, RecursiveMode::NonRecursive);
+            watcher = Some(w);
+        }
 
         tokio::spawn(async move {
             let mut reader = EventStream::new();

@@ -211,10 +211,7 @@ impl NoteList {
                     } else {
                         spans.push(Span::raw(" "));
                     }
-                    spans.push(Span::styled(
-                        date_str,
-                        Style::default().fg(Color::DarkGray),
-                    ));
+                    spans.push(Span::styled(date_str, Style::default().fg(Color::DarkGray)));
                 }
 
                 let mut lines = vec![Line::from(spans)];

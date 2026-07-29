@@ -239,30 +239,29 @@ impl Index {
                     modified_at,
                 )| {
                     let mut content_preview = None;
-                    if has_content_match
-                        && let Some(&first_idx) = content_indices.first() {
-                            let start = first_idx.saturating_sub(15);
-                            let end = (first_idx + 40).min(content.len());
+                    if has_content_match && let Some(&first_idx) = content_indices.first() {
+                        let start = first_idx.saturating_sub(15);
+                        let end = (first_idx + 40).min(content.len());
 
-                            let mut start_idx = start;
-                            while start_idx > 0 && !content.is_char_boundary(start_idx) {
-                                start_idx -= 1;
-                            }
-                            let mut end_idx = end;
-                            while end_idx < content.len() && !content.is_char_boundary(end_idx) {
-                                end_idx += 1;
-                            }
-
-                            let snippet = &content[start_idx..end_idx];
-                            let prefix = if start_idx > 0 { "..." } else { "" };
-                            let suffix = if end_idx < content.len() { "..." } else { "" };
-                            content_preview = Some(format!(
-                                "{}{}{}",
-                                prefix,
-                                snippet.replace('\n', " "),
-                                suffix
-                            ));
+                        let mut start_idx = start;
+                        while start_idx > 0 && !content.is_char_boundary(start_idx) {
+                            start_idx -= 1;
                         }
+                        let mut end_idx = end;
+                        while end_idx < content.len() && !content.is_char_boundary(end_idx) {
+                            end_idx += 1;
+                        }
+
+                        let snippet = &content[start_idx..end_idx];
+                        let prefix = if start_idx > 0 { "..." } else { "" };
+                        let suffix = if end_idx < content.len() { "..." } else { "" };
+                        content_preview = Some(format!(
+                            "{}{}{}",
+                            prefix,
+                            snippet.replace('\n', " "),
+                            suffix
+                        ));
+                    }
 
                     SearchResult {
                         filename: filename.clone(),

@@ -422,21 +422,22 @@ impl App<'_> {
                     self.focus = Focus::NoteList;
                     return Some(Action::SaveNote);
                 } else if key.code == KeyCode::Enter
-                    && let Some(link) = self.editor.extract_wiki_link_at_cursor() {
-                        self.update(Action::SaveNote);
+                    && let Some(link) = self.editor.extract_wiki_link_at_cursor()
+                {
+                    self.update(Action::SaveNote);
 
-                        let filename = format!("{}.md", link.replace(['/', '\\'], "-"));
-                        if !self.note_store.filenames().contains(&filename) {
-                            let _ = self.create_note(&link);
-                        }
-
-                        let mut ta = tui_textarea::TextArea::default();
-                        ta.insert_str(&link);
-                        self.search_bar.textarea = ta;
-                        self.update_search();
-
-                        return None;
+                    let filename = format!("{}.md", link.replace(['/', '\\'], "-"));
+                    if !self.note_store.filenames().contains(&filename) {
+                        let _ = self.create_note(&link);
                     }
+
+                    let mut ta = tui_textarea::TextArea::default();
+                    ta.insert_str(&link);
+                    self.search_bar.textarea = ta;
+                    self.update_search();
+
+                    return None;
+                }
                 self.editor.handle_key(key);
             }
         }
@@ -505,19 +506,20 @@ impl App<'_> {
                         // Create new note flow
                         let query = self.search_bar.query();
                         if !query.is_empty()
-                            && let Ok(filename) = self.create_note(&query) {
-                                // Select it explicitly in the list
-                                if let Some(idx) = self
-                                    .note_list
-                                    .items
-                                    .iter()
-                                    .position(|r| r.filename == filename)
-                                {
-                                    self.note_list.state.select(Some(idx));
-                                }
-                                self.focus = Focus::Editor;
-                                self.update(Action::SelectNote(Some(filename)));
+                            && let Ok(filename) = self.create_note(&query)
+                        {
+                            // Select it explicitly in the list
+                            if let Some(idx) = self
+                                .note_list
+                                .items
+                                .iter()
+                                .position(|r| r.filename == filename)
+                            {
+                                self.note_list.state.select(Some(idx));
                             }
+                            self.focus = Focus::Editor;
+                            self.update(Action::SelectNote(Some(filename)));
+                        }
                     } else {
                         // Jump to existing note
                         self.focus = Focus::Editor;
@@ -527,41 +529,44 @@ impl App<'_> {
             }
             Action::SaveNote => {
                 if self.editor.has_unsaved_changes()
-                    && let Some(ref note) = self.editor.current_note.clone() {
-                        let content = self.editor.content();
-                        self.editor.mark_saved();
-                        let _ = self.save_note(note, &content);
-                    }
+                    && let Some(ref note) = self.editor.current_note.clone()
+                {
+                    let content = self.editor.content();
+                    self.editor.mark_saved();
+                    let _ = self.save_note(note, &content);
+                }
             }
             Action::DeleteNote => {
                 // Delete currently selected note
                 if let Some(selected) = self.note_list.selected_note()
-                    && !selected.is_empty() {
-                        let _ = self.delete_note(&selected);
+                    && !selected.is_empty()
+                {
+                    let _ = self.delete_note(&selected);
 
-                        // Select the next item in the list automatically
-                        let new_selected = self.note_list.selected_note();
-                        self.update(Action::SelectNote(new_selected));
-                    }
+                    // Select the next item in the list automatically
+                    let new_selected = self.note_list.selected_note();
+                    self.update(Action::SelectNote(new_selected));
+                }
             }
             Action::FileChanged(path) => {
                 if let Some(ext) = path.extension().and_then(|e| e.to_str())
                     && ext == "md"
-                        && let Some(filename) = path.file_name().and_then(|n| n.to_str()) {
-                            let filename = filename.to_string();
-                            if let Ok(content) = self.note_store.load_note(&filename) {
-                                let modified_at =
-                                    self.note_store.get_modified_at(&filename).unwrap_or(0);
-                                self.index
-                                    .add_note(filename.clone(), content.clone(), modified_at);
+                    && let Some(filename) = path.file_name().and_then(|n| n.to_str())
+                {
+                    let filename = filename.to_string();
+                    if let Ok(content) = self.note_store.load_note(&filename) {
+                        let modified_at = self.note_store.get_modified_at(&filename).unwrap_or(0);
+                        self.index
+                            .add_note(filename.clone(), content.clone(), modified_at);
 
-                                if Some(&filename) == self.editor.current_note.as_ref()
-                                    && !self.editor.has_unsaved_changes() {
-                                        self.editor.set_content(&filename, &content);
-                                    }
-                                self.update_search();
-                            }
+                        if Some(&filename) == self.editor.current_note.as_ref()
+                            && !self.editor.has_unsaved_changes()
+                        {
+                            self.editor.set_content(&filename, &content);
                         }
+                        self.update_search();
+                    }
+                }
             }
             Action::MouseClick(x, y) => {
                 if self.show_help {
@@ -764,16 +769,17 @@ impl App<'_> {
             spans.push(Span::styled("Quit", text_style));
 
             if let Some(selected) = self.note_list.selected_note()
-                && let Some(ts) = self.note_store.get_modified_at(&selected) {
-                    let date_str = format_timestamp(ts);
-                    if !date_str.is_empty() {
-                        spans.push(Span::styled(" │", sep_style));
-                        spans.push(Span::styled(
-                            format!(" Modified: {date_str} "),
-                            Style::default().fg(Color::Yellow),
-                        ));
-                    }
+                && let Some(ts) = self.note_store.get_modified_at(&selected)
+            {
+                let date_str = format_timestamp(ts);
+                if !date_str.is_empty() {
+                    spans.push(Span::styled(" │", sep_style));
+                    spans.push(Span::styled(
+                        format!(" Modified: {date_str} "),
+                        Style::default().fg(Color::Yellow),
+                    ));
                 }
+            }
         }
 
         let status_text = Line::from(spans);
@@ -1224,9 +1230,10 @@ mod tests {
 
         // Simulate user typing in editor
         if let Some(ref note) = app.editor.current_note
-            && let Some(ta) = app.editor.textareas.get_mut(note) {
-                ta.insert_str("\nAppended edit.");
-            }
+            && let Some(ta) = app.editor.textareas.get_mut(note)
+        {
+            ta.insert_str("\nAppended edit.");
+        }
         app.editor.last_edit_time = Some(Instant::now() - std::time::Duration::from_secs(2));
         assert!(app.editor.has_unsaved_changes());
 

@@ -169,16 +169,17 @@ Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu 
             let path = entry.path();
 
             if path.is_file()
-                && let Some(ext) = path.extension().and_then(|e| e.to_str()) {
-                    if ext == "md" {
-                        if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
-                            found_files.push(name.to_string());
-                        }
-                    } else if ext == "tmp" && path.to_string_lossy().ends_with(".md.tmp") {
-                        // Orphaned temporary file from a crash
-                        let _ = std::fs::remove_file(&path);
+                && let Some(ext) = path.extension().and_then(|e| e.to_str())
+            {
+                if ext == "md" {
+                    if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
+                        found_files.push(name.to_string());
                     }
+                } else if ext == "tmp" && path.to_string_lossy().ends_with(".md.tmp") {
+                    // Orphaned temporary file from a crash
+                    let _ = std::fs::remove_file(&path);
                 }
+            }
         }
 
         let now = Utc::now();
@@ -297,16 +298,17 @@ Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu 
             let path = entry.path();
             if path.is_file() {
                 let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("");
-                if (ext == "md" || ext == "txt")
-                    && self.import_file(&path).is_ok() {
-                        count += 1;
-                    }
+                if (ext == "md" || ext == "txt") && self.import_file(&path).is_ok() {
+                    count += 1;
+                }
             } else if path.is_dir() {
                 let name = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
-                if !name.starts_with('.') && name != "trash"
-                    && let Ok(c) = self.import_directory(&path) {
-                        count += c;
-                    }
+                if !name.starts_with('.')
+                    && name != "trash"
+                    && let Ok(c) = self.import_directory(&path)
+                {
+                    count += c;
+                }
             }
         }
         Ok(count)

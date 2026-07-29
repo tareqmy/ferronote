@@ -191,10 +191,10 @@
   - [x] AUR package
   - [x] Nix flake
   - [x] Pre-built binaries (GitHub Releases via `cargo-dist`)
-- [ ] **CI/CD**
+- [x] **CI/CD**
   - [x] GitHub Actions: `cargo fmt --check`, `cargo clippy`, `cargo test`
   - [x] Cross-compilation matrix (Linux, macOS, Windows)
-  - [ ] Automated release workflow
+  - [x] Automated release workflow
 - [ ] **Documentation**
   - [ ] `man` page
   - [ ] Website / landing page

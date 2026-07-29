@@ -347,6 +347,8 @@ impl App<'_> {
                 return Some(Action::SaveNote);
             }
             KeyCode::Esc => {
+                self.search_bar.clear();
+                self.update_search();
                 self.focus = Focus::SearchBar;
                 return Some(Action::SaveNote);
             }
@@ -1210,5 +1212,21 @@ mod tests {
 
         let disk_content = app.note_store.load_note(&filename).unwrap();
         assert!(disk_content.contains("Appended edit."));
+    }
+
+    #[test]
+    fn test_app_esc_clears_search_bar() {
+        use ratatui::crossterm::event::KeyModifiers;
+
+        let (mut app, _temp_dir) = setup_test_app();
+        app.search_bar.textarea.insert_str("test query");
+        app.update_search();
+        assert_eq!(app.search_bar.query(), "test query");
+
+        // Simulate pressing Esc key
+        let action = app.handle_key(KeyEvent::new(KeyCode::Esc, KeyModifiers::NONE));
+        assert_eq!(action, Some(Action::SaveNote));
+        assert_eq!(app.search_bar.query(), "");
+        assert_eq!(app.focus, Focus::SearchBar);
     }
 }

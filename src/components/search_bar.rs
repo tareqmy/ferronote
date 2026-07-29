@@ -38,6 +38,11 @@ impl SearchBar<'_> {
         self.textarea.input(key);
     }
 
+    /// Clears the search bar input.
+    pub fn clear(&mut self) {
+        *self = Self::new();
+    }
+
     pub fn draw(
         &self,
         frame: &mut Frame,
@@ -95,5 +100,17 @@ mod tests {
 
         search_bar.handle_key(KeyEvent::new(KeyCode::Backspace, KeyModifiers::NONE));
         assert_eq!(search_bar.query(), "rus");
+    }
+
+    #[test]
+    fn test_search_bar_clear() {
+        let mut search_bar = SearchBar::new();
+        search_bar.handle_key(KeyEvent::new(KeyCode::Char('f'), KeyModifiers::NONE));
+        search_bar.handle_key(KeyEvent::new(KeyCode::Char('o'), KeyModifiers::NONE));
+        search_bar.handle_key(KeyEvent::new(KeyCode::Char('o'), KeyModifiers::NONE));
+        assert_eq!(search_bar.query(), "foo");
+
+        search_bar.clear();
+        assert_eq!(search_bar.query(), "");
     }
 }

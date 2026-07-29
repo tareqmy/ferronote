@@ -24,8 +24,11 @@ Ferronote is a Rust TUI application that brings the elegance and speed of Notati
 ## 🚀 Quick Start & CLI Options
 
 ```bash
-# Instant install via curl to sh
+# Instant install on Linux / macOS (curl to sh)
 curl -fsSL https://raw.githubusercontent.com/tareqmy/ferronote/master/install.sh | sh
+
+# Instant install on Windows (PowerShell)
+irm https://raw.githubusercontent.com/tareqmy/ferronote/master/install.ps1 | iex
 
 # Or install via cargo
 cargo install ferronote

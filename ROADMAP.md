@@ -186,7 +186,7 @@
 **Goal**: Make Ferronote easy to install and contribute to.
 
 - [ ] **Packaging**
-  - [ ] `cargo install ferronote` (publish to crates.io)
+  - [x] `cargo install ferronote` (publish to crates.io)
   - [ ] Homebrew formula
   - [ ] AUR package
   - [ ] Nix flake

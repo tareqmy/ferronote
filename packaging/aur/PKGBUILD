@@ -1,6 +1,6 @@
 # Maintainer: Tareq M Y <tareq.y@gmail.com>
 pkgname=ferronote
-pkgver=1.0.6
+pkgver=1.0.7
 pkgrel=1
 pkgdesc="Blazing-fast terminal note-taking app inspired by Notational Velocity"
 arch=('x86_64' 'aarch64')

@@ -8,16 +8,16 @@ Ferronote can be installed via instant installation scripts, Homebrew, Cargo, or
 
 ### Linux / macOS (Shell)
 ```bash
-curl -fsSL https://raw.githubusercontent.com/tareqmy/ferronote/master/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/tareqmy/ferronote/master/scripts/install.sh | sh
 ```
-*Installs binary and `fnt` shortcut to `~/.local/bin` without requiring `sudo` privileges. To install to a custom directory (e.g. `/usr/local/bin`), pass `INSTALL_DIR`:*
+*Installs binary and `fn` / `fnt` shortcuts to `/usr/local/bin` (or `~/.local/bin` if non-root). To install to a custom directory, pass `INSTALL_DIR`:*
 ```bash
-INSTALL_DIR=/usr/local/bin curl -fsSL https://raw.githubusercontent.com/tareqmy/ferronote/master/install.sh | sh
+INSTALL_DIR=/usr/local/bin curl -fsSL https://raw.githubusercontent.com/tareqmy/ferronote/master/scripts/install.sh | sh
 ```
 
 ### Windows (PowerShell)
 ```powershell
-irm https://raw.githubusercontent.com/tareqmy/ferronote/master/install.ps1 | iex
+irm https://raw.githubusercontent.com/tareqmy/ferronote/master/scripts/install.ps1 | iex
 ```
 
 ---
@@ -62,12 +62,12 @@ To completely remove Ferronote from your system:
 
 ### Linux / macOS
 ```bash
-curl -fsSL https://raw.githubusercontent.com/tareqmy/ferronote/master/install.sh | UNINSTALL=true sh
+curl -fsSL https://raw.githubusercontent.com/tareqmy/ferronote/master/scripts/uninstall.sh | sh
 ```
 
 ### Windows (PowerShell)
 ```powershell
-$env:UNINSTALL='true'; irm https://raw.githubusercontent.com/tareqmy/ferronote/master/install.ps1 | iex
+irm https://raw.githubusercontent.com/tareqmy/ferronote/master/scripts/uninstall.ps1 | iex
 ```
 
 ### Homebrew / Cargo

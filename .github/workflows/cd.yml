@@ -166,6 +166,7 @@ jobs:
             def install
               bin.install "ferronote"
               bin.install_symlink "ferronote" => "fn"
+              bin.install_symlink "ferronote" => "fnt"
             end
 
             test do

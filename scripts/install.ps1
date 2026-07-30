@@ -131,10 +131,12 @@ $dest_path = Join-Path $install_dir "ferronote.exe"
 Write-Info "Installing ferronote.exe to $dest_path..."
 Move-Item -Path $exe_path -Destination $dest_path -Force
 
-# Create fn.exe shortcut copy
+# Create fn.exe and fnt.exe shortcut copies
 $fn_dest_path = Join-Path $install_dir "fn.exe"
-Write-Info "Creating shortcut fn.exe..."
+$fnt_dest_path = Join-Path $install_dir "fnt.exe"
+Write-Info "Creating shortcuts fn.exe and fnt.exe..."
 Copy-Item -Path $dest_path -Destination $fn_dest_path -Force
+Copy-Item -Path $dest_path -Destination $fnt_dest_path -Force
 
 # Clean up
 Remove-Item -Path $tmp_dir -Recurse -Force
@@ -154,4 +156,4 @@ if ($path_parts -notcontains $install_dir) {
 Write-Success "Ferronote has been successfully installed!"
 Write-Host ""
 Write-Host -ForegroundColor Green "To start using Ferronote, please restart your terminal / PowerShell session and run:"
-Write-Host -ForegroundColor Green "    ferronote (or shortcut: fn)"
+Write-Host -ForegroundColor Green "    ferronote (or shortcuts: fn / fnt)"

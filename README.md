@@ -40,7 +40,7 @@ Explore detailed documentation sections:
 
 ```bash
 # Linux / macOS (Shell)
-curl -fsSL https://raw.githubusercontent.com/tareqmy/ferronote/master/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/tareqmy/ferronote/master/scripts/install.sh | sh
 
 # macOS / Linux (Homebrew)
 brew install tareqmy/tap/ferronote
@@ -53,14 +53,14 @@ brew install tareqmy/tap/ferronote
 ## 💻 Quick CLI Reference
 
 ```bash
-# Launch interactive TUI
-fnt
+# Launch interactive TUI (using shortcut fn or fnt)
+fn
 
 # Launch with custom notes directory
-fnt --dir ~/notes
+fn --dir ~/notes
 
 # Import backup vault (.zip) or Markdown file
-fnt --import ~/backup.zip
+fn --import ~/backup.zip
 ```
 
 👉 *For full CLI flags and usage examples, see the [CLI Documentation](docs/cli.md).*

@@ -255,17 +255,18 @@ download_and_extract() {
     mv "${BINARY_PATH}" "${INSTALL_DIR}/ferronote"
     chmod +x "${INSTALL_DIR}/ferronote"
 
-    # Create symlink for shortcut fn
-    info "Creating symlink for shortcut 'fn' in ${INSTALL_DIR}..."
-    rm -f "${INSTALL_DIR}/fn"
+    # Create symlinks for shortcuts fn and fnt
+    info "Creating symlinks for shortcuts 'fn' and 'fnt' in ${INSTALL_DIR}..."
+    rm -f "${INSTALL_DIR}/fn" "${INSTALL_DIR}/fnt"
     ln -s "ferronote" "${INSTALL_DIR}/fn"
+    ln -s "ferronote" "${INSTALL_DIR}/fnt"
 }
 
 # Check Path and notify user
 verify_path() {
     case ":${PATH}:" in
         *:${INSTALL_DIR}:*)
-            success "ferronote is installed and ready in your PATH (shortcut 'fn' also available)!"
+            success "ferronote is installed and ready in your PATH (shortcuts 'fn' and 'fnt' also available)!"
             ;;
         *)
             warn "Installation directory (${INSTALL_DIR}) is not in your PATH."

@@ -36,6 +36,7 @@ pub struct App<'a> {
     pub show_settings: bool,
     pub show_delete_confirmation: bool,
     pub show_more_shortcuts: bool,
+    pub show_notes_list: bool,
     pub settings_selected_index: usize,
     pub config: Config,
     pub search_area: Rect,
@@ -74,6 +75,7 @@ impl App<'_> {
             show_settings: false,
             show_delete_confirmation: false,
             show_more_shortcuts: false,
+            show_notes_list: true,
             settings_selected_index: 0,
             config,
             search_area: Rect::default(),
@@ -346,6 +348,7 @@ impl App<'_> {
                 KeyCode::Char('p') => return Some(Action::ToggleSettings),
                 KeyCode::Char('q') => return Some(Action::Quit),
                 KeyCode::Char('d') => return Some(Action::PromptDeleteNote),
+                KeyCode::Char('b') => return Some(Action::ToggleNotesList),
                 KeyCode::Char('e') => return Some(Action::ToggleMoreShortcuts),
                 KeyCode::Char('s') => return Some(Action::SaveNote),
                 KeyCode::Char('n') => {
@@ -489,6 +492,12 @@ impl App<'_> {
             }
             Action::ToggleMoreShortcuts => {
                 self.show_more_shortcuts = !self.show_more_shortcuts;
+            }
+            Action::ToggleNotesList => {
+                self.show_notes_list = !self.show_notes_list;
+                if !self.show_notes_list && self.focus == Focus::NoteList {
+                    self.focus = Focus::SearchBar;
+                }
             }
             Action::Quit => {
                 self.update(Action::SaveNote);
@@ -899,13 +908,23 @@ impl App<'_> {
             Direction::Vertical
         };
 
-        let content_layout = Layout::default()
-            .direction(direction)
-            .constraints([
-                Constraint::Percentage(sidebar_size),
-                Constraint::Percentage(100 - sidebar_size),
-            ])
-            .split(main_layout[2]);
+        let content_layout = if self.show_notes_list {
+            Layout::default()
+                .direction(direction)
+                .constraints([
+                    Constraint::Percentage(sidebar_size),
+                    Constraint::Percentage(100 - sidebar_size),
+                ])
+                .split(main_layout[2])
+        } else {
+            Layout::default()
+                .direction(direction)
+                .constraints([
+                    Constraint::Length(0),
+                    Constraint::Percentage(100),
+                ])
+                .split(main_layout[2])
+        };
 
         self.search_area = main_layout[1];
         self.list_area = content_layout[0];
@@ -918,14 +937,16 @@ impl App<'_> {
             self.focus == Focus::SearchBar,
             &theme,
         );
-        self.note_list.draw(
-            frame,
-            content_layout[0],
-            self.focus == Focus::NoteList,
-            self.config.show_modified_time,
-            &self.config.default_sort,
-            &theme,
-        );
+        if self.show_notes_list {
+            self.note_list.draw(
+                frame,
+                content_layout[0],
+                self.focus == Focus::NoteList,
+                self.config.show_modified_time,
+                &self.config.default_sort,
+                &theme,
+            );
+        }
         self.editor.draw(
             frame,
             content_layout[1],

@@ -25,6 +25,8 @@ pub enum Action {
     ToggleAbout,
     /// Toggle extra status bar shortcuts.
     ToggleMoreShortcuts,
+    /// Toggle notes list visibility.
+    ToggleNotesList,
     /// Toggle settings modal overlay.
     ToggleSettings,
     /// Move focus to next setting in settings menu.

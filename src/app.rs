@@ -670,7 +670,9 @@ impl App<'_> {
         if let Some(latest) = &self.latest_version {
             header_spans.push(Span::styled(
                 format!("[Update to v{}] ", latest),
-                Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD),
+                Style::default()
+                    .fg(Color::Yellow)
+                    .add_modifier(Modifier::BOLD),
             ));
         }
         header_spans.push(Span::styled(
@@ -678,14 +680,15 @@ impl App<'_> {
             Style::default().fg(Color::DarkGray),
         ));
 
-        let version_p = Paragraph::new(Line::from(header_spans))
-            .alignment(Alignment::Right);
-        
-        if self.latest_version.is_some() {
+        let version_p = Paragraph::new(Line::from(header_spans)).alignment(Alignment::Right);
+
+        if let Some(latest) = &self.latest_version {
             // we will approximate the update area based on the right aligned text length
-            let text_len = self.latest_version.as_ref().unwrap().len() + 15;
+            let text_len = latest.len() + 15;
             let mut area = header_layout[1];
-            area.x = area.x.saturating_add(area.width.saturating_sub(text_len as u16 + 10)); // approximate clickable zone
+            area.x = area
+                .x
+                .saturating_add(area.width.saturating_sub(text_len as u16 + 10)); // approximate clickable zone
             self.update_area = Some(area);
         } else {
             self.update_area = None;
@@ -1091,12 +1094,15 @@ impl App<'_> {
     fn trigger_update(&self) {
         let exe_path = std::env::current_exe().unwrap_or_default();
         let exe_str = exe_path.to_string_lossy();
-        
+
         let mut cmd = if exe_str.contains(".cargo/bin") || exe_str.contains(".cargo\\bin") {
             let mut c = std::process::Command::new("cargo");
             c.args(["install", "--git", "https://github.com/tareqmy/ferronote"]);
             c
-        } else if exe_str.contains("homebrew/bin") || exe_str.contains("linuxbrew") || exe_str.contains("Cellar") {
+        } else if exe_str.contains("homebrew/bin")
+            || exe_str.contains("linuxbrew")
+            || exe_str.contains("Cellar")
+        {
             let mut c = std::process::Command::new("brew");
             c.args(["upgrade", "tareqmy/tap/ferronote"]);
             c

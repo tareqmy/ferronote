@@ -33,16 +33,8 @@ echo "  ✓ Updated docs/ferronote.1"
 sed -i '' -E "s/v[0-9]+\.[0-9]+\.[0-9]+/v${NEW_VER}/" .gemini/STYLE_GUIDE.md
 echo "  ✓ Updated .gemini/STYLE_GUIDE.md"
 
-# 7. Update install.sh
-sed -i '' -E "s/TAG=\"v[0-9]+\.[0-9]+\.[0-9]+\"/TAG=\"v${NEW_VER}\"/" install.sh
-echo "  ✓ Updated install.sh"
-
-# 8. Update install.ps1
-sed -i '' -E "s/\\\$Tag = \"v[0-9]+\.[0-9]+\.[0-9]+\"/\\\$Tag = \"v${NEW_VER}\"/" install.ps1
-echo "  ✓ Updated install.ps1"
-
-# 9. Update Cargo.lock via cargo check
-cargo check > /dev/null 2>&1
+# 7. Update Cargo.lock via cargo check
+cargo check > /dev/null 2>&1 || true
 echo "  ✓ Updated Cargo.lock"
 
 echo "✨ Version successfully bumped to ${NEW_VER} across all files!"

@@ -33,4 +33,8 @@ pub enum Action {
     MouseClick(u16, u16),
     /// Exit the application.
     Quit,
+    /// Background task found a new version.
+    NewVersion(String),
+    /// Trigger the update process.
+    UpdateApp,
 }

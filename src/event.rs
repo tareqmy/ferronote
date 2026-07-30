@@ -18,6 +18,8 @@ pub enum Event {
     Resize(u16, u16),
     /// External filesystem modification event for a note file.
     FileChanged(PathBuf),
+    /// Background check found a new version available.
+    NewVersion(String),
 }
 
 /// Asynchronous event loop listener that polls Crossterm terminal events and file system changes.
@@ -53,6 +55,8 @@ impl EventHandler {
             watcher = Some(w);
         }
 
+        let sender_version = sender.clone();
+        
         tokio::spawn(async move {
             let mut reader = EventStream::new();
             let mut tick_interval = tokio::time::interval(tick_rate);
@@ -84,6 +88,21 @@ impl EventHandler {
                             },
                             _ => {}
                         }
+                    }
+                }
+            }
+        });
+
+        // Spawn version check task
+        tokio::spawn(async move {
+            if let Ok(resp) = reqwest::get("https://raw.githubusercontent.com/tareqmy/ferronote/master/.version").await {
+                if let Ok(text) = resp.text().await {
+                    let version = text.trim().to_string();
+                    let current_version = include_str!("../.version").trim().to_string();
+                    
+                    let parse = |v: &str| v.split('.').filter_map(|s| s.parse::<u32>().ok()).collect::<Vec<_>>();
+                    if !version.is_empty() && parse(&version) > parse(&current_version) {
+                        let _ = sender_version.send(Event::NewVersion(version));
                     }
                 }
             }

@@ -39,6 +39,8 @@ pub struct App<'a> {
     pub search_area: Rect,
     pub list_area: Rect,
     pub editor_area: Rect,
+    pub latest_version: Option<String>,
+    pub update_area: Option<Rect>,
 }
 
 impl App<'_> {
@@ -73,6 +75,8 @@ impl App<'_> {
             search_area: Rect::default(),
             list_area: Rect::default(),
             editor_area: Rect::default(),
+            latest_version: None,
+            update_area: None,
         };
         app.update_search();
         app
@@ -271,6 +275,7 @@ impl App<'_> {
             Event::Mouse(mouse_event) => self.handle_mouse(mouse_event),
             Event::Resize(w, h) => Some(Action::Resize(w, h)),
             Event::FileChanged(path) => Some(Action::FileChanged(path)),
+            Event::NewVersion(version) => Some(Action::NewVersion(version)),
         }
     }
 
@@ -471,6 +476,13 @@ impl App<'_> {
                 self.update(Action::SaveNote);
                 self.should_quit = true;
             }
+            Action::NewVersion(version) => {
+                self.latest_version = Some(version);
+            }
+            Action::UpdateApp => {
+                self.trigger_update();
+                self.should_quit = true;
+            }
             Action::Tick => {
                 if let Some(last_input) = self.last_search_input
                     && last_input.elapsed().as_millis() >= 50
@@ -582,6 +594,17 @@ impl App<'_> {
                     return;
                 }
 
+                if let Some(update_area) = self.update_area {
+                    if x >= update_area.x
+                        && x < update_area.x + update_area.width
+                        && y >= update_area.y
+                        && y < update_area.y + update_area.height
+                    {
+                        self.update(Action::UpdateApp);
+                        return;
+                    }
+                }
+
                 if x >= self.search_area.x
                     && x < self.search_area.x + self.search_area.width
                     && y >= self.search_area.y
@@ -643,11 +666,30 @@ impl App<'_> {
                 .fg(theme.title)
                 .add_modifier(Modifier::BOLD),
         )));
-        let version_p = Paragraph::new(Line::from(Span::styled(
+        let mut header_spans = vec![];
+        if let Some(latest) = &self.latest_version {
+            header_spans.push(Span::styled(
+                format!("[Update to v{}] ", latest),
+                Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD),
+            ));
+        }
+        header_spans.push(Span::styled(
             format!("v{} ", include_str!("../.version").trim()),
             Style::default().fg(Color::DarkGray),
-        )))
-        .alignment(Alignment::Right);
+        ));
+
+        let version_p = Paragraph::new(Line::from(header_spans))
+            .alignment(Alignment::Right);
+        
+        if self.latest_version.is_some() {
+            // we will approximate the update area based on the right aligned text length
+            let text_len = self.latest_version.as_ref().unwrap().len() + 15;
+            let mut area = header_layout[1];
+            area.x = area.x.saturating_add(area.width.saturating_sub(text_len as u16 + 10)); // approximate clickable zone
+            self.update_area = Some(area);
+        } else {
+            self.update_area = None;
+        }
 
         frame.render_widget(title_p, header_layout[0]);
         frame.render_widget(version_p, header_layout[1]);
@@ -1044,6 +1086,37 @@ impl App<'_> {
             frame.render_widget(Clear, popup_area);
             frame.render_widget(settings_block, popup_area);
         }
+    }
+
+    fn trigger_update(&self) {
+        let exe_path = std::env::current_exe().unwrap_or_default();
+        let exe_str = exe_path.to_string_lossy();
+        
+        let mut cmd = if exe_str.contains(".cargo/bin") || exe_str.contains(".cargo\\bin") {
+            let mut c = std::process::Command::new("cargo");
+            c.args(["install", "--git", "https://github.com/tareqmy/ferronote"]);
+            c
+        } else if exe_str.contains("homebrew/bin") || exe_str.contains("linuxbrew") || exe_str.contains("Cellar") {
+            let mut c = std::process::Command::new("brew");
+            c.args(["upgrade", "tareqmy/tap/ferronote"]);
+            c
+        } else if exe_str.contains(".local/bin") || exe_str.contains("AppData\\Local") {
+            if cfg!(windows) {
+                let mut c = std::process::Command::new("powershell");
+                c.args(["-Command", "irm https://raw.githubusercontent.com/tareqmy/ferronote/master/install.ps1 | iex"]);
+                c
+            } else {
+                let mut c = std::process::Command::new("sh");
+                c.arg("-c").arg("curl -fsSL https://raw.githubusercontent.com/tareqmy/ferronote/master/install.sh | sh");
+                c
+            }
+        } else {
+            // Let the package manager handle it
+            return;
+        };
+
+        // Detach the child process so it survives app termination
+        let _ = cmd.spawn();
     }
 }
 

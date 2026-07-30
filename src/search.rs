@@ -141,7 +141,7 @@ impl Index {
 
     /// Searches the index with `query`. Supports `#tag` filtering and fuzzy title/content matching.
     #[must_use]
-    pub fn search(&self, query: &str) -> Vec<SearchResult> {
+    pub fn search(&self, query: &str, sort_order: &str) -> Vec<SearchResult> {
         let is_tag_search = query.starts_with('#');
         let tag_query = if is_tag_search {
             query.trim_start_matches('#').to_lowercase()
@@ -165,9 +165,13 @@ impl Index {
                 })
                 .collect();
             all_notes.sort_by(|a, b| {
-                b.modified_at
-                    .cmp(&a.modified_at)
-                    .then_with(|| a.filename.cmp(&b.filename))
+                let cmp = match sort_order {
+                    "title_asc" => a.title.to_lowercase().cmp(&b.title.to_lowercase()),
+                    "title_desc" => b.title.to_lowercase().cmp(&a.title.to_lowercase()),
+                    "modified_asc" | "created_asc" => a.modified_at.cmp(&b.modified_at),
+                    _ => b.modified_at.cmp(&a.modified_at),
+                };
+                cmp.then_with(|| a.filename.cmp(&b.filename))
             });
             return all_notes;
         }
@@ -220,8 +224,15 @@ impl Index {
 
         matches.sort_by(|a, b| {
             b.3.cmp(&a.3)
-                .then_with(|| b.7.cmp(&a.7))
-                .then_with(|| a.0.cmp(b.0))
+                .then_with(|| {
+                    let cmp = match sort_order {
+                        "title_asc" => a.1.to_lowercase().cmp(&b.1.to_lowercase()),
+                        "title_desc" => b.1.to_lowercase().cmp(&a.1.to_lowercase()),
+                        "modified_asc" | "created_asc" => a.7.cmp(&b.7),
+                        _ => b.7.cmp(&a.7),
+                    };
+                    cmp.then_with(|| a.0.cmp(b.0))
+                })
         });
 
         matches

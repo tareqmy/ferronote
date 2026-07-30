@@ -88,7 +88,7 @@ impl App<'_> {
 
     pub fn update_search(&mut self) {
         let query = self.search_bar.query();
-        let mut results = self.index.search(&query);
+        let mut results = self.index.search(&query, &self.config.default_sort);
 
         if !query.is_empty() {
             let exact_match = results.iter().any(|r| r.title.eq_ignore_ascii_case(&query));

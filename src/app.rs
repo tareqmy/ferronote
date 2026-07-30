@@ -223,6 +223,7 @@ impl App<'_> {
                     (current_idx + options.len() - 1) % options.len()
                 };
                 self.config.default_sort = options[next_idx].to_string();
+                self.update_search();
             }
             6 => {
                 let options = [0, 7, 14, 30, 90];

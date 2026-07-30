@@ -50,12 +50,19 @@ echo "⚡ Installing Ferronote for ${OS} (${ARCH})..."
 
 # Get latest release tag if VERSION is not specified
 if [ -z "$VERSION" ]; then
-  TAG="$(curl -s "https://api.github.com/repos/${REPO}/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')"
+  # Try to get the latest release tag without hitting API rate limits
+  TAG="$(curl -fsSLI -o /dev/null -w "%{url_effective}" "https://github.com/${REPO}/releases/latest" 2>/dev/null | sed 's#.*/tag/##')"
+  
+  # Fallback to API if redirect method fails
+  if [ -z "$TAG" ] || [ "$TAG" = "https://github.com/${REPO}/releases/latest" ]; then
+    TAG="$(curl -s "https://api.github.com/repos/${REPO}/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')"
+  fi
+
   if [ -z "$TAG" ]; then
     if [ -f ".version" ]; then
       TAG="v$(tr -d '\r\n' < .version)"
     else
-      TAG="v1.0.3"
+      TAG="v1.0.8"
     fi
   fi
 else

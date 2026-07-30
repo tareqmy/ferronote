@@ -40,7 +40,7 @@ try {
         $Ver = (Get-Content .version).Trim()
         $Tag = "v$Ver"
     } else {
-        $Tag = "v1.0.8"
+        $Tag = "v1.0.9"
     }
 }
 

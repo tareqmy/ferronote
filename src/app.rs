@@ -212,7 +212,7 @@ impl App<'_> {
                 self.config.theme = options[next_idx].to_string();
             }
             5 => {
-                let options = ["modified_desc", "title_asc", "created_desc"];
+                let options = ["modified_desc", "modified_asc", "title_asc", "title_desc", "created_desc", "created_asc"];
                 let current_idx = options
                     .iter()
                     .position(|&v| v == self.config.default_sort)

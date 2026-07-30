@@ -157,6 +157,7 @@ impl NoteList {
         area: Rect,
         is_focused: bool,
         show_modified_time: bool,
+        sort_order: &str,
         theme: &crate::theme::ThemePalette,
     ) {
         let border_color = if is_focused {
@@ -165,10 +166,21 @@ impl NoteList {
             theme.border_inactive
         };
 
+        let sort_title = match sort_order {
+            "modified_desc" => "Sort: Modified ↓",
+            "modified_asc" => "Sort: Modified ↑",
+            "title_asc" => "Sort: Title A-Z",
+            "title_desc" => "Sort: Title Z-A",
+            "created_desc" => "Sort: Created ↓",
+            "created_asc" => "Sort: Created ↑",
+            _ => sort_order,
+        };
+
         let block = Block::default()
             .borders(Borders::ALL)
             .border_style(Style::default().fg(border_color))
-            .title(" Notes ");
+            .title(" Notes ")
+            .title_top(ratatui::text::Line::from(format!(" {} ", sort_title)).alignment(ratatui::layout::Alignment::Right));
 
         let available_width = (area.width as usize).saturating_sub(4);
 

@@ -922,6 +922,7 @@ impl App<'_> {
             content_layout[0],
             self.focus == Focus::NoteList,
             self.config.show_modified_time,
+            &self.config.default_sort,
             &theme,
         );
         self.editor.draw(

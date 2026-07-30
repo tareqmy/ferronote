@@ -34,6 +34,7 @@ pub struct App<'a> {
     pub show_help: bool,
     pub show_about: bool,
     pub show_settings: bool,
+    pub show_delete_confirmation: bool,
     pub settings_selected_index: usize,
     pub config: Config,
     pub search_area: Rect,
@@ -70,6 +71,7 @@ impl App<'_> {
             show_help: false,
             show_about: false,
             show_settings: false,
+            show_delete_confirmation: false,
             settings_selected_index: 0,
             config,
             search_area: Rect::default(),
@@ -315,6 +317,15 @@ impl App<'_> {
             }
         }
 
+        if self.show_delete_confirmation {
+            match key.code {
+                KeyCode::Char('y') | KeyCode::Char('Y') | KeyCode::Enter => {
+                    return Some(Action::DeleteNote);
+                }
+                _ => return Some(Action::CancelDeleteNote),
+            }
+        }
+
         if self.show_help {
             return Some(Action::ToggleHelp);
         }
@@ -331,7 +342,7 @@ impl App<'_> {
                 KeyCode::Char('v') => return Some(Action::ToggleAbout),
                 KeyCode::Char('p') => return Some(Action::ToggleSettings),
                 KeyCode::Char('q') => return Some(Action::Quit),
-                KeyCode::Char('d') => return Some(Action::DeleteNote),
+                KeyCode::Char('d') => return Some(Action::PromptDeleteNote),
                 KeyCode::Char('s') => return Some(Action::SaveNote),
                 KeyCode::Char('n') => {
                     self.search_bar.clear();
@@ -548,7 +559,18 @@ impl App<'_> {
                     let _ = self.save_note(note, &content);
                 }
             }
+            Action::PromptDeleteNote => {
+                if let Some(selected) = self.note_list.selected_note() {
+                    if !selected.is_empty() {
+                        self.show_delete_confirmation = true;
+                    }
+                }
+            }
+            Action::CancelDeleteNote => {
+                self.show_delete_confirmation = false;
+            }
             Action::DeleteNote => {
+                self.show_delete_confirmation = false;
                 // Delete currently selected note
                 if let Some(selected) = self.note_list.selected_note()
                     && !selected.is_empty()
@@ -829,6 +851,39 @@ impl App<'_> {
         let status_text = Line::from(spans);
         let status_bar = Paragraph::new(status_text);
         frame.render_widget(status_bar, main_layout[3]);
+
+        // Render Delete Confirmation Overlay
+        if self.show_delete_confirmation {
+            let selected_note = self.note_list.selected_note().unwrap_or_default();
+            let confirm_lines = vec![
+                Line::from(vec![
+                    Span::styled(" Are you sure you want to delete ", Style::default().fg(Color::White)),
+                    Span::styled(format!("'{}'", selected_note), Style::default().fg(Color::Red).add_modifier(Modifier::BOLD)),
+                    Span::styled("? ", Style::default().fg(Color::White)),
+                ]),
+                Line::from(""),
+                Line::from(Span::styled(" [Y]es / [N]o ", Style::default().fg(Color::DarkGray))),
+            ];
+
+            let confirm_block = Paragraph::new(confirm_lines)
+                .alignment(Alignment::Center)
+                .block(
+                    Block::default()
+                        .borders(Borders::ALL)
+                        .title(" Confirm Deletion ")
+                        .border_style(Style::default().fg(Color::Red)),
+                );
+
+            let area = frame.area();
+            let width = 60;
+            let height = 5;
+            let x = (area.width.saturating_sub(width)) / 2;
+            let y = (area.height.saturating_sub(height)) / 2;
+            let popup_area = ratatui::layout::Rect::new(x, y, width, height);
+
+            frame.render_widget(Clear, popup_area);
+            frame.render_widget(confirm_block, popup_area);
+        }
 
         // Render Help Overlay
         if self.show_help {

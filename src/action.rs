@@ -15,6 +15,10 @@ pub enum Action {
     SaveNote,
     /// Soft delete selected note.
     DeleteNote,
+    /// Prompt for delete confirmation.
+    PromptDeleteNote,
+    /// Cancel delete confirmation.
+    CancelDeleteNote,
     /// Toggle help modal overlay.
     ToggleHelp,
     /// Toggle about modal overlay.

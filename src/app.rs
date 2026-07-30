@@ -35,6 +35,7 @@ pub struct App<'a> {
     pub show_about: bool,
     pub show_settings: bool,
     pub show_delete_confirmation: bool,
+    pub show_more_shortcuts: bool,
     pub settings_selected_index: usize,
     pub config: Config,
     pub search_area: Rect,
@@ -72,6 +73,7 @@ impl App<'_> {
             show_about: false,
             show_settings: false,
             show_delete_confirmation: false,
+            show_more_shortcuts: false,
             settings_selected_index: 0,
             config,
             search_area: Rect::default(),
@@ -343,6 +345,7 @@ impl App<'_> {
                 KeyCode::Char('p') => return Some(Action::ToggleSettings),
                 KeyCode::Char('q') => return Some(Action::Quit),
                 KeyCode::Char('d') => return Some(Action::PromptDeleteNote),
+                KeyCode::Char('e') => return Some(Action::ToggleMoreShortcuts),
                 KeyCode::Char('s') => return Some(Action::SaveNote),
                 KeyCode::Char('n') => {
                     self.search_bar.clear();
@@ -482,6 +485,9 @@ impl App<'_> {
             }
             Action::ToggleAbout => {
                 self.show_about = !self.show_about;
+            }
+            Action::ToggleMoreShortcuts => {
+                self.show_more_shortcuts = !self.show_more_shortcuts;
             }
             Action::Quit => {
                 self.update(Action::SaveNote);
@@ -665,13 +671,180 @@ impl App<'_> {
     pub fn draw(&mut self, frame: &mut Frame) {
         let theme = crate::theme::ThemePalette::from_name(&self.config.theme);
 
+// Render dynamic status bar (no background color, uses terminal default)
+        let key_style = Style::default()
+            .fg(theme.accent)
+            .add_modifier(Modifier::BOLD);
+        let text_style = Style::default().fg(Color::Reset);
+        let sep_style = Style::default().fg(theme.border_inactive);
+
+        let mut shortcut_groups = vec![
+            vec![
+                Span::styled(" [Tab/Esc] ", key_style),
+                Span::styled("Switch Focus", text_style),
+                Span::styled(" │", sep_style),
+            ],
+        ];
+
+        let mut stats_span = None;
+
+        if self.focus == Focus::Editor {
+            shortcut_groups.push(vec![
+                Span::styled(" [Ctrl+Z] ", key_style),
+                Span::styled("Undo", text_style),
+                Span::styled(" │", sep_style),
+            ]);
+            shortcut_groups.push(vec![
+                Span::styled(" [Ctrl+Y] ", key_style),
+                Span::styled("Redo", text_style),
+                Span::styled(" │", sep_style),
+            ]);
+            shortcut_groups.push(vec![
+                Span::styled(" [Ctrl+Q] ", key_style),
+                Span::styled("Quit", text_style),
+                Span::styled(" │", sep_style),
+            ]);
+
+            let (backlinks_count, modified_str) = if let Some(ref note) = self.editor.current_note {
+                let count = self.index.get_backlinks(note).len();
+                let mod_time = self
+                    .note_store
+                    .get_modified_at(note)
+                    .map(format_timestamp)
+                    .unwrap_or_default();
+                (count, mod_time)
+            } else {
+                (0, String::new())
+            };
+
+            let stats = if modified_str.is_empty() {
+                format!(
+                    " Words: {} │ Chars: {} │ Backlinks: {} ",
+                    self.editor.word_count(),
+                    self.editor.char_count(),
+                    backlinks_count
+                )
+            } else {
+                format!(
+                    " Modified: {} │ Words: {} │ Chars: {} │ Backlinks: {} ",
+                    modified_str,
+                    self.editor.word_count(),
+                    self.editor.char_count(),
+                    backlinks_count
+                )
+            };
+            stats_span = Some(Span::styled(stats, Style::default().fg(Color::Yellow)));
+        } else {
+            shortcut_groups.push(vec![
+                Span::styled(" [?] ", key_style),
+                Span::styled("Help", text_style),
+                Span::styled(" │", sep_style),
+            ]);
+            shortcut_groups.push(vec![
+                Span::styled(" [Ctrl+V] ", key_style),
+                Span::styled("About", text_style),
+                Span::styled(" │", sep_style),
+            ]);
+            shortcut_groups.push(vec![
+                Span::styled(" [Enter] ", key_style),
+                Span::styled("Create/Edit", text_style),
+                Span::styled(" │", sep_style),
+            ]);
+            shortcut_groups.push(vec![
+                Span::styled(" [Ctrl+D] ", key_style),
+                Span::styled("Delete", text_style),
+                Span::styled(" │", sep_style),
+            ]);
+            shortcut_groups.push(vec![
+                Span::styled(" [Ctrl+Q] ", key_style),
+                Span::styled("Quit", text_style),
+                Span::styled(" │", sep_style),
+            ]);
+
+            if let Some(selected) = self.note_list.selected_note()
+                && let Some(ts) = self.note_store.get_modified_at(&selected)
+            {
+                let date_str = format_timestamp(ts);
+                if !date_str.is_empty() {
+                    stats_span = Some(Span::styled(
+                        format!(" Modified: {date_str} "),
+                        Style::default().fg(Color::Yellow),
+                    ));
+                }
+            }
+        }
+
+        let available_width = frame.area().width as usize;
+        let stats_width = stats_span.as_ref().map(|s| s.content.chars().count()).unwrap_or(0);
+        let more_span_width = 16; // Length of " [Ctrl+E] More │"
+
+        let mut primary_spans = Vec::new();
+        let mut secondary_spans = Vec::new();
+        let mut current_width = 0;
+        let mut overflow = false;
+
+        for group in shortcut_groups.clone() {
+            let group_width: usize = group.iter().map(|s| s.content.chars().count()).sum();
+            
+            if !overflow && current_width + group_width + stats_width + more_span_width <= available_width {
+                primary_spans.extend(group);
+                current_width += group_width;
+            } else {
+                overflow = true;
+                secondary_spans.extend(group);
+            }
+        }
+
+        let mut final_spans = Vec::new();
+        let mut status_height = 1;
+
+        if overflow {
+            if self.show_more_shortcuts {
+                for group in shortcut_groups {
+                    final_spans.extend(group);
+                }
+                final_spans.push(Span::styled(" [Ctrl+E] ", key_style));
+                final_spans.push(Span::styled("Back", text_style));
+                final_spans.push(Span::styled(" │", sep_style));
+                
+                let total_len: usize = final_spans.iter().map(|s| s.content.chars().count()).sum();
+                let total_with_stats = total_len + stats_width;
+                status_height = ((total_with_stats as u16 + frame.area().width - 1) / frame.area().width).max(1);
+            } else {
+                final_spans.extend(primary_spans);
+                final_spans.push(Span::styled(" [Ctrl+E] ", key_style));
+                final_spans.push(Span::styled("More", text_style));
+                final_spans.push(Span::styled(" │", sep_style));
+            }
+        } else {
+            for group in shortcut_groups {
+                final_spans.extend(group);
+            }
+        }
+
+        if let Some(last) = final_spans.last() {
+            if last.content == " │" {
+                final_spans.pop();
+            }
+        }
+
+        if stats_span.is_some() && !final_spans.is_empty() {
+            final_spans.push(Span::styled(" │", sep_style));
+        }
+
+        if let Some(stats) = stats_span {
+            final_spans.push(stats);
+        }
+
+        let status_text = Line::from(final_spans);
+
         let main_layout = Layout::default()
             .direction(Direction::Vertical)
             .constraints([
                 Constraint::Length(1), // Header bar (App Title & Version)
                 Constraint::Length(3), // Search bar
                 Constraint::Min(1),    // Main content
-                Constraint::Length(1), // Status bar
+                Constraint::Length(status_height), // Status bar
             ])
             .split(frame.area());
 
@@ -759,97 +932,8 @@ impl App<'_> {
             &theme,
         );
 
-        // Render dynamic status bar (no background color, uses terminal default)
-        let key_style = Style::default()
-            .fg(theme.accent)
-            .add_modifier(Modifier::BOLD);
-        let text_style = Style::default().fg(Color::Reset);
-        let sep_style = Style::default().fg(theme.border_inactive);
-
-        let mut spans = vec![
-            Span::styled(" [Tab/Esc] ", key_style),
-            Span::styled("Switch Focus", text_style),
-            Span::styled(" │", sep_style),
-        ];
-
-        if self.focus == Focus::Editor {
-            spans.push(Span::styled(" [Ctrl+Z] ", key_style));
-            spans.push(Span::styled("Undo", text_style));
-            spans.push(Span::styled(" │", sep_style));
-
-            spans.push(Span::styled(" [Ctrl+Y] ", key_style));
-            spans.push(Span::styled("Redo", text_style));
-            spans.push(Span::styled(" │", sep_style));
-
-            spans.push(Span::styled(" [Ctrl+Q] ", key_style));
-            spans.push(Span::styled("Quit", text_style));
-            spans.push(Span::styled(" │", sep_style));
-
-            let (backlinks_count, modified_str) = if let Some(ref note) = self.editor.current_note {
-                let count = self.index.get_backlinks(note).len();
-                let mod_time = self
-                    .note_store
-                    .get_modified_at(note)
-                    .map(format_timestamp)
-                    .unwrap_or_default();
-                (count, mod_time)
-            } else {
-                (0, String::new())
-            };
-
-            let stats = if modified_str.is_empty() {
-                format!(
-                    " Words: {} │ Chars: {} │ Backlinks: {} ",
-                    self.editor.word_count(),
-                    self.editor.char_count(),
-                    backlinks_count
-                )
-            } else {
-                format!(
-                    " Modified: {} │ Words: {} │ Chars: {} │ Backlinks: {} ",
-                    modified_str,
-                    self.editor.word_count(),
-                    self.editor.char_count(),
-                    backlinks_count
-                )
-            };
-            spans.push(Span::styled(stats, Style::default().fg(Color::Yellow)));
-        } else {
-            spans.push(Span::styled(" [?] ", key_style));
-            spans.push(Span::styled("Help", text_style));
-            spans.push(Span::styled(" │", sep_style));
-
-            spans.push(Span::styled(" [Ctrl+V] ", key_style));
-            spans.push(Span::styled("About", text_style));
-            spans.push(Span::styled(" │", sep_style));
-
-            spans.push(Span::styled(" [Enter] ", key_style));
-            spans.push(Span::styled("Create/Edit", text_style));
-            spans.push(Span::styled(" │", sep_style));
-
-            spans.push(Span::styled(" [Ctrl+D] ", key_style));
-            spans.push(Span::styled("Delete", text_style));
-            spans.push(Span::styled(" │", sep_style));
-
-            spans.push(Span::styled(" [Ctrl+Q] ", key_style));
-            spans.push(Span::styled("Quit", text_style));
-
-            if let Some(selected) = self.note_list.selected_note()
-                && let Some(ts) = self.note_store.get_modified_at(&selected)
-            {
-                let date_str = format_timestamp(ts);
-                if !date_str.is_empty() {
-                    spans.push(Span::styled(" │", sep_style));
-                    spans.push(Span::styled(
-                        format!(" Modified: {date_str} "),
-                        Style::default().fg(Color::Yellow),
-                    ));
-                }
-            }
-        }
-
-        let status_text = Line::from(spans);
-        let status_bar = Paragraph::new(status_text);
+        let status_bar = Paragraph::new(status_text)
+            .wrap(ratatui::widgets::Wrap { trim: false });
         frame.render_widget(status_bar, main_layout[3]);
 
         // Render Delete Confirmation Overlay

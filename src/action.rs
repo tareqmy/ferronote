@@ -23,6 +23,8 @@ pub enum Action {
     ToggleHelp,
     /// Toggle about modal overlay.
     ToggleAbout,
+    /// Toggle extra status bar shortcuts.
+    ToggleMoreShortcuts,
     /// Toggle settings modal overlay.
     ToggleSettings,
     /// Move focus to next setting in settings menu.

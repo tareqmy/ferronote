@@ -98,19 +98,18 @@ impl EventHandler {
             if let Ok(resp) =
                 reqwest::get("https://raw.githubusercontent.com/tareqmy/ferronote/master/.version")
                     .await
+                && let Ok(text) = resp.text().await
             {
-                if let Ok(text) = resp.text().await {
-                    let version = text.trim().to_string();
-                    let current_version = include_str!("../.version").trim().to_string();
+                let version = text.trim().to_string();
+                let current_version = include_str!("../.version").trim().to_string();
 
-                    let parse = |v: &str| {
-                        v.split('.')
-                            .filter_map(|s| s.parse::<u32>().ok())
-                            .collect::<Vec<_>>()
-                    };
-                    if !version.is_empty() && parse(&version) > parse(&current_version) {
-                        let _ = sender_version.send(Event::NewVersion(version));
-                    }
+                let parse = |v: &str| {
+                    v.split('.')
+                        .filter_map(|s| s.parse::<u32>().ok())
+                        .collect::<Vec<_>>()
+                };
+                if !version.is_empty() && parse(&version) > parse(&current_version) {
+                    let _ = sender_version.send(Event::NewVersion(version));
                 }
             }
         });

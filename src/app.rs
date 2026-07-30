@@ -594,15 +594,14 @@ impl App<'_> {
                     return;
                 }
 
-                if let Some(update_area) = self.update_area {
-                    if x >= update_area.x
-                        && x < update_area.x + update_area.width
-                        && y >= update_area.y
-                        && y < update_area.y + update_area.height
-                    {
-                        self.update(Action::UpdateApp);
-                        return;
-                    }
+                if let Some(update_area) = self.update_area
+                    && x >= update_area.x
+                    && x < update_area.x + update_area.width
+                    && y >= update_area.y
+                    && y < update_area.y + update_area.height
+                {
+                    self.update(Action::UpdateApp);
+                    return;
                 }
 
                 if x >= self.search_area.x

@@ -756,6 +756,11 @@ impl App<'_> {
                 Span::styled(" │", sep_style),
             ]);
             shortcut_groups.push(vec![
+                Span::styled(" [Ctrl+B] ", key_style),
+                Span::styled("Toggle List", text_style),
+                Span::styled(" │", sep_style),
+            ]);
+            shortcut_groups.push(vec![
                 Span::styled(" [Enter] ", key_style),
                 Span::styled("Create/Edit", text_style),
                 Span::styled(" │", sep_style),
@@ -1006,6 +1011,7 @@ impl App<'_> {
                 ("Ctrl+Z", "Undo in editor"),
                 ("Ctrl+Y", "Redo in editor"),
                 ("Ctrl+D", "Delete selected note (moves to trash)"),
+                ("Ctrl+B", "Toggle Notes List panel visibility"),
                 ("Ctrl+P", "Toggle Settings Overlay"),
                 ("Ctrl+V", "Toggle About Overlay"),
                 ("?", "Toggle Help Overlay"),

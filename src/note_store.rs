@@ -89,6 +89,7 @@ You don't need a separate "New Note" button!
 - Home / End: Jump to top or bottom of notes list.
 - Ctrl+S: Force save current note.
 - Ctrl+D: Soft delete selected note (moves file to trash).
+- Ctrl+B: Toggle Notes List panel visibility.
 - Ctrl+Z / Ctrl+Y: Undo / Redo inside the editor.
 - Ctrl+P: Toggle Interactive Settings Overlay.
 - Ctrl+V: Toggle About Overlay.

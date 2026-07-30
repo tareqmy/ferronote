@@ -62,7 +62,7 @@ if [ -z "$VERSION" ]; then
     if [ -f ".version" ]; then
       TAG="v$(tr -d '\r\n' < .version)"
     else
-      TAG="v1.1.1"
+      TAG="v1.1.2"
     fi
   fi
 else

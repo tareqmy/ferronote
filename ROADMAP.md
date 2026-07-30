@@ -219,6 +219,14 @@
 - [ ] 🤖 **AI integration** — Optional LLM-powered summarization, tagging, linking
 - [ ] ⚡ **Vim keybindings** — Modal editing mode for vim users
 - [ ] 📊 **Daily notes / Journal mode** — Auto-create daily notes template
+- [ ] 📋 **Paste as new note** — Paste clipboard contents directly as a new note (inspired by NV)
+- [ ] ✏️ **Rename from UI** — Shortcut to easily rename the currently selected note (inspired by NV)
+- [ ] 🔍 **In-note search** — Find next/previous occurrence of text within the editor (inspired by NV)
+- [ ] 🔗 **Open URLs** — Shortcut to open URL under the cursor in the default web browser (inspired by NV)
+- [ ] 📌 **Bookmarks / Pins** — Pin or bookmark frequently used notes (inspired by NV)
+- [ ] 🖨️ **Print support** — Print notes directly from the application (inspired by NV)
+- [ ] 📤 **Export from UI** — Trigger export to HTML/Zip via a UI shortcut (inspired by NV)
+- [ ] ✍️ **Formatting shortcuts** — Keyboard shortcuts for Markdown formatting like Bold, Italic, Indent (inspired by NV)
 
 ---
 

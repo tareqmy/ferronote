@@ -644,7 +644,7 @@ impl App<'_> {
                 .add_modifier(Modifier::BOLD),
         )));
         let version_p = Paragraph::new(Line::from(Span::styled(
-            format!("v{} ", env!("CARGO_PKG_VERSION")),
+            format!("v{} ", include_str!("../.version").trim()),
             Style::default().fg(Color::DarkGray),
         )))
         .alignment(Alignment::Right);
@@ -855,7 +855,7 @@ impl App<'_> {
 
         // Render About Overlay
         if self.show_about {
-            let version = env!("CARGO_PKG_VERSION");
+            let version = include_str!("../.version").trim();
             let about_lines = vec![
                 Line::from(Span::styled(
                     format!(" ℹ️  Ferronote v{version}"),

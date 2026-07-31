@@ -49,6 +49,14 @@ pub enum Action {
     MouseScrollUp(u16, u16),
     /// Mouse wheel scrolled down at position (column, row).
     MouseScrollDown(u16, u16),
+    /// Format current word as bold (**text**).
+    FormatBold,
+    /// Format current word as italic (*text*).
+    FormatItalic,
+    /// Indent current line with spaces.
+    IndentLine,
+    /// Unindent current line (remove leading spaces).
+    UnindentLine,
     /// Exit the application.
     Quit,
     /// Background task found a new version.

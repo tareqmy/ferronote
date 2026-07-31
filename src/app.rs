@@ -790,6 +790,18 @@ impl App<'_> {
                     self.note_list.next();
                 }
             }
+            Action::FormatBold => {
+                self.editor.format_bold();
+            }
+            Action::FormatItalic => {
+                self.editor.format_italic();
+            }
+            Action::IndentLine => {
+                self.editor.indent_line(self.config.tab_size as usize);
+            }
+            Action::UnindentLine => {
+                self.editor.unindent_line(self.config.tab_size as usize);
+            }
             Action::Render | Action::Resize(_, _) => {}
         }
     }

@@ -23,6 +23,8 @@ pub struct Editor<'a> {
     pub last_edit_time: Option<Instant>,
     /// Last saved content per note filename for dirty checking.
     pub original_content: HashMap<String, String>,
+    /// Whether the editor is in active Edit mode (true) or View mode (false).
+    pub is_editing: bool,
 }
 
 impl Default for Editor<'_> {
@@ -147,16 +149,23 @@ impl Editor<'_> {
             current_note: None,
             last_edit_time: None,
             original_content: HashMap::new(),
+            is_editing: false,
         }
+    }
+
+    pub fn toggle_edit_mode(&mut self) {
+        self.is_editing = !self.is_editing;
     }
 
     pub fn set_content(&mut self, title: &str, content: &str) {
         if title.is_empty() {
             self.current_note = None;
+            self.is_editing = false;
             return;
         }
 
         self.current_note = Some(title.to_string());
+        self.is_editing = false;
 
         if !self.textareas.contains_key(title) {
             let lines: Vec<String> = content.lines().map(ToString::to_string).collect();
@@ -180,6 +189,49 @@ impl Editor<'_> {
         if let Some(ref note) = self.current_note
             && let Some(ta) = self.textareas.get_mut(note)
         {
+            if !self.is_editing {
+                match key.code {
+                    KeyCode::Char('e') | KeyCode::Char('i') | KeyCode::Enter => {
+                        self.is_editing = true;
+                    }
+                    KeyCode::PageDown => {
+                        for _ in 0..10 {
+                            ta.move_cursor(tui_textarea::CursorMove::Down);
+                        }
+                    }
+                    KeyCode::PageUp => {
+                        for _ in 0..10 {
+                            ta.move_cursor(tui_textarea::CursorMove::Up);
+                        }
+                    }
+                    KeyCode::Up | KeyCode::Char('k') => {
+                        ta.move_cursor(tui_textarea::CursorMove::Up);
+                    }
+                    KeyCode::Down | KeyCode::Char('j') => {
+                        ta.move_cursor(tui_textarea::CursorMove::Down);
+                    }
+                    KeyCode::Left | KeyCode::Char('h') => {
+                        ta.move_cursor(tui_textarea::CursorMove::Back);
+                    }
+                    KeyCode::Right | KeyCode::Char('l') => {
+                        ta.move_cursor(tui_textarea::CursorMove::Forward);
+                    }
+                    KeyCode::Home => {
+                        ta.move_cursor(tui_textarea::CursorMove::Head);
+                    }
+                    KeyCode::End => {
+                        ta.move_cursor(tui_textarea::CursorMove::End);
+                    }
+                    _ => {}
+                }
+                return;
+            }
+
+            if key.code == KeyCode::Esc {
+                self.is_editing = false;
+                return;
+            }
+
             let modified = if key.modifiers.contains(KeyModifiers::CONTROL)
                 && key.code == KeyCode::Char('z')
             {
@@ -216,8 +268,13 @@ impl Editor<'_> {
         word_wrap: bool,
         theme: &crate::theme::ThemePalette,
     ) {
+        let mode_str = if self.is_editing { " [EDIT] " } else { " [VIEW] " };
         let title = if let Some(ref note) = self.current_note {
-            format!(" {} ", note.strip_suffix(".md").unwrap_or(note))
+            format!(
+                " {}{} ",
+                note.strip_suffix(".md").unwrap_or(note),
+                mode_str
+            )
         } else {
             " Editor ".to_string()
         };
@@ -250,7 +307,7 @@ impl Editor<'_> {
             };
 
             ta_clone.set_block(block);
-            if is_focused {
+            if is_focused && self.is_editing {
                 ta_clone.set_cursor_style(Style::default().bg(Color::White).fg(Color::Black));
             } else {
                 ta_clone.set_cursor_style(Style::default().bg(Color::Reset).fg(Color::Reset));

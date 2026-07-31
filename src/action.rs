@@ -57,6 +57,8 @@ pub enum Action {
     IndentLine,
     /// Unindent current line (remove leading spaces).
     UnindentLine,
+    /// Toggle editor view mode / edit mode.
+    ToggleEditMode,
     /// Exit the application.
     Quit,
     /// Background task found a new version.

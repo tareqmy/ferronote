@@ -517,7 +517,13 @@ impl App<'_> {
             },
             Focus::Editor => {
                 if key.code == KeyCode::Esc {
-                    self.focus = Focus::NoteList;
+                    if self.editor.is_editing {
+                        self.editor.is_editing = false;
+                        return None;
+                    }
+                    self.search_bar.clear();
+                    self.update_search();
+                    self.focus = Focus::SearchBar;
                     return Some(Action::SaveNote);
                 } else if key.code == KeyCode::Enter
                     && let Some(link) = self.editor.extract_wiki_link_at_cursor()
@@ -600,6 +606,9 @@ impl App<'_> {
                 {
                     self.update(Action::SaveNote);
                 }
+            }
+            Action::ToggleEditMode => {
+                self.editor.toggle_edit_mode();
             }
             Action::SelectNote(maybe_filename) => {
                 self.update(Action::SaveNote);
@@ -1621,6 +1630,26 @@ mod tests {
 
         app.update(Action::ToggleHelp);
         assert!(!app.show_help);
+    }
+
+    #[test]
+    fn test_app_editor_view_mode_by_default() {
+        let (mut app, _temp_dir) = setup_test_app();
+        let filename = app.create_note("ViewMode Test").unwrap();
+        app.update(Action::SelectNote(Some(filename)));
+
+        // Must be in View Mode by default
+        assert!(!app.editor.is_editing);
+
+        // Pressing 'e' enters Edit Mode
+        app.editor
+            .handle_key(KeyEvent::new(KeyCode::Char('e'), KeyModifiers::NONE));
+        assert!(app.editor.is_editing);
+
+        // Pressing Esc exits Edit Mode back to View Mode
+        app.editor
+            .handle_key(KeyEvent::new(KeyCode::Esc, KeyModifiers::NONE));
+        assert!(!app.editor.is_editing);
     }
 
     #[test]

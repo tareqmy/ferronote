@@ -75,6 +75,7 @@ fn --import ~/backup.zip
 | `Tab` / `Shift+Tab` | Cycle focus (Search → Note List → Editor) |
 | `Enter` | Open selected note / Create new note / Follow wiki-link |
 | `Ctrl+P` | Toggle Interactive Settings Overlay |
+| `Mouse Drag` | Drag panel divider to resize notes list and content (20%-40%) |
 | `Ctrl+Q` | Quit application |
 
 👉 *For complete shortcuts and overlay controls, view the [Keybindings Reference](docs/keybindings.md).*

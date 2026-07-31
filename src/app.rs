@@ -1084,6 +1084,7 @@ impl App<'_> {
                 ("Ctrl+B", "Toggle Notes List panel visibility"),
                 ("Ctrl+P", "Toggle Settings Overlay"),
                 ("Ctrl+V", "Toggle About Overlay"),
+                ("Mouse Drag", "Resize notes list and content panel"),
                 ("?", "Toggle Help Overlay"),
                 ("Ctrl+Q", "Quit Application"),
             ];
@@ -1126,7 +1127,7 @@ impl App<'_> {
 
             let area = frame.area();
             let width = 70;
-            let height = 18;
+            let height = 19;
             let x = (area.width.saturating_sub(width)) / 2;
             let y = (area.height.saturating_sub(height)) / 2;
             let popup_area = ratatui::layout::Rect::new(x, y, width, height);

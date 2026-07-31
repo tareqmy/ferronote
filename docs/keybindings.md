@@ -21,6 +21,7 @@ Ferronote is built from the ground up for keyboard efficiency.
 | `Ctrl+V` | Toggle About Application Overlay | Global |
 | `?` | Toggle Help Overlay | Global |
 | `Mouse Click` | Focus panel / select note item | Global |
+| `Mouse Drag` | Drag panel divider to resize notes list and content (20%-40%) | Global |
 | `Esc` | Close overlay / Return focus to search bar | Global / Overlay |
 | `Ctrl+Q` | Quit application | Global |
 

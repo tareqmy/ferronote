@@ -28,8 +28,9 @@ Tailor your terminal environment with pre-built theme palettes:
 - `nord`
 - `dracula`
 
-### ⚙️ Interactive Settings Overlay
+### ⚙️ Interactive Settings & Panel Resizing
 Press `Ctrl+P` to open the interactive settings overlay. Modify note directory, theme, auto-save interval, and display options on the fly.
+Drag the panel divider boundary with your mouse to dynamically resize the notes list and content panels (clamped between 20% and 40%, defaulting to the 38% Golden Ratio split).
 
 ### 🗑️ Trash & Recovery
 Deleted notes (`Ctrl+D`) are moved to a soft-delete trash directory, ensuring accidental deletions can be restored easily via CLI (`--restore`).

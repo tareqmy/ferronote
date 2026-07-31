@@ -33,6 +33,14 @@ pub enum Action {
     NextSetting,
     /// Move focus to previous setting in settings menu.
     PrevSetting,
+    /// Move focus to first setting in settings menu (Home).
+    FirstSetting,
+    /// Move focus to last setting in settings menu (End).
+    LastSetting,
+    /// Move focus page up in settings menu (PageUp).
+    PageUpSetting,
+    /// Move focus page down in settings menu (PageDown).
+    PageDownSetting,
     /// Cycle active setting option (`true` for forward, `false` for backward).
     ChangeSettingOption(bool),
     /// File system change detected for file at path.

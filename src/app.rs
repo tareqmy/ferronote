@@ -386,6 +386,10 @@ impl App<'_> {
                 }
                 KeyCode::Up | KeyCode::Char('k') => return Some(Action::PrevSetting),
                 KeyCode::Down | KeyCode::Char('j') => return Some(Action::NextSetting),
+                KeyCode::PageUp => return Some(Action::PageUpSetting),
+                KeyCode::PageDown => return Some(Action::PageDownSetting),
+                KeyCode::Home => return Some(Action::FirstSetting),
+                KeyCode::End => return Some(Action::LastSetting),
                 KeyCode::Left | KeyCode::Char('h') => {
                     return Some(Action::ChangeSettingOption(false));
                 }
@@ -582,6 +586,18 @@ impl App<'_> {
             }
             Action::PrevSetting => {
                 self.settings_selected_index = self.settings_selected_index.saturating_sub(1);
+            }
+            Action::PageUpSetting => {
+                self.settings_selected_index = self.settings_selected_index.saturating_sub(5);
+            }
+            Action::PageDownSetting => {
+                self.settings_selected_index = std::cmp::min(self.settings_selected_index.saturating_add(5), 9);
+            }
+            Action::FirstSetting => {
+                self.settings_selected_index = 0;
+            }
+            Action::LastSetting => {
+                self.settings_selected_index = 9;
             }
             Action::ChangeSettingOption(forward) => {
                 self.cycle_setting(forward);
@@ -1625,6 +1641,23 @@ mod tests {
         assert_eq!(app.config.notes_list_position, expected_next);
         app.update(Action::ChangeSettingOption(true));
         assert_eq!(app.config.notes_list_position, initial_pos);
+
+        // Test FirstSetting / LastSetting (Home / End)
+        app.update(Action::FirstSetting);
+        assert_eq!(app.settings_selected_index, 0);
+        app.update(Action::LastSetting);
+        assert_eq!(app.settings_selected_index, 9);
+
+        // Test PageUp / PageDown
+        app.update(Action::PageUpSetting);
+        assert_eq!(app.settings_selected_index, 4); // 9 - 5 = 4
+        app.update(Action::PageUpSetting);
+        assert_eq!(app.settings_selected_index, 0); // 4 - 5 = 0 (saturates)
+
+        app.update(Action::PageDownSetting);
+        assert_eq!(app.settings_selected_index, 5); // 0 + 5 = 5
+        app.update(Action::PageDownSetting);
+        assert_eq!(app.settings_selected_index, 9); // 5 + 5 = 9 (capped at 9)
 
         app.update(Action::ToggleSettings);
         assert!(!app.show_settings);

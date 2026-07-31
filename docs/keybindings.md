@@ -12,7 +12,8 @@ Ferronote is built from the ground up for keyboard efficiency.
 | `Tab` / `Shift+Tab` | Cycle panel focus (Search → Note List → Editor) | Global |
 | `Enter` | Open selected note / Create new note / Follow wiki-link | Global |
 | `↑` / `↓` | Navigate note list / settings items | List / Overlay |
-| `PageUp` / `PageDown` | Page jump note list | Note List |
+| `PageUp` / `PageDown` | Page jump note list / settings items | List / Overlay |
+| `Home` / `End` | Jump to start/end of note list / settings items | List / Overlay |
 | `Ctrl+S` | Force save current note | Editor |
 | `Ctrl+D` | Delete active note (moves to trash) | Global |
 | `Ctrl+N` | Create new note | Global |

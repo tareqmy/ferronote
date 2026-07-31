@@ -1227,7 +1227,11 @@ impl App<'_> {
 
         // Render Delete Confirmation Overlay
         if self.show_delete_confirmation {
-            let selected_note = self.note_list.selected_note().unwrap_or_default();
+            let mut selected_note = self.note_list.selected_note().unwrap_or_default();
+            if selected_note.chars().count() > 20 {
+                selected_note = format!("{}...", selected_note.chars().take(17).collect::<String>());
+            }
+            
             let confirm_lines = vec![
                 Line::from(vec![
                     Span::styled(" Are you sure you want to delete ", Style::default().fg(Color::White)),

@@ -226,7 +226,6 @@
 - [ ] 📌 **Bookmarks / Pins** — Pin or bookmark frequently used notes (inspired by NV)
 - [ ] 🖨️ **Print support** — Print notes directly from the application (inspired by NV)
 - [ ] 📤 **Export from UI** — Trigger export to HTML/Zip via a UI shortcut (inspired by NV)
-- [ ] ✍️ **Formatting shortcuts** — Keyboard shortcuts for Markdown formatting like Bold, Italic, Indent (inspired by NV)
 
 ---
 

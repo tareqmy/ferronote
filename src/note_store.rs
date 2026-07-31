@@ -47,6 +47,11 @@ impl NoteStore {
         Ok(store)
     }
 
+    /// Gets the absolute path for a note filename.
+    pub fn get_note_path(&self, filename: &str) -> PathBuf {
+        self.notes_dir.join(filename)
+    }
+
     /// Creates or updates the default welcome note with the latest application guide content.
     /// # Errors
     /// Returns an error if saving the note fails.
@@ -91,6 +96,7 @@ You don't need a separate "New Note" button!
 - Ctrl+D: Soft delete selected note (moves file to trash).
 - Ctrl+B: Toggle Notes List panel visibility.
 - Ctrl+Z / Ctrl+Y: Undo / Redo inside the editor.
+- Ctrl+O: Open active note in external advanced editor.
 - Ctrl+P: Toggle Interactive Settings Overlay.
 - Ctrl+V: Toggle About Overlay.
 - ?: Toggle Help Overlay.
@@ -137,6 +143,7 @@ Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu 
 
 ---
 💡 Referencing [[Welcome to Ferronote]]
+💡 Press `Ctrl+O` to open this note in your advanced external editor!
 "#;
         self.save_note(&filename, content)?;
         Ok(filename)

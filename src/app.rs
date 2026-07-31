@@ -305,7 +305,43 @@ impl App<'_> {
             let action = self.handle_event(event);
 
             if let Some(action) = action {
-                self.update(action);
+                if action == Action::OpenExternalEditor {
+                    self.update(Action::SaveNote);
+                    
+                    if let Some(current) = self.editor.current_note.clone() {
+                        // Suspend TUI
+                        crate::tui::Tui::restore()?;
+                        
+                        // Determine editor
+                        let editor_cmd = std::env::var("VISUAL")
+                            .or_else(|_| std::env::var("EDITOR"))
+                            .unwrap_or_else(|_| {
+                                if cfg!(windows) {
+                                    "notepad".to_string()
+                                } else {
+                                    "vi".to_string()
+                                }
+                            });
+                            
+                        let path = self.note_store.get_note_path(&current);
+                        
+                        // Spawn editor
+                        let _ = std::process::Command::new(editor_cmd)
+                            .arg(path)
+                            .spawn()
+                            .and_then(|mut child| child.wait());
+                            
+                        // Restore TUI
+                        tui = crate::tui::Tui::init(self.config.mouse_capture)?;
+                        
+                        // Reload content
+                        if let Ok(content) = self.note_store.load_note(&current) {
+                            self.editor.set_content(&current, &content);
+                        }
+                    }
+                } else {
+                    self.update(action);
+                }
             }
         }
 
@@ -474,6 +510,7 @@ impl App<'_> {
                 KeyCode::Char('b') => return Some(Action::ToggleNotesList),
                 KeyCode::Char('e') => return Some(Action::ToggleMoreShortcuts),
                 KeyCode::Char('s') => return Some(Action::SaveNote),
+                KeyCode::Char('o') => return Some(Action::OpenExternalEditor),
                 KeyCode::Char('n') => {
                     self.search_bar.clear();
                     self.update_search();
@@ -673,6 +710,9 @@ impl App<'_> {
             }
             Action::ToggleEditMode => {
                 self.editor.toggle_edit_mode();
+            }
+            Action::OpenExternalEditor => {
+                // Handled in `App::run`
             }
             Action::SelectNote(maybe_filename) => {
                 self.update(Action::SaveNote);
@@ -930,18 +970,7 @@ impl App<'_> {
                     }
                 }
             }
-            Action::FormatBold => {
-                self.editor.format_bold();
-            }
-            Action::FormatItalic => {
-                self.editor.format_italic();
-            }
-            Action::IndentLine => {
-                self.editor.indent_line(self.config.tab_size as usize);
-            }
-            Action::UnindentLine => {
-                self.editor.unindent_line(self.config.tab_size as usize);
-            }
+
             Action::Render | Action::Resize(_, _) => {}
         }
     }

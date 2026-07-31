@@ -28,6 +28,7 @@ Explore detailed documentation sections:
 
 - **Modeless** — Search and note creation combined into a single bar.
 - **Keyboard-first** — Control every aspect of the app without leaving your keyboard.
+- **External Editor Support** — Press `Ctrl+O` to seamlessly edit any note in your preferred advanced terminal editor (`$VISUAL` or `$EDITOR`).
 - **Plain Text** — Notes stored as standard Markdown files in your directory of choice.
 - **Tag & Backlink Support** — Categorize with `#tag` annotations and link via `[[Note Title]]`.
 - **Custom Themes & Overlays** — Tailor visual aesthetics (`Ctrl+P`) and access help on demand.
@@ -74,6 +75,7 @@ fn --import ~/backup.zip
 | `/` or `Ctrl+L` | Focus search bar |
 | `Tab` / `Shift+Tab` | Cycle focus (Search → Note List → Editor) |
 | `Enter` | Open selected note / Create new note / Follow wiki-link |
+| `Ctrl+O` | Open active note in external editor (`$VISUAL` or `$EDITOR`) |
 | `Ctrl+P` | Toggle Interactive Settings Overlay |
 | `Mouse Drag` | Drag panel divider to resize notes list and content (20%-40%) |
 | `Ctrl+Q` | Quit application |

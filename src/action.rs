@@ -63,20 +63,14 @@ pub enum Action {
     MouseScrollUp(u16, u16),
     /// Mouse wheel scrolled down at position (column, row).
     MouseScrollDown(u16, u16),
-    /// Format current word as bold (**text**).
-    FormatBold,
-    /// Format current word as italic (*text*).
-    FormatItalic,
-    /// Indent current line with spaces.
-    IndentLine,
-    /// Unindent current line (remove leading spaces).
-    UnindentLine,
     /// Toggle editor view mode / edit mode.
     ToggleEditMode,
     /// Exit the application.
     Quit,
     /// Background task found a new version.
     NewVersion(String),
+    /// Open the current note in an external editor.
+    OpenExternalEditor,
     /// Trigger the update process.
     UpdateApp,
 }

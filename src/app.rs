@@ -5,7 +5,9 @@ use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
     text::{Line, Span},
-    widgets::{Block, Borders, Clear, Paragraph},
+    widgets::{
+        Block, Borders, Clear, Paragraph, Scrollbar, ScrollbarOrientation, ScrollbarState,
+    },
 };
 
 use crate::{
@@ -46,6 +48,7 @@ pub struct App<'a> {
     pub latest_version: Option<String>,
     pub update_area: Option<Rect>,
     pub is_resizing_sidebar: bool,
+    pub help_scroll_offset: usize,
 }
 
 impl App<'_> {
@@ -87,6 +90,7 @@ impl App<'_> {
             latest_version: None,
             update_area: None,
             is_resizing_sidebar: false,
+            help_scroll_offset: 0,
         };
         app.update_search();
         app
@@ -301,6 +305,12 @@ impl App<'_> {
             crossterm::event::MouseEventKind::Up(crossterm::event::MouseButton::Left) => {
                 Some(Action::MouseUp(mouse.column, mouse.row))
             }
+            crossterm::event::MouseEventKind::ScrollUp => {
+                Some(Action::MouseScrollUp(mouse.column, mouse.row))
+            }
+            crossterm::event::MouseEventKind::ScrollDown => {
+                Some(Action::MouseScrollDown(mouse.column, mouse.row))
+            }
             _ => None,
         }
     }
@@ -379,7 +389,25 @@ impl App<'_> {
         }
 
         if self.show_help {
-            return Some(Action::ToggleHelp);
+            match key.code {
+                KeyCode::Up | KeyCode::Char('k') => {
+                    self.help_scroll_offset = self.help_scroll_offset.saturating_sub(1);
+                    return None;
+                }
+                KeyCode::Down | KeyCode::Char('j') => {
+                    self.help_scroll_offset = self.help_scroll_offset.saturating_add(1);
+                    return None;
+                }
+                KeyCode::PageUp => {
+                    self.help_scroll_offset = self.help_scroll_offset.saturating_sub(5);
+                    return None;
+                }
+                KeyCode::PageDown => {
+                    self.help_scroll_offset = self.help_scroll_offset.saturating_add(5);
+                    return None;
+                }
+                _ => return Some(Action::ToggleHelp),
+            }
         }
 
         if self.show_about {
@@ -533,6 +561,7 @@ impl App<'_> {
             }
             Action::ToggleHelp => {
                 self.show_help = !self.show_help;
+                self.help_scroll_offset = 0;
             }
             Action::ToggleAbout => {
                 self.show_about = !self.show_about;
@@ -742,6 +771,24 @@ impl App<'_> {
             Action::MouseClick(x, y) => {
                 self.update(Action::MouseDown(x, y));
                 self.update(Action::MouseUp(x, y));
+            }
+            Action::MouseScrollUp(_x, _y) => {
+                if self.show_help {
+                    self.help_scroll_offset = self.help_scroll_offset.saturating_sub(2);
+                    return;
+                }
+                if self.focus == Focus::NoteList {
+                    self.note_list.previous();
+                }
+            }
+            Action::MouseScrollDown(_x, _y) => {
+                if self.show_help {
+                    self.help_scroll_offset = self.help_scroll_offset.saturating_add(2);
+                    return;
+                }
+                if self.focus == Focus::NoteList {
+                    self.note_list.next();
+                }
             }
             Action::Render | Action::Resize(_, _) => {}
         }
@@ -1114,26 +1161,50 @@ impl App<'_> {
 
             lines.push(Line::from(""));
             lines.push(Line::from(Span::styled(
-                " [Press any key or Esc to close]",
+                " [Press Esc or ? to close, ↑/↓ or Mouse Wheel to scroll]",
                 Style::default().fg(Color::DarkGray),
             )));
 
-            let help_block = Paragraph::new(lines).block(
-                Block::default()
-                    .borders(Borders::ALL)
-                    .title(" Help (?) ")
-                    .border_style(Style::default().fg(Color::Yellow)),
-            );
+            let total_lines = lines.len();
 
             let area = frame.area();
-            let width = 70;
-            let height = 19;
+            let width = 70.min(area.width.saturating_sub(2));
+            let height = (total_lines as u16 + 2).min(area.height.saturating_sub(2));
             let x = (area.width.saturating_sub(width)) / 2;
             let y = (area.height.saturating_sub(height)) / 2;
             let popup_area = ratatui::layout::Rect::new(x, y, width, height);
 
+            let inner_height = popup_area.height.saturating_sub(2) as usize;
+            let max_scroll = total_lines.saturating_sub(inner_height);
+            self.help_scroll_offset = self.help_scroll_offset.min(max_scroll);
+
+            let help_block = Paragraph::new(lines)
+                .scroll((self.help_scroll_offset as u16, 0))
+                .block(
+                    Block::default()
+                        .borders(Borders::ALL)
+                        .title(" Help (?) ")
+                        .border_style(Style::default().fg(Color::Yellow)),
+                );
+
             frame.render_widget(Clear, popup_area);
             frame.render_widget(help_block, popup_area);
+
+            if max_scroll > 0 {
+                let scrollbar = Scrollbar::new(ScrollbarOrientation::VerticalRight)
+                    .begin_symbol(Some("▲"))
+                    .end_symbol(Some("▼"));
+                let mut scrollbar_state =
+                    ScrollbarState::new(max_scroll).position(self.help_scroll_offset);
+                frame.render_stateful_widget(
+                    scrollbar,
+                    popup_area.inner(ratatui::layout::Margin {
+                        vertical: 1,
+                        horizontal: 0,
+                    }),
+                    &mut scrollbar_state,
+                );
+            }
         }
 
         // Render About Overlay
@@ -1538,6 +1609,31 @@ mod tests {
 
         app.update(Action::ToggleHelp);
         assert!(!app.show_help);
+    }
+
+    #[test]
+    fn test_app_help_overlay_mouse_scroll() {
+        let (mut app, _temp_dir) = setup_test_app();
+        app.update(Action::ToggleHelp);
+        assert!(app.show_help);
+        assert_eq!(app.help_scroll_offset, 0);
+
+        // Scroll down with mouse wheel
+        app.update(Action::MouseScrollDown(35, 10));
+        assert_eq!(app.help_scroll_offset, 2);
+
+        // Scroll down again
+        app.update(Action::MouseScrollDown(35, 10));
+        assert_eq!(app.help_scroll_offset, 4);
+
+        // Scroll up with mouse wheel
+        app.update(Action::MouseScrollUp(35, 10));
+        assert_eq!(app.help_scroll_offset, 2);
+
+        // Closing help overlay resets scroll offset
+        app.update(Action::ToggleHelp);
+        assert!(!app.show_help);
+        assert_eq!(app.help_scroll_offset, 0);
     }
 
     #[test]

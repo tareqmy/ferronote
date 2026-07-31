@@ -37,7 +37,7 @@ fn default_auto_purge_days() -> u32 {
 }
 
 fn default_show_modified_time() -> bool {
-    true
+    false
 }
 
 fn default_word_wrap() -> bool {
@@ -159,7 +159,7 @@ mod tests {
         assert_eq!(config.theme, "default");
         assert_eq!(config.default_sort, "modified_desc");
         assert_eq!(config.auto_purge_days, 30);
-        assert!(config.show_modified_time);
+        assert!(!config.show_modified_time);
         assert!(config.word_wrap);
         assert_eq!(config.notes_list_position, "top");
     }

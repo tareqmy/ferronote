@@ -190,21 +190,23 @@ impl NoteList {
             .map(|i| {
                 if i.is_create_prompt {
                     let text = format!(" + {}", i.title);
+                    let text_chars: Vec<char> = text.chars().collect();
+                    let display_text = if text_chars.len() > available_width {
+                        if available_width >= 3 {
+                            let prefix: String = text_chars[..available_width - 3].iter().collect();
+                            format!("{prefix}...")
+                        } else {
+                            ".".repeat(available_width)
+                        }
+                    } else {
+                        text
+                    };
                     return ListItem::new(Line::from(Span::styled(
-                        text,
+                        display_text,
                         Style::default()
                             .fg(theme.search_match)
                             .add_modifier(Modifier::ITALIC),
                     )));
-                }
-
-                let mut spans = Vec::new();
-                for (idx, ch) in i.title.chars().enumerate() {
-                    let mut style = Style::default();
-                    if i.title_match_indices.contains(&idx) {
-                        style = style.fg(theme.search_match).add_modifier(Modifier::BOLD);
-                    }
-                    spans.push(Span::styled(ch.to_string(), style));
                 }
 
                 let date_str = if show_modified_time {
@@ -213,15 +215,58 @@ impl NoteList {
                     String::new()
                 };
 
-                if !date_str.is_empty() {
-                    let title_len = i.title.chars().count();
-                    let date_len = date_str.chars().count();
-                    let padding = available_width.saturating_sub(title_len + date_len);
+                let date_len = date_str.chars().count();
+                let show_date = !date_str.is_empty() && available_width > date_len + 1;
+
+                let max_title_len = if show_date {
+                    available_width - date_len - 1
+                } else {
+                    available_width
+                };
+
+                let title_chars: Vec<char> = i.title.chars().collect();
+                let is_title_curtailed = title_chars.len() > max_title_len;
+
+                let mut spans = Vec::new();
+
+                if is_title_curtailed {
+                    if max_title_len >= 3 {
+                        let visible_len = max_title_len - 3;
+                        for idx in 0..visible_len {
+                            let ch = title_chars[idx];
+                            let mut style = Style::default();
+                            if i.title_match_indices.contains(&idx) {
+                                style = style.fg(theme.search_match).add_modifier(Modifier::BOLD);
+                            }
+                            spans.push(Span::styled(ch.to_string(), style));
+                        }
+                        spans.push(Span::raw("..."));
+                    } else {
+                        for _ in 0..max_title_len {
+                            spans.push(Span::raw("."));
+                        }
+                    }
+                } else {
+                    for (idx, ch) in title_chars.iter().enumerate() {
+                        let mut style = Style::default();
+                        if i.title_match_indices.contains(&idx) {
+                            style = style.fg(theme.search_match).add_modifier(Modifier::BOLD);
+                        }
+                        spans.push(Span::styled(ch.to_string(), style));
+                    }
+                }
+
+                if show_date {
+                    let rendered_title_len = if is_title_curtailed {
+                        max_title_len
+                    } else {
+                        title_chars.len()
+                    };
+
+                    let padding = available_width.saturating_sub(rendered_title_len + date_len);
 
                     if padding > 0 {
                         spans.push(Span::raw(" ".repeat(padding)));
-                    } else {
-                        spans.push(Span::raw(" "));
                     }
                     spans.push(Span::styled(date_str, Style::default().fg(Color::DarkGray)));
                 }
@@ -229,8 +274,19 @@ impl NoteList {
                 let mut lines = vec![Line::from(spans)];
 
                 if let Some(preview) = &i.content_preview {
+                    let preview_chars: Vec<char> = preview.chars().collect();
+                    let display_preview = if preview_chars.len() > available_width {
+                        if available_width >= 3 {
+                            let prefix: String = preview_chars[..available_width - 3].iter().collect();
+                            format!("{prefix}...")
+                        } else {
+                            ".".repeat(available_width)
+                        }
+                    } else {
+                        preview.clone()
+                    };
                     lines.push(Line::from(Span::styled(
-                        preview.clone(),
+                        display_preview,
                         Style::default().fg(Color::DarkGray),
                     )));
                 }
@@ -357,5 +413,77 @@ mod tests {
         list.state.select(Some(2));
         list.set_items(make_mock_results(2));
         assert_eq!(list.state.selected(), Some(1));
+    }
+
+    #[test]
+    fn test_note_list_title_curtailment() {
+        use ratatui::backend::TestBackend;
+        use ratatui::Terminal;
+        use crate::theme::ThemePalette;
+
+        let mut list = NoteList::new();
+        list.set_items(vec![SearchResult {
+            filename: "very_long_note_title.md".to_string(),
+            title: "This is a very long note title that exceeds available width".to_string(),
+            score: 0,
+            title_match_indices: Vec::new(),
+            content_preview: None,
+            is_create_prompt: false,
+            modified_at: 0,
+        }]);
+
+        // Box width = 20. Available width = 20 - 4 = 16.
+        // Title length (58) > 16, so it must be curtailed to 13 chars + "..." = 16 chars.
+        let backend = TestBackend::new(20, 5);
+        let mut terminal = Terminal::new(backend).unwrap();
+
+        let theme = ThemePalette::from_name("dark");
+        terminal
+            .draw(|f| {
+                list.draw(
+                    f,
+                    Rect::new(0, 0, 20, 5),
+                    true,
+                    false,
+                    "modified_desc",
+                    &theme,
+                );
+            })
+            .unwrap();
+
+        let buffer = terminal.backend().buffer();
+        let row_content: String = (1..19).map(|x| buffer[(x, 1)].symbol().to_string()).collect();
+        assert!(row_content.contains("..."), "Row content should contain '...': {row_content}");
+
+        // Test create prompt curtailment
+        let mut list_prompt = NoteList::new();
+        list_prompt.set_items(vec![SearchResult {
+            filename: "new.md".to_string(),
+            title: "Extremely long create prompt note title text".to_string(),
+            score: 0,
+            title_match_indices: Vec::new(),
+            content_preview: None,
+            is_create_prompt: true,
+            modified_at: 0,
+        }]);
+
+        let backend2 = TestBackend::new(20, 5);
+        let mut terminal2 = Terminal::new(backend2).unwrap();
+        terminal2
+            .draw(|f| {
+                list_prompt.draw(
+                    f,
+                    Rect::new(0, 0, 20, 5),
+                    true,
+                    false,
+                    "modified_desc",
+                    &theme,
+                );
+            })
+            .unwrap();
+
+        let buffer2 = terminal2.backend().buffer();
+        let prompt_row: String = (1..19).map(|x| buffer2[(x, 1)].symbol().to_string()).collect();
+        assert!(prompt_row.contains("..."), "Prompt row should contain '...': {prompt_row}");
     }
 }

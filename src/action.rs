@@ -45,6 +45,10 @@ pub enum Action {
     MouseDrag(u16, u16),
     /// Mouse button released at position (column, row).
     MouseUp(u16, u16),
+    /// Mouse wheel scrolled up at position (column, row).
+    MouseScrollUp(u16, u16),
+    /// Mouse wheel scrolled down at position (column, row).
+    MouseScrollDown(u16, u16),
     /// Exit the application.
     Quit,
     /// Background task found a new version.

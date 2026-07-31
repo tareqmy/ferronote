@@ -290,19 +290,6 @@ impl App<'_> {
                     let _ = crossterm::execute!(std::io::stdout(), crossterm::event::DisableMouseCapture);
                 }
             }
-            11 => {
-                let options = ["auto", "nano", "vim", "nvim", "hx", "micro", "emacs", "notepad"];
-                let current_idx = options
-                    .iter()
-                    .position(|&v| v == self.config.external_editor)
-                    .unwrap_or(0);
-                let next_idx = if forward {
-                    (current_idx + 1) % options.len()
-                } else {
-                    (current_idx + options.len() - 1) % options.len()
-                };
-                self.config.external_editor = options[next_idx].to_string();
-            }
             _ => {}
         }
         let _ = self.config.save();
@@ -449,19 +436,35 @@ impl App<'_> {
                 {
                     return Some(Action::ToggleSettings);
                 }
-                KeyCode::Up | KeyCode::Char('k') => return Some(Action::PrevSetting),
-                KeyCode::Down | KeyCode::Char('j') => return Some(Action::NextSetting),
-                KeyCode::PageUp => return Some(Action::PageUpSetting),
-                KeyCode::PageDown => return Some(Action::PageDownSetting),
-                KeyCode::Home => return Some(Action::FirstSetting),
-                KeyCode::End => return Some(Action::LastSetting),
-                KeyCode::Left | KeyCode::Char('h') => {
-                    return Some(Action::ChangeSettingOption(false));
+                _ => {}
+            }
+
+            if self.settings_selected_index == 11 {
+                match key.code {
+                    KeyCode::Up => return Some(Action::PrevSetting),
+                    KeyCode::Down => return Some(Action::NextSetting),
+                    KeyCode::PageUp => return Some(Action::PageUpSetting),
+                    KeyCode::PageDown => return Some(Action::PageDownSetting),
+                    KeyCode::Backspace => return Some(Action::SettingsBackspace),
+                    KeyCode::Char(c) => return Some(Action::SettingsTypeChar(c)),
+                    _ => return None,
                 }
-                KeyCode::Right | KeyCode::Char('l') | KeyCode::Enter | KeyCode::Char(' ') => {
-                    return Some(Action::ChangeSettingOption(true));
+            } else {
+                match key.code {
+                    KeyCode::Up | KeyCode::Char('k') => return Some(Action::PrevSetting),
+                    KeyCode::Down | KeyCode::Char('j') => return Some(Action::NextSetting),
+                    KeyCode::PageUp => return Some(Action::PageUpSetting),
+                    KeyCode::PageDown => return Some(Action::PageDownSetting),
+                    KeyCode::Home => return Some(Action::FirstSetting),
+                    KeyCode::End => return Some(Action::LastSetting),
+                    KeyCode::Left | KeyCode::Char('h') => {
+                        return Some(Action::ChangeSettingOption(false));
+                    }
+                    KeyCode::Right | KeyCode::Char('l') | KeyCode::Enter | KeyCode::Char(' ') => {
+                        return Some(Action::ChangeSettingOption(true));
+                    }
+                    _ => return None,
                 }
-                _ => return None,
             }
         }
 
@@ -682,6 +685,18 @@ impl App<'_> {
             }
             Action::ChangeSettingOption(forward) => {
                 self.cycle_setting(forward);
+            }
+            Action::SettingsTypeChar(c) => {
+                if self.settings_selected_index == 11 {
+                    self.config.external_editor.push(c);
+                    let _ = self.config.save();
+                }
+            }
+            Action::SettingsBackspace => {
+                if self.settings_selected_index == 11 {
+                    self.config.external_editor.pop();
+                    let _ = self.config.save();
+                }
             }
             Action::ToggleHelp => {
                 self.show_help = !self.show_help;
@@ -1572,7 +1587,9 @@ impl App<'_> {
                 ),
                 (
                     "External Editor",
-                    if self.config.external_editor == "auto" {
+                    if self.show_settings && self.settings_selected_index == 11 {
+                        format!("{}█", self.config.external_editor)
+                    } else if self.config.external_editor.is_empty() || self.config.external_editor == "auto" {
                         "Auto ($VISUAL/$EDITOR)".to_string()
                     } else {
                         self.config.external_editor.clone()

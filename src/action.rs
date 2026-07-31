@@ -47,8 +47,12 @@ pub enum Action {
     PageUpSetting,
     /// Move focus page down in settings menu (PageDown).
     PageDownSetting,
-    /// Cycle active setting option (`true` for forward, `false` for backward).
+    /// Cycle the currently selected setting (true for forward, false for backward).
     ChangeSettingOption(bool),
+    /// Type a character into a text setting field.
+    SettingsTypeChar(char),
+    /// Backspace a character from a text setting field.
+    SettingsBackspace,
     /// File system change detected for file at path.
     FileChanged(std::path::PathBuf),
     /// Mouse click at position (column, row).

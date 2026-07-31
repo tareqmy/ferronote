@@ -282,6 +282,14 @@ impl App<'_> {
                     "top".to_string()
                 };
             }
+            10 => {
+                self.config.mouse_capture = !self.config.mouse_capture;
+                if self.config.mouse_capture {
+                    let _ = crossterm::execute!(std::io::stdout(), crossterm::event::EnableMouseCapture);
+                } else {
+                    let _ = crossterm::execute!(std::io::stdout(), crossterm::event::DisableMouseCapture);
+                }
+            }
             _ => {}
         }
         let _ = self.config.save();
@@ -599,7 +607,7 @@ impl App<'_> {
                 self.show_settings = !self.show_settings;
             }
             Action::NextSetting => {
-                if self.settings_selected_index < 9 {
+                if self.settings_selected_index < 10 {
                     self.settings_selected_index += 1;
                 }
             }
@@ -610,13 +618,13 @@ impl App<'_> {
                 self.settings_selected_index = self.settings_selected_index.saturating_sub(5);
             }
             Action::PageDownSetting => {
-                self.settings_selected_index = std::cmp::min(self.settings_selected_index.saturating_add(5), 9);
+                self.settings_selected_index = std::cmp::min(self.settings_selected_index.saturating_add(5), 10);
             }
             Action::FirstSetting => {
                 self.settings_selected_index = 0;
             }
             Action::LastSetting => {
-                self.settings_selected_index = 9;
+                self.settings_selected_index = 10;
             }
             Action::ChangeSettingOption(forward) => {
                 self.cycle_setting(forward);
@@ -1508,6 +1516,14 @@ impl App<'_> {
                         "Left".to_string()
                     },
                 ),
+                (
+                    "Mouse Capture",
+                    if self.config.mouse_capture {
+                        "Enabled".to_string()
+                    } else {
+                        "Disabled (Native Text Select)".to_string()
+                    },
+                ),
             ];
 
             let mut lines = vec![
@@ -1566,7 +1582,7 @@ impl App<'_> {
 
             let area = frame.area();
             let width = 72;
-            let height = 17;
+            let height = 18;
             let x = (area.width.saturating_sub(width)) / 2;
             let y = (area.height.saturating_sub(height)) / 2;
             let popup_area = ratatui::layout::Rect::new(x, y, width, height);
@@ -1759,18 +1775,18 @@ mod tests {
         app.update(Action::FirstSetting);
         assert_eq!(app.settings_selected_index, 0);
         app.update(Action::LastSetting);
-        assert_eq!(app.settings_selected_index, 9);
+        assert_eq!(app.settings_selected_index, 10);
 
-        // Test PageUp / PageDown
+        // Test PageUp / PageDownSetting
         app.update(Action::PageUpSetting);
-        assert_eq!(app.settings_selected_index, 4); // 9 - 5 = 4
+        assert_eq!(app.settings_selected_index, 5); // 10 - 5 = 5
         app.update(Action::PageUpSetting);
-        assert_eq!(app.settings_selected_index, 0); // 4 - 5 = 0 (saturates)
+        assert_eq!(app.settings_selected_index, 0); // 5 - 5 = 0 (saturates)
 
         app.update(Action::PageDownSetting);
         assert_eq!(app.settings_selected_index, 5); // 0 + 5 = 5
         app.update(Action::PageDownSetting);
-        assert_eq!(app.settings_selected_index, 9); // 5 + 5 = 9 (capped at 9)
+        assert_eq!(app.settings_selected_index, 10); // 5 + 5 = 10 (capped at 10)
 
         app.update(Action::ToggleSettings);
         assert!(!app.show_settings);

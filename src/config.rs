@@ -44,6 +44,10 @@ fn default_word_wrap() -> bool {
     true
 }
 
+fn default_mouse_capture() -> bool {
+    true
+}
+
 fn default_notes_list_position() -> String {
     "top".to_string()
 }
@@ -91,6 +95,10 @@ pub struct Config {
     #[serde(default = "default_word_wrap")]
     pub word_wrap: bool,
 
+    /// Whether terminal mouse capture is enabled.
+    #[serde(default = "default_mouse_capture")]
+    pub mouse_capture: bool,
+
     /// Note list position relative to editor (`top`, `left`).
     #[serde(default = "default_notes_list_position")]
     pub notes_list_position: String,
@@ -109,6 +117,7 @@ impl Default for Config {
             auto_purge_days: default_auto_purge_days(),
             show_modified_time: default_show_modified_time(),
             word_wrap: default_word_wrap(),
+            mouse_capture: default_mouse_capture(),
             notes_list_position: default_notes_list_position(),
         }
     }

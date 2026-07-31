@@ -13,9 +13,11 @@ impl Tui {
     /// Initializes the terminal, entering alternate screen, raw mode, and enabling mouse capture.
     /// # Errors
     /// Returns an error if terminal initialization fails.
-    pub fn init() -> Result<Self> {
+    pub fn init(mouse_capture: bool) -> Result<Self> {
         let terminal = ratatui::init();
-        let _ = execute!(stdout(), EnableMouseCapture);
+        if mouse_capture {
+            let _ = execute!(stdout(), EnableMouseCapture);
+        }
         Ok(Self { terminal })
     }
 

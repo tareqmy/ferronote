@@ -96,7 +96,7 @@ async fn main() -> Result<()> {
     }
 
     // 4. Initialize terminal (enters alternate screen, raw mode, sets panic hook)
-    let tui = Tui::init()?;
+    let tui = Tui::init(config.mouse_capture)?;
 
     // 5. Create App and EventHandler
     let mut app = App::new(note_store);

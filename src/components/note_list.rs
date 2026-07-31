@@ -50,7 +50,7 @@ impl NoteList {
         let i = match self.state.selected() {
             Some(i) => {
                 if i >= self.items.len() - 1 {
-                    0
+                    self.items.len() - 1
                 } else {
                     i + 1
                 }
@@ -67,7 +67,7 @@ impl NoteList {
         let i = match self.state.selected() {
             Some(i) => {
                 if i == 0 {
-                    self.items.len() - 1
+                    0
                 } else {
                     i - 1
                 }
@@ -388,7 +388,7 @@ mod tests {
     }
 
     #[test]
-    fn test_note_list_wrapping_and_empty() {
+    fn test_note_list_clamping_and_empty() {
         let mut list = NoteList::new();
         // Empty list navigation
         list.next();
@@ -397,17 +397,19 @@ mod tests {
         assert_eq!(list.state.selected(), None);
         assert_eq!(list.selected_note(), None);
 
-        // Wrapping navigation
+        // Clamping navigation
         list.set_items(make_mock_results(3));
         assert_eq!(list.state.selected(), Some(0));
         assert_eq!(list.selected_note(), Some("note_0.md".to_string()));
 
-        list.previous(); // wrap to last
+        list.previous(); // clamps to first
+        assert_eq!(list.state.selected(), Some(0));
+        assert_eq!(list.selected_note(), Some("note_0.md".to_string()));
+
+        list.state.select(Some(2)); // move to last manually
+        list.next(); // clamps to last
         assert_eq!(list.state.selected(), Some(2));
         assert_eq!(list.selected_note(), Some("note_2.md".to_string()));
-
-        list.next(); // wrap to first
-        assert_eq!(list.state.selected(), Some(0));
 
         // Setting fewer items rescales selection
         list.state.select(Some(2));

@@ -818,22 +818,58 @@ impl App<'_> {
                 self.update(Action::MouseDown(x, y));
                 self.update(Action::MouseUp(x, y));
             }
-            Action::MouseScrollUp(_x, _y) => {
+            Action::MouseScrollUp(x, y) => {
                 if self.show_help {
                     self.help_scroll_offset = self.help_scroll_offset.saturating_sub(2);
                     return;
                 }
-                if self.focus == Focus::NoteList {
+                let in_list = x >= self.list_area.x
+                    && x < self.list_area.x + self.list_area.width
+                    && y >= self.list_area.y
+                    && y < self.list_area.y + self.list_area.height;
+                let in_editor = x >= self.editor_area.x
+                    && x < self.editor_area.x + self.editor_area.width
+                    && y >= self.editor_area.y
+                    && y < self.editor_area.y + self.editor_area.height;
+
+                if in_list || (!in_list && !in_editor && self.focus == Focus::NoteList) {
                     self.note_list.previous();
+                    self.note_list.previous();
+                    self.note_list.previous();
+                } else if in_editor || (!in_list && !in_editor && self.focus == Focus::Editor) {
+                    for _ in 0..3 {
+                        self.editor.handle_key(crossterm::event::KeyEvent::new(
+                            KeyCode::Up,
+                            crossterm::event::KeyModifiers::NONE,
+                        ));
+                    }
                 }
             }
-            Action::MouseScrollDown(_x, _y) => {
+            Action::MouseScrollDown(x, y) => {
                 if self.show_help {
                     self.help_scroll_offset = self.help_scroll_offset.saturating_add(2);
                     return;
                 }
-                if self.focus == Focus::NoteList {
+                let in_list = x >= self.list_area.x
+                    && x < self.list_area.x + self.list_area.width
+                    && y >= self.list_area.y
+                    && y < self.list_area.y + self.list_area.height;
+                let in_editor = x >= self.editor_area.x
+                    && x < self.editor_area.x + self.editor_area.width
+                    && y >= self.editor_area.y
+                    && y < self.editor_area.y + self.editor_area.height;
+
+                if in_list || (!in_list && !in_editor && self.focus == Focus::NoteList) {
                     self.note_list.next();
+                    self.note_list.next();
+                    self.note_list.next();
+                } else if in_editor || (!in_list && !in_editor && self.focus == Focus::Editor) {
+                    for _ in 0..3 {
+                        self.editor.handle_key(crossterm::event::KeyEvent::new(
+                            KeyCode::Down,
+                            crossterm::event::KeyModifiers::NONE,
+                        ));
+                    }
                 }
             }
             Action::FormatBold => {

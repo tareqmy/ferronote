@@ -21,6 +21,9 @@ Organize notes dynamically using `#tag` syntax in note bodies. Filter notes in r
 ### 🔗 Wiki Links & Backlinks
 Link notes effortlessly using `[[Note Title]]` syntax. Ferronote automatically detects backlinks across your vault and lets you navigate between linked notes with `Enter`.
 
+### 📝 External Editor Support
+While Ferronote ships with a blazing-fast builtin editor for quick capturing, you can press `Ctrl+O` at any time to seamlessly drop into your preferred external terminal editor (like Neovim, Helix, or Nano). Ferronote intelligently suspends its UI, reads your `$VISUAL` or `$EDITOR` environment variable, and automatically reloads the note once you finish editing.
+
 ### 🎨 Custom Themes
 Tailor your terminal environment with pre-built theme palettes:
 - `default` (Nord-inspired dark palette)

@@ -466,6 +466,10 @@ impl App<'_> {
                 self.focus = self.focus.next();
                 return Some(Action::SaveNote);
             }
+            KeyCode::BackTab => {
+                self.focus = self.focus.previous();
+                return Some(Action::SaveNote);
+            }
             KeyCode::Esc => {
                 self.search_bar.clear();
                 self.update_search();
@@ -1781,6 +1785,16 @@ mod tests {
         app.focus = Focus::NoteList;
         let action = app.handle_key(KeyEvent::new(KeyCode::Char('/'), KeyModifiers::NONE));
         assert_eq!(action, None);
+        assert_eq!(app.focus, Focus::SearchBar);
+
+        // Test Tab -> Cycle focus forward
+        let action = app.handle_key(KeyEvent::new(KeyCode::Tab, KeyModifiers::NONE));
+        assert_eq!(action, Some(Action::SaveNote));
+        assert_eq!(app.focus, Focus::NoteList);
+
+        // Test Shift+Tab (BackTab) -> Cycle focus backward
+        let action = app.handle_key(KeyEvent::new(KeyCode::BackTab, KeyModifiers::SHIFT));
+        assert_eq!(action, Some(Action::SaveNote));
         assert_eq!(app.focus, Focus::SearchBar);
     }
 

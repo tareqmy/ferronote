@@ -20,6 +20,16 @@ impl Focus {
             Self::Editor => Self::SearchBar,
         }
     }
+
+    /// Cycles focus to the previous region (`SearchBar` <- `NoteList` <- `Editor` <- `SearchBar`).
+    #[must_use]
+    pub fn previous(self) -> Self {
+        match self {
+            Self::SearchBar => Self::Editor,
+            Self::Editor => Self::NoteList,
+            Self::NoteList => Self::SearchBar,
+        }
+    }
 }
 
 #[cfg(test)]
@@ -38,6 +48,21 @@ mod tests {
         assert_eq!(focus, Focus::Editor);
 
         focus = focus.next();
+        assert_eq!(focus, Focus::SearchBar);
+    }
+
+    #[test]
+    fn test_focus_previous_cycling() {
+        let mut focus = Focus::default();
+        assert_eq!(focus, Focus::SearchBar);
+
+        focus = focus.previous();
+        assert_eq!(focus, Focus::Editor);
+
+        focus = focus.previous();
+        assert_eq!(focus, Focus::NoteList);
+
+        focus = focus.previous();
         assert_eq!(focus, Focus::SearchBar);
     }
 }

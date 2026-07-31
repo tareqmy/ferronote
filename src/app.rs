@@ -40,10 +40,12 @@ pub struct App<'a> {
     pub settings_selected_index: usize,
     pub config: Config,
     pub search_area: Rect,
+    pub content_area: Rect,
     pub list_area: Rect,
     pub editor_area: Rect,
     pub latest_version: Option<String>,
     pub update_area: Option<Rect>,
+    pub is_resizing_sidebar: bool,
 }
 
 impl App<'_> {
@@ -79,10 +81,12 @@ impl App<'_> {
             settings_selected_index: 0,
             config,
             search_area: Rect::default(),
+            content_area: Rect::default(),
             list_area: Rect::default(),
             editor_area: Rect::default(),
             latest_version: None,
             update_area: None,
+            is_resizing_sidebar: false,
         };
         app.update_search();
         app
@@ -188,11 +192,11 @@ impl App<'_> {
                 self.config.tab_size = options[next_idx];
             }
             3 => {
-                let options = [20, 25, 30, 35, 40];
+                let options = [20, 25, 30, 38, 40];
                 let current_idx = options
                     .iter()
                     .position(|&v| v == self.config.sidebar_width_percent)
-                    .unwrap_or(2);
+                    .unwrap_or(3);
                 let next_idx = if forward {
                     (current_idx + 1) % options.len()
                 } else {
@@ -287,11 +291,54 @@ impl App<'_> {
     }
 
     fn handle_mouse(&mut self, mouse: crossterm::event::MouseEvent) -> Option<Action> {
-        if mouse.kind == crossterm::event::MouseEventKind::Down(crossterm::event::MouseButton::Left)
-        {
-            Some(Action::MouseClick(mouse.column, mouse.row))
+        match mouse.kind {
+            crossterm::event::MouseEventKind::Down(crossterm::event::MouseButton::Left) => {
+                Some(Action::MouseDown(mouse.column, mouse.row))
+            }
+            crossterm::event::MouseEventKind::Drag(crossterm::event::MouseButton::Left) => {
+                Some(Action::MouseDrag(mouse.column, mouse.row))
+            }
+            crossterm::event::MouseEventKind::Up(crossterm::event::MouseButton::Left) => {
+                Some(Action::MouseUp(mouse.column, mouse.row))
+            }
+            _ => None,
+        }
+    }
+
+    #[must_use]
+    pub fn is_on_divider(&self, x: u16, y: u16) -> bool {
+        if !self.show_notes_list {
+            return false;
+        }
+
+        if self.config.notes_list_position == "left" {
+            let split_x = self.list_area.x + self.list_area.width;
+            let on_x = x >= split_x.saturating_sub(1) && x <= split_x.saturating_add(1);
+            let on_y = y >= self.content_area.y
+                && y < self.content_area.y + self.content_area.height;
+            on_x && on_y
         } else {
-            None
+            let split_y = self.list_area.y + self.list_area.height;
+            let on_y = y >= split_y.saturating_sub(1) && y <= split_y.saturating_add(1);
+            let on_x = x >= self.content_area.x
+                && x < self.content_area.x + self.content_area.width;
+            on_x && on_y
+        }
+    }
+
+    fn update_sidebar_width_percent(&mut self, x: u16, y: u16) {
+        if self.config.notes_list_position == "left" {
+            let rel_x = x.saturating_sub(self.content_area.x);
+            if self.content_area.width > 0 {
+                let pct = ((rel_x as u32 * 100) / self.content_area.width as u32) as u16;
+                self.config.sidebar_width_percent = pct.clamp(20, 40);
+            }
+        } else {
+            let rel_y = y.saturating_sub(self.content_area.y);
+            if self.content_area.height > 0 {
+                let pct = ((rel_y as u32 * 100) / self.content_area.height as u32) as u16;
+                self.config.sidebar_width_percent = pct.clamp(20, 40);
+            }
         }
     }
 
@@ -618,7 +665,7 @@ impl App<'_> {
                     }
                 }
             }
-            Action::MouseClick(x, y) => {
+            Action::MouseDown(x, y) => {
                 if self.show_help {
                     self.show_help = false;
                     return;
@@ -629,6 +676,12 @@ impl App<'_> {
                 }
                 if self.show_settings {
                     self.show_settings = false;
+                    return;
+                }
+
+                if self.is_on_divider(x, y) {
+                    self.is_resizing_sidebar = true;
+                    self.update_sidebar_width_percent(x, y);
                     return;
                 }
 
@@ -673,6 +726,22 @@ impl App<'_> {
                 {
                     self.focus = Focus::Editor;
                 }
+            }
+            Action::MouseDrag(x, y) => {
+                if self.is_resizing_sidebar || (self.show_notes_list && self.is_on_divider(x, y)) {
+                    self.is_resizing_sidebar = true;
+                    self.update_sidebar_width_percent(x, y);
+                }
+            }
+            Action::MouseUp(_, _) => {
+                if self.is_resizing_sidebar {
+                    self.is_resizing_sidebar = false;
+                    let _ = self.config.save();
+                }
+            }
+            Action::MouseClick(x, y) => {
+                self.update(Action::MouseDown(x, y));
+                self.update(Action::MouseUp(x, y));
             }
             Action::Render | Action::Resize(_, _) => {}
         }
@@ -906,7 +975,7 @@ impl App<'_> {
         frame.render_widget(title_p, header_layout[0]);
         frame.render_widget(version_p, header_layout[1]);
 
-        let sidebar_size = self.config.sidebar_width_percent.clamp(10, 80);
+        let sidebar_size = self.config.sidebar_width_percent.clamp(20, 40);
         let direction = if self.config.notes_list_position == "left" {
             Direction::Horizontal
         } else {
@@ -932,6 +1001,7 @@ impl App<'_> {
         };
 
         self.search_area = main_layout[1];
+        self.content_area = main_layout[2];
         self.list_area = content_layout[0];
         self.editor_area = content_layout[1];
 
@@ -1199,7 +1269,7 @@ impl App<'_> {
 
             let mut lines = vec![
                 Line::from(Span::styled(
-                    " ⚙️  Ferronote Settings",
+                    "                   ⚙️  Ferronote Settings",
                     Style::default()
                         .fg(Color::Yellow)
                         .add_modifier(Modifier::BOLD),
@@ -1209,6 +1279,7 @@ impl App<'_> {
 
             for (idx, (label, val)) in options_data.iter().enumerate() {
                 let is_selected = idx == self.settings_selected_index;
+                let indent = "     ";
                 let prefix = if is_selected { " ▶ " } else { "   " };
                 let label_style = if is_selected {
                     Style::default()
@@ -1217,6 +1288,8 @@ impl App<'_> {
                 } else {
                     Style::default().fg(Color::Cyan)
                 };
+
+                let sep_style = Style::default().fg(Color::DarkGray);
 
                 let val_style = if is_selected {
                     Style::default()
@@ -1228,15 +1301,17 @@ impl App<'_> {
                 };
 
                 lines.push(Line::from(vec![
+                    Span::raw(indent),
                     Span::styled(prefix, label_style),
-                    Span::styled(format!("{:<20}", label), label_style),
-                    Span::styled(format!(" [ {:<14} ]", val), val_style),
+                    Span::styled(format!("{:<22}", label), label_style),
+                    Span::styled(": ", sep_style),
+                    Span::styled(format!("[ {:<18} ]", val), val_style),
                 ]));
             }
 
             lines.push(Line::from(""));
             lines.push(Line::from(Span::styled(
-                " [Up/Down] Select   [Left/Right/Enter] Modify   [Esc/Ctrl+P] Close",
+                "  [Up/Down] Select   [Left/Right/Enter] Modify   [Esc/Ctrl+P] Close",
                 Style::default().fg(Color::DarkGray),
             )));
 
@@ -1247,7 +1322,7 @@ impl App<'_> {
             );
 
             let area = frame.area();
-            let width = 64;
+            let width = 72;
             let height = 17;
             let x = (area.width.saturating_sub(width)) / 2;
             let y = (area.height.saturating_sub(height)) / 2;
@@ -1406,11 +1481,12 @@ mod tests {
         // Navigate to Note List Position (option 9)
         app.update(Action::NextSetting);
         assert_eq!(app.settings_selected_index, 9);
-        assert_eq!(app.config.notes_list_position, "top");
+        let initial_pos = app.config.notes_list_position.clone();
+        let expected_next = if initial_pos == "top" { "left" } else { "top" };
         app.update(Action::ChangeSettingOption(true));
-        assert_eq!(app.config.notes_list_position, "left");
+        assert_eq!(app.config.notes_list_position, expected_next);
         app.update(Action::ChangeSettingOption(true));
-        assert_eq!(app.config.notes_list_position, "top");
+        assert_eq!(app.config.notes_list_position, initial_pos);
 
         app.update(Action::ToggleSettings);
         assert!(!app.show_settings);
@@ -1527,5 +1603,82 @@ mod tests {
         let action = app.handle_key(KeyEvent::new(KeyCode::Char('/'), KeyModifiers::NONE));
         assert_eq!(action, None);
         assert_eq!(app.focus, Focus::SearchBar);
+    }
+
+    #[test]
+    fn test_mouse_drag_resize_sidebar_horizontal() {
+        let (mut app, _temp_dir) = setup_test_app();
+        app.config.notes_list_position = "left".to_string();
+        app.config.sidebar_width_percent = 30;
+        app.content_area = Rect::new(0, 4, 100, 30);
+        app.list_area = Rect::new(0, 4, 30, 30);
+        app.editor_area = Rect::new(30, 4, 70, 30);
+        app.show_notes_list = true;
+
+        // Verify divider detection around x = 30
+        assert!(app.is_on_divider(30, 10));
+        assert!(app.is_on_divider(29, 10));
+        assert!(!app.is_on_divider(15, 10));
+
+        // Press mouse down on divider (x = 30)
+        app.update(Action::MouseDown(30, 10));
+        assert!(app.is_resizing_sidebar);
+
+        // Drag mouse to x = 38 (38% of 100)
+        app.update(Action::MouseDrag(38, 10));
+        assert_eq!(app.config.sidebar_width_percent, 38);
+
+        // Release mouse button
+        app.update(Action::MouseUp(38, 10));
+        assert!(!app.is_resizing_sidebar);
+    }
+
+    #[test]
+    fn test_mouse_drag_resize_sidebar_vertical() {
+        let (mut app, _temp_dir) = setup_test_app();
+        app.config.notes_list_position = "top".to_string();
+        app.config.sidebar_width_percent = 30;
+        app.content_area = Rect::new(0, 4, 100, 30);
+        app.list_area = Rect::new(0, 4, 100, 9);
+        app.editor_area = Rect::new(0, 13, 100, 21);
+        app.show_notes_list = true;
+
+        // Verify divider detection around y = 13
+        assert!(app.is_on_divider(50, 13));
+        assert!(app.is_on_divider(50, 12));
+        assert!(!app.is_on_divider(50, 5));
+
+        // Press mouse down on divider (y = 13)
+        app.update(Action::MouseDown(50, 13));
+        assert!(app.is_resizing_sidebar);
+
+        // Drag mouse down to y = 16 (12 relative to 4, 12/30 = 40%)
+        app.update(Action::MouseDrag(50, 16));
+        assert_eq!(app.config.sidebar_width_percent, 40);
+
+        // Release mouse button
+        app.update(Action::MouseUp(50, 16));
+        assert!(!app.is_resizing_sidebar);
+    }
+
+    #[test]
+    fn test_mouse_drag_clamping() {
+        let (mut app, _temp_dir) = setup_test_app();
+        app.config.notes_list_position = "left".to_string();
+        app.content_area = Rect::new(0, 4, 100, 30);
+        app.list_area = Rect::new(0, 4, 30, 30);
+        app.editor_area = Rect::new(30, 4, 70, 30);
+        app.show_notes_list = true;
+
+        // Drag way to the left (x = 2) -> clamped to 20%
+        app.update(Action::MouseDown(30, 10));
+        app.update(Action::MouseDrag(2, 10));
+        assert_eq!(app.config.sidebar_width_percent, 20);
+
+        // Drag way to the right (x = 95) -> clamped to 40%
+        app.update(Action::MouseDrag(95, 10));
+        assert_eq!(app.config.sidebar_width_percent, 40);
+
+        app.update(Action::MouseUp(95, 10));
     }
 }

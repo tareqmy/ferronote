@@ -39,6 +39,12 @@ pub enum Action {
     FileChanged(std::path::PathBuf),
     /// Mouse click at position (column, row).
     MouseClick(u16, u16),
+    /// Mouse button pressed down at position (column, row).
+    MouseDown(u16, u16),
+    /// Mouse dragged to position (column, row).
+    MouseDrag(u16, u16),
+    /// Mouse button released at position (column, row).
+    MouseUp(u16, u16),
     /// Exit the application.
     Quit,
     /// Background task found a new version.

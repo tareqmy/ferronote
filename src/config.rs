@@ -21,7 +21,7 @@ fn default_tab_size() -> u8 {
 }
 
 fn default_sidebar_width_percent() -> u16 {
-    30
+    38
 }
 
 fn default_theme() -> String {
@@ -155,7 +155,7 @@ mod tests {
         assert_eq!(config.default_extension, "md");
         assert_eq!(config.auto_save_delay_ms, 1000);
         assert_eq!(config.tab_size, 4);
-        assert_eq!(config.sidebar_width_percent, 30);
+        assert_eq!(config.sidebar_width_percent, 38);
         assert_eq!(config.theme, "default");
         assert_eq!(config.default_sort, "modified_desc");
         assert_eq!(config.auto_purge_days, 30);

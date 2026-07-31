@@ -299,7 +299,7 @@ mod tests {
         index.add_note("1.md".to_string(), "content".to_string(), 100);
         index.add_note("2.md".to_string(), "content".to_string(), 200);
 
-        let results = index.search("");
+        let results = index.search("", "modified_desc");
         assert_eq!(results.len(), 2);
         // Should sort by modified_at descending, so 2.md (200) is first
         assert_eq!(results[0].filename, "2.md");
@@ -312,7 +312,7 @@ mod tests {
         index.add_note("rust-guide.md".to_string(), "some guide".to_string(), 0);
         index.add_note("other.md".to_string(), "learn rust here".to_string(), 0);
 
-        let results = index.search("rust");
+        let results = index.search("rust", "modified_desc");
         assert_eq!(results.len(), 2);
 
         // title match should rank higher because of 3x multiplier
@@ -326,7 +326,7 @@ mod tests {
         let content = "This is a long text containing the word blazing and some other stuff.";
         index.add_note("test.md".to_string(), content.to_string(), 0);
 
-        let results = index.search("blazing");
+        let results = index.search("blazing", "modified_desc");
         assert_eq!(results.len(), 1);
         assert!(results[0].content_preview.is_some());
 
@@ -344,15 +344,15 @@ mod tests {
         );
         index.add_note("ideas.md".to_string(), "New ideas #ideas".to_string(), 200);
 
-        let results = index.search("#todo");
+        let results = index.search("#todo", "modified_desc");
         assert_eq!(results.len(), 1);
         assert_eq!(results[0].filename, "todo.md");
 
-        let results_urgent = index.search("#urgent");
+        let results_urgent = index.search("#urgent", "modified_desc");
         assert_eq!(results_urgent.len(), 1);
         assert_eq!(results_urgent[0].filename, "todo.md");
 
-        let results_ideas = index.search("#ideas");
+        let results_ideas = index.search("#ideas", "modified_desc");
         assert_eq!(results_ideas.len(), 1);
         assert_eq!(results_ideas[0].filename, "ideas.md");
     }
@@ -381,7 +381,7 @@ mod tests {
         let mut index = Index::new();
         index.add_note("old.md".to_string(), "Ferronote app #v1".to_string(), 100);
 
-        let results = index.search("Ferronote");
+        let results = index.search("Ferronote", "modified_desc");
         assert_eq!(results.len(), 1);
 
         index.rename_note(
@@ -391,15 +391,15 @@ mod tests {
             150,
         );
 
-        let results_old = index.search("old");
+        let results_old = index.search("old", "modified_desc");
         assert!(results_old.iter().all(|r| r.filename != "old.md"));
 
-        let results_new = index.search("Ferronote");
+        let results_new = index.search("Ferronote", "modified_desc");
         assert_eq!(results_new.len(), 1);
         assert_eq!(results_new[0].filename, "new.md");
 
         index.remove_note("new.md");
-        let results_removed = index.search("Ferronote");
+        let results_removed = index.search("Ferronote", "modified_desc");
         assert_eq!(results_removed.len(), 0);
     }
 }

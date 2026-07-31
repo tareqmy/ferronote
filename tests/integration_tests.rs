@@ -29,7 +29,7 @@ fn test_end_to_end_note_lifecycle() {
     assert_eq!(app.focus, Focus::SearchBar);
 
     // 3. Search as-you-type and Tag Filtering
-    app.search_bar.textarea.select_all();
+    app.search_bar.clear();
     app.search_bar.textarea.insert_str("#rust");
     app.update_search();
 
@@ -44,7 +44,7 @@ fn test_end_to_end_note_lifecycle() {
     assert_eq!(backlinks[0].filename, "Weekly Standup.md");
 
     // 5. Search IS Create flow
-    app.search_bar.textarea.select_all();
+    app.search_bar.clear();
     app.search_bar.textarea.insert_str("Brand New Note");
     app.update_search();
 

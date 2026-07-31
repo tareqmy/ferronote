@@ -101,34 +101,51 @@ impl App<'_> {
         let mut results = self.index.search(&query, &self.config.default_sort);
 
         if !query.is_empty() {
-            let exact_match = results.iter().any(|r| r.title.eq_ignore_ascii_case(&query));
-            if !exact_match {
-                results.insert(
-                    0,
-                    crate::search::SearchResult {
-                        filename: String::new(),
-                        title: format!("Create new note: '{}'", query),
-                        score: i64::MAX,
-                        title_match_indices: Vec::new(),
-                        content_preview: None,
-                        is_create_prompt: true,
-                        modified_at: chrono::Utc::now().timestamp(),
-                    },
-                );
-            }
+            results.insert(
+                0,
+                crate::search::SearchResult {
+                    filename: String::new(),
+                    title: format!("Create new note: '{}'", query),
+                    score: i64::MAX,
+                    title_match_indices: Vec::new(),
+                    content_preview: None,
+                    is_create_prompt: true,
+                    modified_at: chrono::Utc::now().timestamp(),
+                },
+            );
         }
 
         self.note_list.set_items(results);
+
+        if let Some(ref current) = self.editor.current_note
+            && let Some(idx) = self.note_list.items.iter().position(|r| r.filename == *current)
+        {
+            self.note_list.state.select(Some(idx));
+        }
 
         let selected = self.note_list.selected_note();
         self.update(Action::SelectNote(selected));
     }
 
     pub fn create_note(&mut self, title: &str) -> Result<String> {
-        let filename = self.note_store.create_note(title)?;
+        let filename = match self.note_store.create_note(title) {
+            Ok(f) => f,
+            Err(_) => {
+                let safe_title = title.replace(['/', '\\'], "-");
+                let mut count = 1;
+                loop {
+                    let candidate = format!("{safe_title} {count}");
+                    if let Ok(f) = self.note_store.create_note(&candidate) {
+                        break f;
+                    }
+                    count += 1;
+                }
+            }
+        };
         let content = format!("# {title}\n\n");
         let modified_at = self.note_store.get_modified_at(&filename).unwrap_or(0);
-        self.index.add_note(filename.clone(), content, modified_at);
+        self.index.add_note(filename.clone(), content.clone(), modified_at);
+        self.editor.set_content(&filename, &content);
         self.update_search();
         Ok(filename)
     }
@@ -1514,6 +1531,30 @@ mod tests {
         app.update(Action::SubmitSearch);
         assert_eq!(app.focus, Focus::Editor);
         assert_eq!(app.editor.current_note, Some("New.md".to_string()));
+    }
+
+    #[test]
+    fn test_app_search_always_includes_create_entry_at_top() {
+        let (mut app, _temp_dir) = setup_test_app();
+        let _filename = app.create_note("ExistingNote").unwrap();
+
+        // Search for phrase matching existing note
+        app.search_bar.clear();
+        for c in "ExistingNote".chars() {
+            app.search_bar
+                .handle_key(KeyEvent::new(KeyCode::Char(c), KeyModifiers::NONE));
+        }
+        app.update_search();
+
+        // Item 0 must be the create prompt
+        assert!(app.note_list.items[0].is_create_prompt);
+        assert_eq!(
+            app.note_list.items[0].title,
+            "Create new note: 'ExistingNote'"
+        );
+
+        // Item 1 must be the filtered matching note
+        assert_eq!(app.note_list.items[1].title, "ExistingNote");
     }
 
     #[test]

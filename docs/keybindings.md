@@ -16,6 +16,7 @@ Ferronote is built from the ground up for keyboard efficiency.
 | `Home` / `End` | Jump to start/end of note list / settings items | List / Overlay |
 | `Ctrl+S` | Force save current note | Editor |
 | `Ctrl+D` | Delete active note (moves to trash) | Global |
+| `Ctrl+R` | Rename active note | Global |
 | `Ctrl+N` | Create new note | Global |
 | `Ctrl+Z` / `Ctrl+Y` | Undo / Redo text edits | Editor |
 | `Ctrl+P` | Toggle Interactive Settings Overlay | Global |

@@ -37,6 +37,8 @@ pub struct App<'a> {
     pub show_about: bool,
     pub show_settings: bool,
     pub show_delete_confirmation: bool,
+    pub show_rename_prompt: bool,
+    pub rename_input: tui_textarea::TextArea<'a>,
     pub show_more_shortcuts: bool,
     pub show_notes_list: bool,
     pub settings_selected_index: usize,
@@ -79,6 +81,8 @@ impl App<'_> {
             show_about: false,
             show_settings: false,
             show_delete_confirmation: false,
+            show_rename_prompt: false,
+            rename_input: tui_textarea::TextArea::default(),
             show_more_shortcuts: false,
             show_notes_list: true,
             settings_selected_index: 0,
@@ -400,6 +404,20 @@ impl App<'_> {
             }
         }
 
+        if self.show_rename_prompt {
+            match key.code {
+                KeyCode::Esc => return Some(Action::CancelRenameNote),
+                KeyCode::Enter => {
+                    let text = self.rename_input.lines().join("");
+                    return Some(Action::SubmitRenameNote(text));
+                }
+                _ => {
+                    self.rename_input.input(key);
+                    return None;
+                }
+            }
+        }
+
         if self.show_delete_confirmation {
             match key.code {
                 KeyCode::Char('y') | KeyCode::Char('Y') | KeyCode::Enter => {
@@ -443,6 +461,7 @@ impl App<'_> {
                 KeyCode::Char('v') => return Some(Action::ToggleAbout),
                 KeyCode::Char('p') => return Some(Action::ToggleSettings),
                 KeyCode::Char('q') => return Some(Action::Quit),
+                KeyCode::Char('r') => return Some(Action::PromptRenameNote),
                 KeyCode::Char('d') => return Some(Action::PromptDeleteNote),
                 KeyCode::Char('b') => return Some(Action::ToggleNotesList),
                 KeyCode::Char('e') => return Some(Action::ToggleMoreShortcuts),
@@ -718,6 +737,37 @@ impl App<'_> {
                     // Select the next item in the list automatically
                     let new_selected = self.note_list.selected_note();
                     self.update(Action::SelectNote(new_selected));
+                }
+            }
+            Action::PromptRenameNote => {
+                if let Some(selected) = self.note_list.selected_note() {
+                    if !selected.is_empty() {
+                        self.show_rename_prompt = true;
+                        let title = self
+                            .note_list
+                            .items
+                            .iter()
+                            .find(|i| i.filename == selected)
+                            .map(|i| i.title.clone())
+                            .unwrap_or_else(|| {
+                                selected.strip_suffix(".md").unwrap_or(&selected).to_string()
+                            });
+                        let mut textarea = tui_textarea::TextArea::default();
+                        textarea.insert_str(&title);
+                        self.rename_input = textarea;
+                    }
+                }
+            }
+            Action::CancelRenameNote => {
+                self.show_rename_prompt = false;
+            }
+            Action::SubmitRenameNote(new_title) => {
+                self.show_rename_prompt = false;
+                if let Some(old_filename) = self.note_list.selected_note() {
+                    if !new_title.is_empty() {
+                        let _ = self.rename_note(&old_filename, &new_title);
+                        self.update_search();
+                    }
                 }
             }
             Action::FileChanged(path) => {
@@ -1206,6 +1256,29 @@ impl App<'_> {
 
             frame.render_widget(Clear, popup_area);
             frame.render_widget(confirm_block, popup_area);
+        }
+
+        // Render Rename Prompt Overlay
+        if self.show_rename_prompt {
+            let mut rename_block = self.rename_input.clone();
+            rename_block.set_block(
+                Block::default()
+                    .title(" Rename Note (Enter to confirm, Esc to cancel) ")
+                    .borders(Borders::ALL)
+                    .border_style(Style::default().fg(theme.border_active)),
+            );
+            rename_block.set_style(Style::default().fg(theme.search_fg));
+            rename_block.set_cursor_line_style(Style::default());
+
+            let area = frame.area();
+            let width = 60;
+            let height = 3;
+            let x = (area.width.saturating_sub(width)) / 2;
+            let y = (area.height.saturating_sub(height)) / 2;
+            let popup_area = ratatui::layout::Rect::new(x, y, width, height);
+
+            frame.render_widget(Clear, popup_area);
+            frame.render_widget(&rename_block, popup_area);
         }
 
         // Render Help Overlay

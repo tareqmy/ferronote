@@ -19,6 +19,12 @@ pub enum Action {
     PromptDeleteNote,
     /// Cancel delete confirmation.
     CancelDeleteNote,
+    /// Prompt for renaming the selected note.
+    PromptRenameNote,
+    /// Submit the new name for the note.
+    SubmitRenameNote(String),
+    /// Cancel renaming.
+    CancelRenameNote,
     /// Toggle help modal overlay.
     ToggleHelp,
     /// Toggle about modal overlay.

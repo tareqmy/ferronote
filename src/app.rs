@@ -290,6 +290,19 @@ impl App<'_> {
                     let _ = crossterm::execute!(std::io::stdout(), crossterm::event::DisableMouseCapture);
                 }
             }
+            11 => {
+                let options = ["auto", "nano", "vim", "nvim", "hx", "micro", "emacs", "notepad"];
+                let current_idx = options
+                    .iter()
+                    .position(|&v| v == self.config.external_editor)
+                    .unwrap_or(0);
+                let next_idx = if forward {
+                    (current_idx + 1) % options.len()
+                } else {
+                    (current_idx + options.len() - 1) % options.len()
+                };
+                self.config.external_editor = options[next_idx].to_string();
+            }
             _ => {}
         }
         let _ = self.config.save();
@@ -313,15 +326,19 @@ impl App<'_> {
                         crate::tui::Tui::restore()?;
                         
                         // Determine editor
-                        let editor_cmd = std::env::var("VISUAL")
-                            .or_else(|_| std::env::var("EDITOR"))
-                            .unwrap_or_else(|_| {
-                                if cfg!(windows) {
-                                    "notepad".to_string()
-                                } else {
-                                    "vi".to_string()
-                                }
-                            });
+                        let editor_cmd = if self.config.external_editor == "auto" {
+                            std::env::var("VISUAL")
+                                .or_else(|_| std::env::var("EDITOR"))
+                                .unwrap_or_else(|_| {
+                                    if cfg!(windows) {
+                                        "notepad".to_string()
+                                    } else {
+                                        "vi".to_string()
+                                    }
+                                })
+                        } else {
+                            self.config.external_editor.clone()
+                        };
                             
                         let path = self.note_store.get_note_path(&current);
                         
@@ -644,7 +661,7 @@ impl App<'_> {
                 self.show_settings = !self.show_settings;
             }
             Action::NextSetting => {
-                if self.settings_selected_index < 10 {
+                if self.settings_selected_index < 11 {
                     self.settings_selected_index += 1;
                 }
             }
@@ -655,13 +672,13 @@ impl App<'_> {
                 self.settings_selected_index = self.settings_selected_index.saturating_sub(5);
             }
             Action::PageDownSetting => {
-                self.settings_selected_index = std::cmp::min(self.settings_selected_index.saturating_add(5), 10);
+                self.settings_selected_index = std::cmp::min(self.settings_selected_index.saturating_add(5), 11);
             }
             Action::FirstSetting => {
                 self.settings_selected_index = 0;
             }
             Action::LastSetting => {
-                self.settings_selected_index = 10;
+                self.settings_selected_index = 11;
             }
             Action::ChangeSettingOption(forward) => {
                 self.cycle_setting(forward);
@@ -1553,6 +1570,14 @@ impl App<'_> {
                         "Disabled (Native Text Select)".to_string()
                     },
                 ),
+                (
+                    "External Editor",
+                    if self.config.external_editor == "auto" {
+                        "Auto ($VISUAL/$EDITOR)".to_string()
+                    } else {
+                        self.config.external_editor.clone()
+                    },
+                ),
             ];
 
             let mut lines = vec![
@@ -1804,18 +1829,22 @@ mod tests {
         app.update(Action::FirstSetting);
         assert_eq!(app.settings_selected_index, 0);
         app.update(Action::LastSetting);
-        assert_eq!(app.settings_selected_index, 10);
+        assert_eq!(app.settings_selected_index, 11);
 
         // Test PageUp / PageDownSetting
         app.update(Action::PageUpSetting);
-        assert_eq!(app.settings_selected_index, 5); // 10 - 5 = 5
+        assert_eq!(app.settings_selected_index, 6); // 11 - 5 = 6
         app.update(Action::PageUpSetting);
-        assert_eq!(app.settings_selected_index, 0); // 5 - 5 = 0 (saturates)
+        assert_eq!(app.settings_selected_index, 1); // 6 - 5 = 1
+        app.update(Action::PageUpSetting);
+        assert_eq!(app.settings_selected_index, 0); // 1 - 5 = 0 (saturates)
 
         app.update(Action::PageDownSetting);
         assert_eq!(app.settings_selected_index, 5); // 0 + 5 = 5
         app.update(Action::PageDownSetting);
-        assert_eq!(app.settings_selected_index, 10); // 5 + 5 = 10 (capped at 10)
+        assert_eq!(app.settings_selected_index, 10); // 5 + 5 = 10
+        app.update(Action::PageDownSetting);
+        assert_eq!(app.settings_selected_index, 11); // 10 + 5 = 15 (capped at 11)
 
         app.update(Action::ToggleSettings);
         assert!(!app.show_settings);

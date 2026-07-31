@@ -52,6 +52,10 @@ fn default_notes_list_position() -> String {
     "top".to_string()
 }
 
+fn default_external_editor() -> String {
+    "auto".to_string()
+}
+
 /// User preferences and application configuration persisted in `config.json`.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Config {
@@ -102,6 +106,10 @@ pub struct Config {
     /// Note list position relative to editor (`top`, `left`).
     #[serde(default = "default_notes_list_position")]
     pub notes_list_position: String,
+
+    /// Preferred external advanced editor (`auto`, `vim`, `nano`, etc).
+    #[serde(default = "default_external_editor")]
+    pub external_editor: String,
 }
 
 impl Default for Config {
@@ -119,6 +127,7 @@ impl Default for Config {
             word_wrap: default_word_wrap(),
             mouse_capture: default_mouse_capture(),
             notes_list_position: default_notes_list_position(),
+            external_editor: default_external_editor(),
         }
     }
 }
@@ -171,6 +180,7 @@ mod tests {
         assert!(!config.show_modified_time);
         assert!(config.word_wrap);
         assert_eq!(config.notes_list_position, "top");
+        assert_eq!(config.external_editor, "auto");
     }
 
     #[test]

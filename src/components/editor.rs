@@ -307,8 +307,12 @@ impl Editor<'_> {
             };
 
             ta_clone.set_block(block);
-            if is_focused && self.is_editing {
-                ta_clone.set_cursor_style(Style::default().bg(Color::White).fg(Color::Black));
+            if is_focused {
+                if self.is_editing {
+                    ta_clone.set_cursor_style(Style::default().bg(Color::White).fg(Color::Black));
+                } else {
+                    ta_clone.set_cursor_style(Style::default().bg(Color::DarkGray).fg(Color::White));
+                }
             } else {
                 ta_clone.set_cursor_style(Style::default().bg(Color::Reset).fg(Color::Reset));
             }

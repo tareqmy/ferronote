@@ -4,7 +4,7 @@ use crate::queue::Queue;
 use ratatui::crossterm::event::KeyCode;
 use ratatui::{
     Frame,
-    layout::{Constraint, Direction, Layout, Rect},
+    layout::{Constraint, Rect},
     style::{Color, Style},
     widgets::{Block, Borders, Clear, Row, Table},
 };
@@ -99,7 +99,7 @@ impl DrawableComponent for HelpPopup {
         frame.render_widget(Clear, popup_area);
 
         let help_block = Block::default()
-            .title(ratatui::widgets::block::Title::from(" Help / Keybindings ").alignment(ratatui::layout::Alignment::Center))
+            .title(ratatui::text::Line::from(" Help / Keybindings ").alignment(ratatui::layout::Alignment::Center))
             .borders(Borders::ALL)
             .style(Style::default().fg(Color::Cyan));
 

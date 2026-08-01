@@ -12,25 +12,23 @@ use tui_textarea::TextArea;
 pub struct SearchBar<'a> {
     /// Inner text area holding search query input.
     pub textarea: TextArea<'a>,
+    /// Event queue for emitting app actions.
+    pub queue: crate::queue::Queue,
 }
 
-impl Default for SearchBar<'_> {
-    fn default() -> Self {
-        Self::new()
-    }
-}
+// Default removed due to queue requirement
 
 impl SearchBar<'_> {
     /// Creates a new `SearchBar` instance initialized with border box styling.
     #[must_use]
-    pub fn new() -> Self {
+    pub fn new(queue: crate::queue::Queue) -> Self {
         let mut textarea = TextArea::default();
         let block = Block::default()
             .borders(Borders::ALL)
             .title(" 🔍 Search / Create ");
         textarea.set_block(block);
 
-        Self { textarea }
+        Self { textarea, queue }
     }
 
     /// Forwards keyboard events to the search text area.
@@ -40,7 +38,7 @@ impl SearchBar<'_> {
 
     /// Clears the search bar input.
     pub fn clear(&mut self) {
-        *self = Self::new();
+        *self = Self::new(self.queue.clone());
     }
 }
 
@@ -102,7 +100,8 @@ mod tests {
 
     #[test]
     fn test_search_bar_input_and_query() {
-        let mut search_bar = SearchBar::new();
+        let queue = crate::queue::Queue::new();
+        let mut search_bar = SearchBar::new(queue);
         assert_eq!(search_bar.query(), "");
 
         search_bar.handle_key(KeyEvent::new(KeyCode::Char('r'), KeyModifiers::NONE));
@@ -118,7 +117,8 @@ mod tests {
 
     #[test]
     fn test_search_bar_clear() {
-        let mut search_bar = SearchBar::new();
+        let queue = crate::queue::Queue::new();
+        let mut search_bar = SearchBar::new(queue);
         search_bar.handle_key(KeyEvent::new(KeyCode::Char('f'), KeyModifiers::NONE));
         search_bar.handle_key(KeyEvent::new(KeyCode::Char('o'), KeyModifiers::NONE));
         search_bar.handle_key(KeyEvent::new(KeyCode::Char('o'), KeyModifiers::NONE));

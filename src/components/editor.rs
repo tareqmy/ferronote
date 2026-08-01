@@ -33,13 +33,11 @@ pub struct Editor<'a> {
     pub pending_y: bool,
     /// Active search textarea input. If Some, search mode is active.
     pub search_textarea: Option<TextArea<'a>>,
+    /// Event queue for emitting app actions.
+    pub queue: crate::queue::Queue,
 }
 
-impl Default for Editor<'_> {
-    fn default() -> Self {
-        Self::new()
-    }
-}
+// Default removed due to queue requirement
 
 /// Soft wraps lines to fit max character width on space boundaries.
 #[must_use]
@@ -151,7 +149,7 @@ pub fn map_cursor_to_wrapped(
 impl Editor<'_> {
     /// Creates a new empty `Editor` component.
     #[must_use]
-    pub fn new() -> Self {
+    pub fn new(queue: crate::queue::Queue) -> Self {
         Self {
             textareas: HashMap::new(),
             current_note: None,
@@ -162,6 +160,7 @@ impl Editor<'_> {
             pending_d: false,
             pending_y: false,
             search_textarea: None,
+            queue,
         }
     }
 
@@ -576,8 +575,9 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_extract_wiki_link_at_cursor() {
-        let mut editor = Editor::new();
+    fn test_editor_wiki_link_extraction() {
+        let queue = crate::queue::Queue::new();
+        let mut editor = Editor::new(queue);
         editor.set_content("test.md", "Check out [[Project Ideas]] for details.");
 
         // Place cursor inside the brackets
@@ -593,8 +593,9 @@ mod tests {
     }
 
     #[test]
-    fn test_editor_stats_and_save_state() {
-        let mut editor = Editor::new();
+    fn test_editor_debounced_save() {
+        let queue = crate::queue::Queue::new();
+        let mut editor = Editor::new(queue);
         assert_eq!(editor.current_note, None);
         assert_eq!(editor.word_count(), 0);
         assert_eq!(editor.char_count(), 0);
@@ -646,8 +647,9 @@ mod tests {
     }
 
     #[test]
-    fn test_editor_page_up_page_down() {
-        let mut editor = Editor::new();
+    fn test_editor_dirty_checking() {
+        let queue = crate::queue::Queue::new();
+        let mut editor = Editor::new(queue);
         let content = (0..30)
             .map(|i| format!("Line {i}"))
             .collect::<Vec<_>>()

@@ -1,6 +1,8 @@
 pub mod editor;
 pub mod note_list;
 pub mod search_bar;
+pub mod help;
+pub mod popup_stack;
 
 use crate::event::Event;
 use color_eyre::Result;

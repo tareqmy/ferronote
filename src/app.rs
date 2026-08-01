@@ -6,7 +6,7 @@ use ratatui::{
     style::{Color, Modifier, Style},
     text::{Line, Span},
     widgets::{
-        Block, Borders, Clear, Paragraph, Scrollbar, ScrollbarOrientation, ScrollbarState,
+        Block, Borders, Clear, Paragraph,
     },
 };
 
@@ -33,16 +33,17 @@ pub struct App<'a> {
     pub index: Index,
     pub last_search_input: Option<Instant>,
     pub current_query: String,
-    pub show_help: bool,
     pub show_about: bool,
     pub show_settings: bool,
     pub show_delete_confirmation: bool,
     pub show_rename_prompt: bool,
+    pub popup_stack: crate::components::popup_stack::PopupStack,
     pub rename_input: tui_textarea::TextArea<'a>,
     pub show_more_shortcuts: bool,
     pub show_notes_list: bool,
     pub settings_selected_index: usize,
     pub config: Config,
+    pub env: crate::environment::Environment,
     pub search_area: Rect,
     pub content_area: Rect,
     pub list_area: Rect,
@@ -50,7 +51,6 @@ pub struct App<'a> {
     pub latest_version: Option<String>,
     pub update_area: Option<Rect>,
     pub is_resizing_sidebar: bool,
-    pub help_scroll_offset: usize,
 }
 
 impl App<'_> {
@@ -66,27 +66,29 @@ impl App<'_> {
         }
 
         let config = Config::load().unwrap_or_default();
+        let env = crate::environment::Environment::new();
 
         let mut app = Self {
             should_quit: false,
             note_store,
             focus: Focus::default(),
-            search_bar: SearchBar::new(),
-            note_list: NoteList::new(),
-            editor: Editor::new(),
+            search_bar: SearchBar::new(env.queue.clone()),
+            note_list: NoteList::new(env.queue.clone()),
+            editor: Editor::new(env.queue.clone()),
             index,
             last_search_input: None,
             current_query: String::new(),
-            show_help: false,
             show_about: false,
             show_settings: false,
             show_delete_confirmation: false,
             show_rename_prompt: false,
+            popup_stack: crate::components::popup_stack::PopupStack::new(env.queue.clone()),
             rename_input: tui_textarea::TextArea::default(),
             show_more_shortcuts: false,
             show_notes_list: true,
             settings_selected_index: 0,
             config,
+            env,
             search_area: Rect::default(),
             content_area: Rect::default(),
             list_area: Rect::default(),
@@ -94,7 +96,6 @@ impl App<'_> {
             latest_version: None,
             update_area: None,
             is_resizing_sidebar: false,
-            help_scroll_offset: 0,
         };
         app.update_search();
         app
@@ -305,6 +306,10 @@ impl App<'_> {
             let action = self.handle_event(event);
 
             if let Some(action) = action {
+                self.env.queue.push(action);
+            }
+
+            while let Some(action) = self.env.queue.pop() {
                 if action == Action::OpenExternalEditor {
                     self.update(Action::SaveNote);
                     
@@ -353,6 +358,18 @@ impl App<'_> {
     }
 
     fn handle_event(&mut self, event: Event) -> Option<Action> {
+        if !self.popup_stack.is_empty() {
+            use crate::components::Component;
+            match event {
+                Event::Key(_) | Event::Mouse(_) => {
+                    if let Ok(crate::components::EventState::Consumed) = self.popup_stack.event(&event) {
+                        return None;
+                    }
+                }
+                _ => {}
+            }
+        }
+
         match event {
             Event::Tick => Some(Action::Tick),
             Event::Key(key_event) => self.handle_key(key_event),
@@ -491,27 +508,7 @@ impl App<'_> {
             }
         }
 
-        if self.show_help {
-            match key.code {
-                KeyCode::Up | KeyCode::Char('k') => {
-                    self.help_scroll_offset = self.help_scroll_offset.saturating_sub(1);
-                    return None;
-                }
-                KeyCode::Down | KeyCode::Char('j') => {
-                    self.help_scroll_offset = self.help_scroll_offset.saturating_add(1);
-                    return None;
-                }
-                KeyCode::PageUp => {
-                    self.help_scroll_offset = self.help_scroll_offset.saturating_sub(5);
-                    return None;
-                }
-                KeyCode::PageDown => {
-                    self.help_scroll_offset = self.help_scroll_offset.saturating_add(5);
-                    return None;
-                }
-                _ => return Some(Action::ToggleHelp),
-            }
-        }
+
 
         if self.show_about {
             return Some(Action::ToggleAbout);
@@ -602,9 +599,7 @@ impl App<'_> {
                 if key.code == KeyCode::Enter {
                     return Some(Action::SubmitSearch);
                 }
-                if let Ok(crate::components::EventState::Consumed) = self.note_list.event(&crate::event::Event::Key(key)) {
-                    return Some(Action::SelectNote(self.note_list.selected_note()));
-                }
+                let _ = self.note_list.event(&crate::event::Event::Key(key));
             }
             Focus::Editor => {
                 if key.code == KeyCode::Esc {
@@ -682,8 +677,11 @@ impl App<'_> {
                 }
             }
             Action::ToggleHelp => {
-                self.show_help = !self.show_help;
-                self.help_scroll_offset = 0;
+                if !self.popup_stack.is_empty() {
+                    self.popup_stack.clear();
+                } else {
+                    self.popup_stack.push(crate::components::popup_stack::AnyPopup::Help(crate::components::help::HelpPopup::new(self.env.queue.clone())));
+                }
             }
             Action::ToggleAbout => {
                 self.show_about = !self.show_about;
@@ -854,8 +852,8 @@ impl App<'_> {
                 }
             }
             Action::MouseDown(x, y) => {
-                if self.show_help {
-                    self.show_help = false;
+                if !self.popup_stack.is_empty() {
+                    self.popup_stack.clear();
                     return;
                 }
                 if self.show_about {
@@ -932,10 +930,6 @@ impl App<'_> {
                 self.update(Action::MouseUp(x, y));
             }
             Action::MouseScrollUp(x, y) => {
-                if self.show_help {
-                    self.help_scroll_offset = self.help_scroll_offset.saturating_sub(2);
-                    return;
-                }
                 let in_list = x >= self.list_area.x
                     && x < self.list_area.x + self.list_area.width
                     && y >= self.list_area.y
@@ -959,10 +953,6 @@ impl App<'_> {
                 }
             }
             Action::MouseScrollDown(x, y) => {
-                if self.show_help {
-                    self.help_scroll_offset = self.help_scroll_offset.saturating_add(2);
-                    return;
-                }
                 let in_list = x >= self.list_area.x
                     && x < self.list_area.x + self.list_area.width
                     && y >= self.list_area.y
@@ -1337,113 +1327,9 @@ impl App<'_> {
             frame.render_widget(&rename_block, popup_area);
         }
 
-        // Render Help Overlay
-        if self.show_help {
-            let keybindings_data = [
-                ("/ or Ctrl+L", "Focus search bar"),
-                ("Ctrl+N", "New note / Clear search bar"),
-                ("Tab / Esc", "Switch Focus (Search → List → Editor)"),
-                ("Enter", "Open selected note / Create / Wiki-link"),
-                ("Up / Down", "Navigate note list"),
-                ("PgUp / PgDn", "Scroll note list page by page"),
-                ("Home / End", "Jump to top / bottom of note list"),
-                ("Ctrl+S", "Force save current note"),
-                ("Ctrl+Z", "Undo in editor"),
-                ("Ctrl+Y", "Redo in editor"),
-                ("Ctrl+D", "Delete selected note (moves to trash)"),
-                ("Ctrl+B", "Toggle Notes List panel visibility"),
-                ("Ctrl+O", "Open note in external editor"),
-                ("Ctrl+P", "Toggle Settings Overlay"),
-                ("Ctrl+V", "Toggle About Overlay"),
-                ("Mouse Drag", "Resize notes list and content panel"),
-                ("?", "Toggle Help Overlay"),
-                ("Ctrl+Q", "Quit Application"),
-                ("", ""),
-                ("h, j, k, l", "Move cursor (View mode)"),
-                ("w, b", "Move word forward/backward (View mode)"),
-                ("0, $", "Move to beginning/end of line (View mode)"),
-                ("gg, G", "Move to beginning/end of file (View mode)"),
-                ("dd", "Delete current line (View mode)"),
-                ("yy", "Yank (copy) current line (View mode)"),
-                ("p, P", "Paste after/before cursor (View mode)"),
-                ("u, Ctrl+r", "Undo / Redo (View mode)"),
-                ("/, n, N", "Search, next, previous (View mode)"),
-                ("x", "Delete character under cursor (View mode)"),
-                ("Ctrl+W", "Delete word before cursor (Edit mode)"),
-                ("Ctrl+U", "Delete to beginning of line (Edit mode)"),
-                ("Ctrl+H", "Delete character before cursor (Edit mode)"),
-            ];
-
-            let mut lines = vec![
-                Line::from(Span::styled(
-                    " 💡 Ferronote Keybindings",
-                    Style::default()
-                        .fg(Color::Yellow)
-                        .add_modifier(Modifier::BOLD),
-                )),
-                Line::from(""),
-            ];
-
-            for (key, action) in keybindings_data {
-                lines.push(Line::from(vec![
-                    Span::styled(
-                        format!("  {:<14} ", key),
-                        Style::default()
-                            .fg(Color::Cyan)
-                            .add_modifier(Modifier::BOLD),
-                    ),
-                    Span::styled("│ ", Style::default().fg(Color::DarkGray)),
-                    Span::styled(action, Style::default().fg(Color::White)),
-                ]));
-            }
-
-            lines.push(Line::from(""));
-            lines.push(Line::from(Span::styled(
-                " [Press Esc or ? to close, ↑/↓ or Mouse Wheel to scroll]",
-                Style::default().fg(Color::DarkGray),
-            )));
-
-            let total_lines = lines.len();
-
-            let area = frame.area();
-            let width = 70.min(area.width.saturating_sub(2));
-            let height = (total_lines as u16 + 2).min(area.height.saturating_sub(2));
-            let x = (area.width.saturating_sub(width)) / 2;
-            let y = (area.height.saturating_sub(height)) / 2;
-            let popup_area = ratatui::layout::Rect::new(x, y, width, height);
-
-            let inner_height = popup_area.height.saturating_sub(2) as usize;
-            let max_scroll = total_lines.saturating_sub(inner_height);
-            self.help_scroll_offset = self.help_scroll_offset.min(max_scroll);
-
-            let help_block = Paragraph::new(lines)
-                .scroll((self.help_scroll_offset as u16, 0))
-                .block(
-                    Block::default()
-                        .borders(Borders::ALL)
-                        .title(" Help (?) ")
-                        .border_style(Style::default().fg(Color::Yellow)),
-                );
-
-            frame.render_widget(Clear, popup_area);
-            frame.render_widget(help_block, popup_area);
-
-            if max_scroll > 0 {
-                let scrollbar = Scrollbar::new(ScrollbarOrientation::VerticalRight)
-                    .begin_symbol(Some("▲"))
-                    .end_symbol(Some("▼"));
-                let mut scrollbar_state =
-                    ScrollbarState::new(max_scroll).position(self.help_scroll_offset);
-                frame.render_stateful_widget(
-                    scrollbar,
-                    popup_area.inner(ratatui::layout::Margin {
-                        vertical: 1,
-                        horizontal: 0,
-                    }),
-                    &mut scrollbar_state,
-                );
-            }
-        }
+        // Render Popups (Help, etc.)
+        use crate::components::DrawableComponent;
+        let _ = self.popup_stack.draw(frame, frame.area());
 
         // Render About Overlay
         if self.show_about {
@@ -1903,13 +1789,13 @@ mod tests {
     #[test]
     fn test_app_help_overlay_toggle() {
         let (mut app, _temp_dir) = setup_test_app();
-        assert!(!app.show_help);
+        assert!(app.popup_stack.is_empty());
 
         app.update(Action::ToggleHelp);
-        assert!(app.show_help);
+        assert!(!app.popup_stack.is_empty());
 
         app.update(Action::ToggleHelp);
-        assert!(!app.show_help);
+        assert!(app.popup_stack.is_empty());
     }
 
     #[test]
@@ -1932,30 +1818,7 @@ mod tests {
         assert!(!app.editor.is_editing);
     }
 
-    #[test]
-    fn test_app_help_overlay_mouse_scroll() {
-        let (mut app, _temp_dir) = setup_test_app();
-        app.update(Action::ToggleHelp);
-        assert!(app.show_help);
-        assert_eq!(app.help_scroll_offset, 0);
 
-        // Scroll down with mouse wheel
-        app.update(Action::MouseScrollDown(35, 10));
-        assert_eq!(app.help_scroll_offset, 2);
-
-        // Scroll down again
-        app.update(Action::MouseScrollDown(35, 10));
-        assert_eq!(app.help_scroll_offset, 4);
-
-        // Scroll up with mouse wheel
-        app.update(Action::MouseScrollUp(35, 10));
-        assert_eq!(app.help_scroll_offset, 2);
-
-        // Closing help overlay resets scroll offset
-        app.update(Action::ToggleHelp);
-        assert!(!app.show_help);
-        assert_eq!(app.help_scroll_offset, 0);
-    }
 
     #[test]
     fn test_app_auto_save_on_tick() {

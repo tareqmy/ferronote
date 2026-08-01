@@ -15,15 +15,18 @@ pub struct NoteList {
     pub state: ListState,
     /// Matching search results displayed in sidebar list.
     pub items: Vec<SearchResult>,
+    /// Event queue for emitting app actions.
+    pub queue: crate::queue::Queue,
 }
 
 impl NoteList {
     /// Creates a new empty `NoteList` component.
     #[must_use]
-    pub fn new() -> Self {
+    pub fn new(queue: crate::queue::Queue) -> Self {
         Self {
             state: ListState::default(),
             items: Vec::new(),
+            queue,
         }
     }
 
@@ -321,26 +324,32 @@ impl crate::components::Component for NoteList {
             match key.code {
                 KeyCode::Down | KeyCode::Char('j') => {
                     self.next();
+                    self.queue.push(crate::action::Action::SelectNote(self.selected_note()));
                     return Ok(crate::components::EventState::Consumed);
                 }
                 KeyCode::Up | KeyCode::Char('k') => {
                     self.previous();
+                    self.queue.push(crate::action::Action::SelectNote(self.selected_note()));
                     return Ok(crate::components::EventState::Consumed);
                 }
                 KeyCode::PageDown => {
                     self.page_down(10);
+                    self.queue.push(crate::action::Action::SelectNote(self.selected_note()));
                     return Ok(crate::components::EventState::Consumed);
                 }
                 KeyCode::PageUp => {
                     self.page_up(10);
+                    self.queue.push(crate::action::Action::SelectNote(self.selected_note()));
                     return Ok(crate::components::EventState::Consumed);
                 }
                 KeyCode::Home => {
                     self.select_first();
+                    self.queue.push(crate::action::Action::SelectNote(self.selected_note()));
                     return Ok(crate::components::EventState::Consumed);
                 }
                 KeyCode::End => {
                     self.select_last();
+                    self.queue.push(crate::action::Action::SelectNote(self.selected_note()));
                     return Ok(crate::components::EventState::Consumed);
                 }
                 _ => {}
@@ -372,7 +381,8 @@ mod tests {
 
     #[test]
     fn test_note_list_navigation() {
-        let mut list = NoteList::new();
+        let queue = crate::queue::Queue::new();
+        let mut list = NoteList::new(queue);
         list.set_items(make_mock_results(25));
         assert_eq!(list.state.selected(), Some(0));
 
@@ -394,7 +404,8 @@ mod tests {
 
     #[test]
     fn test_note_list_click_at() {
-        let mut list = NoteList::new();
+        let queue = crate::queue::Queue::new();
+        let mut list = NoteList::new(queue);
         list.set_items(make_mock_results(5));
         let list_area = Rect::new(0, 3, 24, 20);
 
@@ -426,7 +437,8 @@ mod tests {
 
     #[test]
     fn test_note_list_clamping_and_empty() {
-        let mut list = NoteList::new();
+        let queue = crate::queue::Queue::new();
+        let mut list = NoteList::new(queue);
         // Empty list navigation
         list.next();
         assert_eq!(list.state.selected(), None);
@@ -460,7 +472,8 @@ mod tests {
         use ratatui::Terminal;
         use crate::theme::ThemePalette;
 
-        let mut list = NoteList::new();
+        let queue = crate::queue::Queue::new();
+        let mut list = NoteList::new(queue);
         list.set_items(vec![SearchResult {
             filename: "very_long_note_title.md".to_string(),
             title: "This is a very long note title that exceeds available width".to_string(),
@@ -495,7 +508,8 @@ mod tests {
         assert!(row_content.contains("..."), "Row content should contain '...': {row_content}");
 
         // Test create prompt curtailment
-        let mut list_prompt = NoteList::new();
+        let queue2 = crate::queue::Queue::new();
+        let mut list_prompt = NoteList::new(queue2);
         list_prompt.set_items(vec![SearchResult {
             filename: "new.md".to_string(),
             title: "Extremely long create prompt note title text".to_string(),

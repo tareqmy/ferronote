@@ -33,6 +33,7 @@ pub struct Editor<'a> {
     pub pending_y: bool,
     /// Active search textarea input. If Some, search mode is active.
     pub search_textarea: Option<TextArea<'a>>,
+    pub current_search_query: Option<String>,
     /// Event queue for emitting app actions.
     pub queue: crate::queue::Queue,
 }
@@ -160,6 +161,7 @@ impl Editor<'_> {
             pending_d: false,
             pending_y: false,
             search_textarea: None,
+            current_search_query: None,
             queue,
         }
     }
@@ -211,6 +213,7 @@ impl Editor<'_> {
                     KeyCode::Enter => {
                         let query = search_ta.lines()[0].clone();
                         let _ = ta.set_search_pattern(&query);
+                        self.current_search_query = Some(query.clone());
                         ta.search_forward(false);
                         self.search_textarea = None;
                     }
@@ -367,6 +370,10 @@ impl Editor<'_> {
                         KeyCode::Char('G') => {
                             ta.move_cursor(tui_textarea::CursorMove::Bottom);
                         }
+                        KeyCode::Esc => {
+                            let _ = ta.set_search_pattern("");
+                            self.current_search_query = None;
+                        }
                         _ => {}
                     }
                 }
@@ -458,6 +465,10 @@ impl Editor<'_> {
             };
 
             ta_clone.set_block(block);
+            if let Some(query) = &self.current_search_query {
+                let _ = ta_clone.set_search_pattern(query);
+            }
+            ta_clone.set_search_style(ratatui::style::Style::default().bg(ratatui::style::Color::Yellow).fg(ratatui::style::Color::Black));
             if is_focused {
                 if self.is_editing {
                     ta_clone.set_cursor_style(Style::default().bg(Color::White).fg(Color::Black));
@@ -477,6 +488,7 @@ impl Editor<'_> {
                         ratatui::layout::Constraint::Length(3),
                     ])
                     .split(area)[1];
+                frame.render_widget(ratatui::widgets::Clear, search_area);
                 frame.render_widget(search_ta, search_area);
             }
             return;

@@ -229,6 +229,13 @@
     - [x] `u`, `Ctrl+r` - Undo / Redo
     - [x] `/`, `n`, `N` - Search forward, next match, previous match
     - [x] `x` - Delete character under cursor
+  - [ ] **Entering Insert Mode Precisely:**
+    - [x] `i` - Insert before cursor
+    - [ ] `a` - Append after cursor
+    - [ ] `I` - Insert at the beginning of the line (first non-blank char)
+    - [ ] `A` - Append at the end of the line
+    - [ ] `o` - Open a new line below current line and enter Insert mode
+    - [ ] `O` - Open a new line above current line and enter Insert mode
   - [ ] **Edit (Insert) Mode Shortcuts:**
     - [x] `Esc` or `Ctrl+c` - Return to normal mode
     - [x] `Ctrl+w` - Delete word before the cursor

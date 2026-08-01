@@ -180,8 +180,10 @@ impl Editor<'_> {
             return;
         }
 
+        if self.current_note.as_deref() != Some(title) {
+            self.is_editing = false;
+        }
         self.current_note = Some(title.to_string());
-        self.is_editing = false;
 
         if !self.textareas.contains_key(title) {
             let lines: Vec<String> = content.lines().map(ToString::to_string).collect();
@@ -386,7 +388,7 @@ impl Editor<'_> {
                 return;
             }
 
-            if key.code == KeyCode::Esc {
+            if key.code == KeyCode::Esc || (key.code == KeyCode::Char('c') && key.modifiers.contains(KeyModifiers::CONTROL)) {
                 self.is_editing = false;
                 return;
             }
@@ -399,6 +401,18 @@ impl Editor<'_> {
                 && key.code == KeyCode::Char('y')
             {
                 ta.redo()
+            } else if key.modifiers.contains(KeyModifiers::CONTROL)
+                && key.code == KeyCode::Char('w')
+            {
+                ta.delete_word()
+            } else if key.modifiers.contains(KeyModifiers::CONTROL)
+                && key.code == KeyCode::Char('u')
+            {
+                ta.delete_line_by_head()
+            } else if key.modifiers.contains(KeyModifiers::CONTROL)
+                && key.code == KeyCode::Char('h')
+            {
+                ta.delete_char()
             } else if key.code == KeyCode::PageDown {
                 for _ in 0..10 {
                     ta.move_cursor(tui_textarea::CursorMove::Down);

@@ -33,7 +33,7 @@ pub struct Editor<'a> {
     pub pending_y: bool,
     /// Active search textarea input. If Some, search mode is active.
     pub search_textarea: Option<TextArea<'a>>,
-    pub current_search_query: Option<String>,
+    pub current_search_query: HashMap<String, String>,
     /// Event queue for emitting app actions.
     pub queue: crate::queue::Queue,
 }
@@ -161,7 +161,7 @@ impl Editor<'_> {
             pending_d: false,
             pending_y: false,
             search_textarea: None,
-            current_search_query: None,
+            current_search_query: HashMap::new(),
             queue,
         }
     }
@@ -214,7 +214,7 @@ impl Editor<'_> {
                         let query = search_ta.lines()[0].clone();
                         let pattern = format!("(?i){}", query);
                         let _ = ta.set_search_pattern(&pattern);
-                        self.current_search_query = Some(pattern);
+                        self.current_search_query.insert(note.clone(), pattern);
                         ta.search_forward(false);
                         self.search_textarea = None;
                     }
@@ -373,7 +373,7 @@ impl Editor<'_> {
                         }
                         KeyCode::Esc => {
                             let _ = ta.set_search_pattern("");
-                            self.current_search_query = None;
+                            self.current_search_query.remove(note);
                         }
                         _ => {}
                     }
@@ -466,7 +466,7 @@ impl Editor<'_> {
             };
 
             ta_clone.set_block(block);
-            if let Some(query) = &self.current_search_query {
+            if let Some(query) = self.current_search_query.get(note) {
                 let _ = ta_clone.set_search_pattern(query);
             }
             ta_clone.set_search_style(ratatui::style::Style::default().bg(ratatui::style::Color::Yellow).fg(ratatui::style::Color::Black));

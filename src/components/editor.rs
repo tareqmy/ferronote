@@ -439,7 +439,11 @@ impl Editor<'_> {
         };
 
         let border_color = if is_focused {
-            theme.border_active
+            if self.is_editing {
+                theme.accent
+            } else {
+                theme.border_active
+            }
         } else {
             theme.border_inactive
         };

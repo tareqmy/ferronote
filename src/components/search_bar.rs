@@ -42,6 +42,20 @@ impl SearchBar<'_> {
     pub fn clear(&mut self) {
         *self = Self::new();
     }
+}
+
+impl crate::components::Component for SearchBar<'_> {
+    fn event(&mut self, ev: &crate::event::Event) -> color_eyre::Result<crate::components::EventState> {
+        if let crate::event::Event::Key(key) = ev {
+            self.handle_key(*key);
+            // SearchBar consumes all keys when focused (usually)
+            return Ok(crate::components::EventState::Consumed);
+        }
+        Ok(crate::components::EventState::NotConsumed)
+    }
+}
+
+impl SearchBar<'_> {
 
     pub fn draw(
         &self,

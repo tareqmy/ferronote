@@ -588,42 +588,24 @@ impl App<'_> {
                     }
                     return Some(Action::SelectNote(self.note_list.selected_note()));
                 } else {
+                    use crate::components::Component;
                     let old_query = self.search_bar.query();
-                    self.search_bar.handle_key(key);
+                    let _ = self.search_bar.event(&crate::event::Event::Key(key));
                     let new_query = self.search_bar.query();
                     if old_query != new_query {
                         self.last_search_input = Some(Instant::now());
                     }
                 }
             }
-            Focus::NoteList => match key.code {
-                KeyCode::Enter => return Some(Action::SubmitSearch),
-                KeyCode::Down => {
-                    self.note_list.next();
+            Focus::NoteList => {
+                use crate::components::Component;
+                if key.code == KeyCode::Enter {
+                    return Some(Action::SubmitSearch);
+                }
+                if let Ok(crate::components::EventState::Consumed) = self.note_list.event(&crate::event::Event::Key(key)) {
                     return Some(Action::SelectNote(self.note_list.selected_note()));
                 }
-                KeyCode::Up => {
-                    self.note_list.previous();
-                    return Some(Action::SelectNote(self.note_list.selected_note()));
-                }
-                KeyCode::PageDown => {
-                    self.note_list.page_down(10);
-                    return Some(Action::SelectNote(self.note_list.selected_note()));
-                }
-                KeyCode::PageUp => {
-                    self.note_list.page_up(10);
-                    return Some(Action::SelectNote(self.note_list.selected_note()));
-                }
-                KeyCode::Home => {
-                    self.note_list.select_first();
-                    return Some(Action::SelectNote(self.note_list.selected_note()));
-                }
-                KeyCode::End => {
-                    self.note_list.select_last();
-                    return Some(Action::SelectNote(self.note_list.selected_note()));
-                }
-                _ => {}
-            },
+            }
             Focus::Editor => {
                 if key.code == KeyCode::Esc {
                     if self.editor.is_editing {
@@ -651,7 +633,8 @@ impl App<'_> {
 
                     return None;
                 }
-                self.editor.handle_key(key);
+                use crate::components::Component;
+                let _ = self.editor.event(&crate::event::Event::Key(key));
             }
         }
 

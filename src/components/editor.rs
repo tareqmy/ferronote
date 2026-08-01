@@ -558,6 +558,19 @@ impl Editor<'_> {
     }
 }
 
+impl crate::components::Component for Editor<'_> {
+    fn event(&mut self, ev: &crate::event::Event) -> color_eyre::Result<crate::components::EventState> {
+        if let crate::event::Event::Key(key) = ev {
+            // Only consume events if the editor is in editing mode, 
+            // or if we want it to handle view mode scrolling. 
+            // We just proxy to handle_key for now.
+            self.handle_key(*key);
+            return Ok(crate::components::EventState::Consumed);
+        }
+        Ok(crate::components::EventState::NotConsumed)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

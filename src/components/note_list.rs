@@ -314,6 +314,43 @@ impl NoteList {
     }
 }
 
+impl crate::components::Component for NoteList {
+    fn event(&mut self, ev: &crate::event::Event) -> color_eyre::Result<crate::components::EventState> {
+        if let crate::event::Event::Key(key) = ev {
+            use ratatui::crossterm::event::KeyCode;
+            match key.code {
+                KeyCode::Down | KeyCode::Char('j') => {
+                    self.next();
+                    return Ok(crate::components::EventState::Consumed);
+                }
+                KeyCode::Up | KeyCode::Char('k') => {
+                    self.previous();
+                    return Ok(crate::components::EventState::Consumed);
+                }
+                KeyCode::PageDown => {
+                    self.page_down(10);
+                    return Ok(crate::components::EventState::Consumed);
+                }
+                KeyCode::PageUp => {
+                    self.page_up(10);
+                    return Ok(crate::components::EventState::Consumed);
+                }
+                KeyCode::Home => {
+                    self.select_first();
+                    return Ok(crate::components::EventState::Consumed);
+                }
+                KeyCode::End => {
+                    self.select_last();
+                    return Ok(crate::components::EventState::Consumed);
+                }
+                _ => {}
+            }
+        }
+        Ok(crate::components::EventState::NotConsumed)
+    }
+}
+
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -243,7 +243,7 @@
     - [x] `Ctrl+h` - Delete character before the cursor
     - [x] `Ctrl+t` - Indent current line
     - [x] `Ctrl+d` - De-indent current line
-    - [ ] `Ctrl+v` - Insert character literally
+    - [x] `Ctrl+v` - Insert character literally
 - [ ] 📊 **Daily notes / Journal mode** — Auto-create daily notes template
 - [ ] 📋 **Paste as new note** — Paste clipboard contents directly as a new note (inspired by NV)
 - [ ] ✏️ **Rename from UI** — Shortcut to easily rename the currently selected note (inspired by NV)

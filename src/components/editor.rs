@@ -31,6 +31,8 @@ pub struct Editor<'a> {
     pub pending_d: bool,
     /// Pending 'y' keypress for 'yy' normal mode vim shortcut.
     pub pending_y: bool,
+    /// Pending 'v' keypress for 'Ctrl+v' insert literal mode.
+    pub pending_v: bool,
     /// Active search textarea input. If Some, search mode is active.
     pub search_textarea: Option<TextArea<'a>>,
     pub current_search_query: HashMap<String, String>,
@@ -160,6 +162,7 @@ impl Editor<'_> {
             pending_g: false,
             pending_d: false,
             pending_y: false,
+            pending_v: false,
             search_textarea: None,
             current_search_query: HashMap::new(),
             queue,
@@ -174,6 +177,7 @@ impl Editor<'_> {
         self.pending_g = false;
         self.pending_d = false;
         self.pending_y = false;
+        self.pending_v = false;
         if title.is_empty() {
             self.current_note = None;
             self.is_editing = false;
@@ -411,12 +415,31 @@ impl Editor<'_> {
                 return;
             }
 
-            if key.code == KeyCode::Esc || (key.code == KeyCode::Char('c') && key.modifiers.contains(KeyModifiers::CONTROL)) {
+            if key.code == KeyCode::Esc || (!self.pending_v && key.code == KeyCode::Char('c') && key.modifiers.contains(KeyModifiers::CONTROL)) {
                 self.is_editing = false;
                 return;
             }
 
-            let modified = if key.modifiers.contains(KeyModifiers::CONTROL)
+            let modified = if self.pending_v {
+                self.pending_v = false;
+                if let KeyCode::Char(c) = key.code {
+                    ta.insert_char(c);
+                    true
+                } else if key.code == KeyCode::Enter {
+                    ta.insert_newline();
+                    true
+                } else if key.code == KeyCode::Tab {
+                    ta.insert_str("    ");
+                    true
+                } else {
+                    ta.input(key)
+                }
+            } else if key.modifiers.contains(KeyModifiers::CONTROL)
+                && key.code == KeyCode::Char('v')
+            {
+                self.pending_v = true;
+                false
+            } else if key.modifiers.contains(KeyModifiers::CONTROL)
                 && key.code == KeyCode::Char('z')
             {
                 ta.undo()

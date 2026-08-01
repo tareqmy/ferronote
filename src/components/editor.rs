@@ -289,6 +289,12 @@ impl Editor<'_> {
                     } else if key.code == KeyCode::Char('r') && key.modifiers.contains(KeyModifiers::CONTROL) {
                         ta.redo();
                         modified = true;
+                    } else if key.code == KeyCode::Char('x') {
+                        let (row, col) = ta.cursor();
+                        if col < ta.lines()[row].len() {
+                            ta.delete_next_char();
+                            modified = true;
+                        }
                     } else {
                         match key.code {
                         KeyCode::Char('e') | KeyCode::Char('i') | KeyCode::Enter => {

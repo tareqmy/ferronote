@@ -228,7 +228,7 @@
     - [x] `p`, `P` - Paste after/before cursor
     - [x] `u`, `Ctrl+r` - Undo / Redo
     - [ ] `/`, `n`, `N` - Search forward, next match, previous match
-    - [ ] `x` - Delete character under cursor
+    - [x] `x` - Delete character under cursor
   - [ ] **Edit (Insert) Mode Shortcuts:**
     - [x] `Esc` or `Ctrl+c` - Return to normal mode
     - [x] `Ctrl+w` - Delete word before the cursor

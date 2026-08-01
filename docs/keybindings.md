@@ -18,7 +18,7 @@ Ferronote is built from the ground up for keyboard efficiency.
 | `Ctrl+D` | Delete active note (moves to trash) | Global |
 | `Ctrl+R` | Rename active note | Global |
 | `Ctrl+N` | Create new note | Global |
-| `Ctrl+O` | Open active note in external editor (`$VISUAL` or `$EDITOR`) | Global |
+| `Ctrl+O` | Open active note in external editor (configured in Settings, or `$VISUAL` / `$EDITOR`) | Global |
 | `Ctrl+Z` / `Ctrl+Y` | Undo / Redo text edits | Editor |
 | `Ctrl+P` | Toggle Interactive Settings Overlay | Global |
 | `Ctrl+V` | Toggle About Application Overlay | Global |

@@ -96,7 +96,7 @@ You don't need a separate "New Note" button!
 - Ctrl+D: Soft delete selected note (moves file to trash).
 - Ctrl+B: Toggle Notes List panel visibility.
 - Ctrl+Z / Ctrl+Y: Undo / Redo inside the editor.
-- Ctrl+O: Open active note in external advanced editor.
+- Ctrl+O: Open active note in external advanced editor (configure in Ctrl+P settings).
 - Ctrl+P: Toggle Interactive Settings Overlay.
 - Ctrl+V: Toggle About Overlay.
 - ?: Toggle Help Overlay.

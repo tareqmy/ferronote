@@ -1369,6 +1369,7 @@ impl App<'_> {
                 ("Ctrl+Y", "Redo in editor"),
                 ("Ctrl+D", "Delete selected note (moves to trash)"),
                 ("Ctrl+B", "Toggle Notes List panel visibility"),
+                ("Ctrl+O", "Open note in external editor"),
                 ("Ctrl+P", "Toggle Settings Overlay"),
                 ("Ctrl+V", "Toggle About Overlay"),
                 ("Mouse Drag", "Resize notes list and content panel"),

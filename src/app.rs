@@ -1482,11 +1482,11 @@ impl App<'_> {
 
             let mut lines = vec![
                 Line::from(Span::styled(
-                    "                   ⚙️  Ferronote Settings",
+                    "⚙️  Ferronote Settings",
                     Style::default()
                         .fg(Color::Yellow)
                         .add_modifier(Modifier::BOLD),
-                )),
+                )).alignment(ratatui::layout::Alignment::Center),
                 Line::from(""),
             ];
 
@@ -1518,15 +1518,15 @@ impl App<'_> {
                     Span::styled(prefix, label_style),
                     Span::styled(format!("{:<22}", label), label_style),
                     Span::styled(": ", sep_style),
-                    Span::styled(format!("[ {:<18} ]", val), val_style),
+                    Span::styled(format!("[ {:<30} ]", val), val_style),
                 ]));
             }
 
             lines.push(Line::from(""));
             lines.push(Line::from(Span::styled(
-                "  [Up/Down] Select   [Left/Right/Enter] Modify   [Esc/Ctrl+P] Close",
+                "[Up/Down] Select   [Left/Right/Enter] Modify   [Esc/Ctrl+P] Close",
                 Style::default().fg(Color::DarkGray),
-            )));
+            )).alignment(ratatui::layout::Alignment::Center));
 
             let settings_block = Paragraph::new(lines).block(
                 Block::default()

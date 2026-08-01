@@ -92,14 +92,14 @@ impl DrawableComponent for HelpPopup {
         frame.render_widget(Clear, popup_area);
 
         let help_block = Block::default()
-            .title(" Help / Keybindings ")
+            .title(ratatui::widgets::block::Title::from(" Help / Keybindings ").alignment(ratatui::layout::Alignment::Center))
             .borders(Borders::ALL)
             .style(Style::default().fg(Color::Cyan));
 
         let rows: Vec<Row> = keybindings_data
             .iter()
             .map(|(k, d)| {
-                Row::new(vec![*k, *d]).style(Style::default().fg(Color::White))
+                Row::new(vec!["", *k, *d]).style(Style::default().fg(Color::White))
             })
             .collect();
 
@@ -111,7 +111,7 @@ impl DrawableComponent for HelpPopup {
 
         let table = Table::new(
             visible_rows,
-            [Constraint::Length(15), Constraint::Min(40)],
+            [Constraint::Length(2), Constraint::Length(18), Constraint::Min(40)],
         )
         .block(help_block)
         .column_spacing(2);

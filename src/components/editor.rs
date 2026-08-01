@@ -29,6 +29,8 @@ pub struct Editor<'a> {
     pub pending_g: bool,
     /// Pending 'd' keypress for 'dd' normal mode vim shortcut.
     pub pending_d: bool,
+    /// Pending 'y' keypress for 'yy' normal mode vim shortcut.
+    pub pending_y: bool,
 }
 
 impl Default for Editor<'_> {
@@ -156,6 +158,7 @@ impl Editor<'_> {
             is_editing: false,
             pending_g: false,
             pending_d: false,
+            pending_y: false,
         }
     }
 
@@ -166,6 +169,7 @@ impl Editor<'_> {
     pub fn set_content(&mut self, title: &str, content: &str) {
         self.pending_g = false;
         self.pending_d = false;
+        self.pending_y = false;
         if title.is_empty() {
             self.current_note = None;
             self.is_editing = false;
@@ -202,6 +206,7 @@ impl Editor<'_> {
                 
                 if key.code == KeyCode::Char('g') {
                     self.pending_d = false;
+                    self.pending_y = false;
                     if self.pending_g {
                         ta.move_cursor(tui_textarea::CursorMove::Top);
                         self.pending_g = false;
@@ -226,8 +231,26 @@ impl Editor<'_> {
                     } else {
                         self.pending_d = true;
                     }
+                } else if key.code == KeyCode::Char('y') {
+                    self.pending_d = false;
+                    if self.pending_y {
+                        let orig = ta.cursor();
+                        ta.move_cursor(tui_textarea::CursorMove::Head);
+                        ta.start_selection();
+                        ta.move_cursor(tui_textarea::CursorMove::Down);
+                        if ta.cursor() == (orig.0, 0) {
+                            ta.move_cursor(tui_textarea::CursorMove::End);
+                        }
+                        ta.copy();
+                        ta.cancel_selection();
+                        ta.move_cursor(tui_textarea::CursorMove::Jump(orig.0 as u16, orig.1 as u16));
+                        self.pending_y = false;
+                    } else {
+                        self.pending_y = true;
+                    }
                 } else {
                     self.pending_d = false;
+                    self.pending_y = false;
                     match key.code {
                         KeyCode::Char('e') | KeyCode::Char('i') | KeyCode::Enter => {
                             self.is_editing = true;

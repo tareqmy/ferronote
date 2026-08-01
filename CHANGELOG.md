@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.1] - 2026-08-01
+
+### Added
+- feat: implement missing `/` shortcut to focus global search bar
+- feat: add case-insensitive regex search support for local editor search
+
+### Changed
+- refactor: change `Esc` behavior to clear global search bar and exit overlays
+- refactor: dynamically size help popup based on content height
+- refactor: use different border color for editor in edit vs view mode
+- docs: update README, keybindings, and default notes to reflect new `Esc` and Vim behaviors
+- chore: fix compilation warnings for deprecated layout methods
+
+### Fixed
+- fix: resolve default note generation overwriting existing files
+- fix: correct note content snippet generation in search results handling multi-byte characters
+
 ## [1.1.7] - 2026-08-01
 
 ### Added

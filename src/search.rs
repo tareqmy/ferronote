@@ -1,5 +1,4 @@
-use fuzzy_matcher::FuzzyMatcher;
-use fuzzy_matcher::skim::SkimMatcherV2;
+
 use regex::Regex;
 use std::collections::{HashMap, HashSet};
 use std::sync::OnceLock;
@@ -30,7 +29,6 @@ pub struct SearchResult {
 
 /// In-memory search index supporting fuzzy search, tag indexing, and backlink resolution.
 pub struct Index {
-    matcher: SkimMatcherV2,
     // filename -> (title, content, modified_at, tags)
     notes: HashMap<String, (String, String, i64, HashSet<String>)>,
 }
@@ -52,7 +50,6 @@ impl Index {
     #[must_use]
     pub fn new() -> Self {
         Self {
-            matcher: SkimMatcherV2::default().smart_case(),
             notes: HashMap::new(),
         }
     }
@@ -198,26 +195,65 @@ impl Index {
                 continue;
             }
 
-            let title_match = self.matcher.fuzzy_indices(title, query);
-            let content_match = self.matcher.fuzzy_indices(content, query);
+            let query_words: Vec<&str> = query.split_whitespace().collect();
+            let mut matches_all = true;
+            let mut total_score = 0;
+            let mut all_title_indices = Vec::new();
+            let mut all_content_indices = Vec::new();
+            
+            let title_lower = title.to_lowercase();
+            let content_lower = content.to_lowercase();
 
-            if title_match.is_none() && content_match.is_none() {
+            for word in &query_words {
+                let word_lower = word.to_lowercase();
+                let mut word_matched = false;
+
+                if let Some(start) = title_lower.find(&word_lower) {
+                    word_matched = true;
+                    let char_start = title_lower[..start].chars().count();
+                    let char_len = word_lower.chars().count();
+                    for i in char_start..char_start + char_len {
+                        if !all_title_indices.contains(&i) {
+                            all_title_indices.push(i);
+                        }
+                    }
+                    total_score += 30; // 3x multiplier for title match
+                }
+
+                if let Some(start) = content_lower.find(&word_lower) {
+                    word_matched = true;
+                    let char_start = content_lower[..start].chars().count();
+                    let char_len = word_lower.chars().count();
+                    for i in char_start..char_start + char_len {
+                        if !all_content_indices.contains(&i) {
+                            all_content_indices.push(i);
+                        }
+                    }
+                    total_score += 10;
+                }
+
+                if !word_matched {
+                    matches_all = false;
+                    break;
+                }
+            }
+
+            if !matches_all || query_words.is_empty() {
                 continue;
             }
 
-            let (title_score, title_indices) = title_match.unwrap_or((0, vec![]));
-            let (content_score, content_indices) = content_match.unwrap_or((0, vec![]));
-
-            let total_score = (title_score * 3) + content_score;
+            let has_content_match = !all_content_indices.is_empty();
+            all_title_indices.sort_unstable();
+            all_content_indices.sort_unstable();
 
             matches.push((
                 filename,
                 title,
                 content,
                 total_score,
-                title_indices,
-                content_score > 0,
-                content_indices,
+                all_title_indices,
+                has_content_match,
+                all_content_indices,
                 *modified_at,
             ));
         }

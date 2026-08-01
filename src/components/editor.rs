@@ -348,6 +348,11 @@ impl Editor<'_> {
                             ta.move_cursor(tui_textarea::CursorMove::End);
                             self.is_editing = true;
                         }
+                        KeyCode::Char('o') => {
+                            ta.move_cursor(tui_textarea::CursorMove::End);
+                            ta.insert_newline();
+                            self.is_editing = true;
+                        }
                         KeyCode::PageDown => {
                             for _ in 0..10 {
                                 ta.move_cursor(tui_textarea::CursorMove::Down);

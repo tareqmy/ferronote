@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.7] - 2026-08-01
+
+### Added
+- feat: convert external editor setting to free-form text input
+- feat: add external editor selection to settings overlay
+- feat: add support for external editor and remove builtin formatting shortcuts
+- feat: add mouse capture toggle to settings to allow native text selection
+- feat: implement note renaming via UI with Ctrl+R
+- feat: support mouse scroll on editor content
+- feat: support PageUp/PageDown and Home/End in settings popup
+- feat: add Shift+Tab (BackTab) support to cycle focus backwards
+- feat: ensure search bar always inserts 1 create note prompt at top for non-empty queries
+- feat: default editor to view mode with shortcut to toggle edit mode
+- feat: eliminate shortcut overlaps and add non-overlapping formatting shortcuts
+- feat: curtail long note titles in list, enable help popup scrolling, and set default show_modified_time to false
+
+### Changed
+- docs: add auto-generated changelog and update agent rules
+- docs: sync docs and help menus with external editor settings option
+- docs: add external editor support to features.md
+- refactor: disable wrap around in note list navigation
+
+### Fixed
+- fix: show cursor pointer in editor view mode
+- fix: truncate long note names in delete confirmation popup
+
 ## [1.1.6] - 2026-07-31
 
 ### Added

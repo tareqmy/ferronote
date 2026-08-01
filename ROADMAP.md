@@ -218,6 +218,28 @@
 - [ ] 📱 **Companion mobile app** — Read-only viewer synced via filesystem
 - [ ] 🤖 **AI integration** — Optional LLM-powered summarization, tagging, linking
 - [ ] ⚡ **Vim keybindings** — Modal editing mode for vim users
+  - [ ] **View (Normal) Mode Shortcuts:**
+    - [x] `h`, `j`, `k`, `l` - Move cursor left, down, up, right
+    - [ ] `w`, `b` - Move forward/backward by word
+    - [ ] `0`, `$` - Move to beginning/end of line
+    - [ ] `gg`, `G` - Move to beginning/end of file
+    - [ ] `dd` - Delete current line
+    - [ ] `yy` - Yank (copy) current line
+    - [ ] `p`, `P` - Paste after/before cursor
+    - [ ] `u`, `Ctrl+r` - Undo / Redo
+    - [ ] `/`, `n`, `N` - Search forward, next match, previous match
+    - [ ] `x` - Delete character under cursor
+  - [ ] **Edit (Insert) Mode Shortcuts:**
+    - [x] `Esc` or `Ctrl+c` - Return to normal mode
+    - [x] `Ctrl+w` - Delete word before the cursor
+    - [x] `Ctrl+u` - Delete to the beginning of the line
+    - [x] `Ctrl+h` - Delete character before the cursor
+    - [ ] `Ctrl+t` - Indent current line
+    - [ ] `Ctrl+d` - De-indent current line
+    - [ ] `Ctrl+r` `{register}` - Insert contents of a register
+    - [ ] `Ctrl+o` - Execute a single normal mode command
+    - [ ] `Ctrl+p`, `Ctrl+n` - Autocomplete previous/next match
+    - [ ] `Ctrl+v` - Insert character literally
 - [ ] 📊 **Daily notes / Journal mode** — Auto-create daily notes template
 - [ ] 📋 **Paste as new note** — Paste clipboard contents directly as a new note (inspired by NV)
 - [ ] ✏️ **Rename from UI** — Shortcut to easily rename the currently selected note (inspired by NV)

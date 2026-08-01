@@ -1375,6 +1375,11 @@ impl App<'_> {
                 ("Mouse Drag", "Resize notes list and content panel"),
                 ("?", "Toggle Help Overlay"),
                 ("Ctrl+Q", "Quit Application"),
+                ("", ""),
+                ("h, j, k, l", "Move cursor (View mode)"),
+                ("Ctrl+W", "Delete word before cursor (Edit mode)"),
+                ("Ctrl+U", "Delete to beginning of line (Edit mode)"),
+                ("Ctrl+H", "Delete character before cursor (Edit mode)"),
             ];
 
             let mut lines = vec![

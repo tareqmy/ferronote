@@ -102,6 +102,12 @@ You don't need a separate "New Note" button!
 - ?: Toggle Help Overlay.
 - Ctrl+Q: Quit Ferronote.
 
+## ⚡ Vim Keybindings (Experimental)
+- h, j, k, l: Move cursor left, down, up, right (View mode).
+- Ctrl+W: Delete word before cursor (Edit mode).
+- Ctrl+U: Delete to beginning of line (Edit mode).
+- Ctrl+H: Delete character before cursor (Edit mode).
+
 ## 🏷️ Tags & Wiki-Links
 - #tags: Add inline tags like #todo or #ideas anywhere in your note, then search #todo to filter instantly.
 - [[Wiki-Links]]: Type [[Another Note]] inside a note, place your cursor on it, and press Enter to jump to or create the linked note! Check out [[Lorem Ipsum]] for an example.

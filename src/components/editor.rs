@@ -27,6 +27,8 @@ pub struct Editor<'a> {
     pub is_editing: bool,
     /// Pending 'g' keypress for 'gg' normal mode vim shortcut.
     pub pending_g: bool,
+    /// Pending 'd' keypress for 'dd' normal mode vim shortcut.
+    pub pending_d: bool,
 }
 
 impl Default for Editor<'_> {
@@ -153,6 +155,7 @@ impl Editor<'_> {
             original_content: HashMap::new(),
             is_editing: false,
             pending_g: false,
+            pending_d: false,
         }
     }
 
@@ -162,6 +165,7 @@ impl Editor<'_> {
 
     pub fn set_content(&mut self, title: &str, content: &str) {
         self.pending_g = false;
+        self.pending_d = false;
         if title.is_empty() {
             self.current_note = None;
             self.is_editing = false;
@@ -194,7 +198,10 @@ impl Editor<'_> {
             && let Some(ta) = self.textareas.get_mut(note)
         {
             if !self.is_editing {
+                let mut modified = false;
+                
                 if key.code == KeyCode::Char('g') {
+                    self.pending_d = false;
                     if self.pending_g {
                         ta.move_cursor(tui_textarea::CursorMove::Top);
                         self.pending_g = false;
@@ -205,48 +212,69 @@ impl Editor<'_> {
                 }
                 self.pending_g = false;
 
-                match key.code {
-                    KeyCode::Char('e') | KeyCode::Char('i') | KeyCode::Enter => {
-                        self.is_editing = true;
-                    }
-                    KeyCode::PageDown => {
-                        for _ in 0..10 {
-                            ta.move_cursor(tui_textarea::CursorMove::Down);
+                if key.code == KeyCode::Char('d') {
+                    if self.pending_d {
+                        ta.move_cursor(tui_textarea::CursorMove::Head);
+                        ta.delete_line_by_end();
+                        if ta.cursor().0 == ta.lines().len() - 1 && ta.lines().len() > 1 {
+                            ta.delete_char();
+                        } else {
+                            ta.delete_next_char();
                         }
+                        self.pending_d = false;
+                        modified = true;
+                    } else {
+                        self.pending_d = true;
                     }
-                    KeyCode::PageUp => {
-                        for _ in 0..10 {
+                } else {
+                    self.pending_d = false;
+                    match key.code {
+                        KeyCode::Char('e') | KeyCode::Char('i') | KeyCode::Enter => {
+                            self.is_editing = true;
+                        }
+                        KeyCode::PageDown => {
+                            for _ in 0..10 {
+                                ta.move_cursor(tui_textarea::CursorMove::Down);
+                            }
+                        }
+                        KeyCode::PageUp => {
+                            for _ in 0..10 {
+                                ta.move_cursor(tui_textarea::CursorMove::Up);
+                            }
+                        }
+                        KeyCode::Up | KeyCode::Char('k') => {
                             ta.move_cursor(tui_textarea::CursorMove::Up);
                         }
+                        KeyCode::Down | KeyCode::Char('j') => {
+                            ta.move_cursor(tui_textarea::CursorMove::Down);
+                        }
+                        KeyCode::Left | KeyCode::Char('h') => {
+                            ta.move_cursor(tui_textarea::CursorMove::Back);
+                        }
+                        KeyCode::Right | KeyCode::Char('l') => {
+                            ta.move_cursor(tui_textarea::CursorMove::Forward);
+                        }
+                        KeyCode::Char('w') => {
+                            ta.move_cursor(tui_textarea::CursorMove::WordForward);
+                        }
+                        KeyCode::Char('b') => {
+                            ta.move_cursor(tui_textarea::CursorMove::WordBack);
+                        }
+                        KeyCode::Home | KeyCode::Char('0') => {
+                            ta.move_cursor(tui_textarea::CursorMove::Head);
+                        }
+                        KeyCode::End | KeyCode::Char('$') => {
+                            ta.move_cursor(tui_textarea::CursorMove::End);
+                        }
+                        KeyCode::Char('G') => {
+                            ta.move_cursor(tui_textarea::CursorMove::Bottom);
+                        }
+                        _ => {}
                     }
-                    KeyCode::Up | KeyCode::Char('k') => {
-                        ta.move_cursor(tui_textarea::CursorMove::Up);
-                    }
-                    KeyCode::Down | KeyCode::Char('j') => {
-                        ta.move_cursor(tui_textarea::CursorMove::Down);
-                    }
-                    KeyCode::Left | KeyCode::Char('h') => {
-                        ta.move_cursor(tui_textarea::CursorMove::Back);
-                    }
-                    KeyCode::Right | KeyCode::Char('l') => {
-                        ta.move_cursor(tui_textarea::CursorMove::Forward);
-                    }
-                    KeyCode::Char('w') => {
-                        ta.move_cursor(tui_textarea::CursorMove::WordForward);
-                    }
-                    KeyCode::Char('b') => {
-                        ta.move_cursor(tui_textarea::CursorMove::WordBack);
-                    }
-                    KeyCode::Home | KeyCode::Char('0') => {
-                        ta.move_cursor(tui_textarea::CursorMove::Head);
-                    }
-                    KeyCode::End | KeyCode::Char('$') => {
-                        ta.move_cursor(tui_textarea::CursorMove::End);
-                    }
-                    KeyCode::Char('G') => {
-                        ta.move_cursor(tui_textarea::CursorMove::Bottom);
-                    }
-                    _ => {}
+                }
+                
+                if modified {
+                    self.last_edit_time = Some(std::time::Instant::now());
                 }
                 return;
             }

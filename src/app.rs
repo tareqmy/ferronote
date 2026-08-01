@@ -1379,6 +1379,7 @@ impl App<'_> {
                 ("h, j, k, l", "Move cursor (View mode)"),
                 ("w, b", "Move word forward/backward (View mode)"),
                 ("0, $", "Move to beginning/end of line (View mode)"),
+                ("gg, G", "Move to beginning/end of file (View mode)"),
                 ("Ctrl+W", "Delete word before cursor (Edit mode)"),
                 ("Ctrl+U", "Delete to beginning of line (Edit mode)"),
                 ("Ctrl+H", "Delete character before cursor (Edit mode)"),

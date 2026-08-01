@@ -222,7 +222,7 @@
     - [x] `h`, `j`, `k`, `l` - Move cursor left, down, up, right
     - [x] `w`, `b` - Move forward/backward by word
     - [x] `0`, `$` - Move to beginning/end of line
-    - [ ] `gg`, `G` - Move to beginning/end of file
+    - [x] `gg`, `G` - Move to beginning/end of file
     - [ ] `dd` - Delete current line
     - [ ] `yy` - Yank (copy) current line
     - [ ] `p`, `P` - Paste after/before cursor

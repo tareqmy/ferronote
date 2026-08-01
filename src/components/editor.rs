@@ -25,6 +25,8 @@ pub struct Editor<'a> {
     pub original_content: HashMap<String, String>,
     /// Whether the editor is in active Edit mode (true) or View mode (false).
     pub is_editing: bool,
+    /// Pending 'g' keypress for 'gg' normal mode vim shortcut.
+    pub pending_g: bool,
 }
 
 impl Default for Editor<'_> {
@@ -150,6 +152,7 @@ impl Editor<'_> {
             last_edit_time: None,
             original_content: HashMap::new(),
             is_editing: false,
+            pending_g: false,
         }
     }
 
@@ -158,6 +161,7 @@ impl Editor<'_> {
     }
 
     pub fn set_content(&mut self, title: &str, content: &str) {
+        self.pending_g = false;
         if title.is_empty() {
             self.current_note = None;
             self.is_editing = false;
@@ -190,6 +194,17 @@ impl Editor<'_> {
             && let Some(ta) = self.textareas.get_mut(note)
         {
             if !self.is_editing {
+                if key.code == KeyCode::Char('g') {
+                    if self.pending_g {
+                        ta.move_cursor(tui_textarea::CursorMove::Top);
+                        self.pending_g = false;
+                    } else {
+                        self.pending_g = true;
+                    }
+                    return;
+                }
+                self.pending_g = false;
+
                 match key.code {
                     KeyCode::Char('e') | KeyCode::Char('i') | KeyCode::Enter => {
                         self.is_editing = true;
@@ -227,6 +242,9 @@ impl Editor<'_> {
                     }
                     KeyCode::End | KeyCode::Char('$') => {
                         ta.move_cursor(tui_textarea::CursorMove::End);
+                    }
+                    KeyCode::Char('G') => {
+                        ta.move_cursor(tui_textarea::CursorMove::Bottom);
                     }
                     _ => {}
                 }

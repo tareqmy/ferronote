@@ -218,7 +218,7 @@
 - [ ] 📱 **Companion mobile app** — Read-only viewer synced via filesystem
 - [ ] 🤖 **AI integration** — Optional LLM-powered summarization, tagging, linking
 - [ ] ⚡ **Vim keybindings** — Modal editing mode for vim users
-  - [ ] **View (Normal) Mode Shortcuts:**
+  - [x] **View (Normal) Mode Shortcuts:**
     - [x] `h`, `j`, `k`, `l` - Move cursor left, down, up, right
     - [x] `w`, `b` - Move forward/backward by word
     - [x] `0`, `$` - Move to beginning/end of line
@@ -229,7 +229,7 @@
     - [x] `u`, `Ctrl+r` - Undo / Redo
     - [x] `/`, `n`, `N` - Search forward, next match, previous match
     - [x] `x` - Delete character under cursor
-  - [ ] **Entering Insert Mode Precisely:**
+  - [x] **Entering Insert Mode Precisely:**
     - [x] `i` - Insert before cursor
     - [x] `a` - Append after cursor
     - [x] `I` - Insert at the beginning of the line (first non-blank char)
@@ -241,11 +241,8 @@
     - [x] `Ctrl+w` - Delete word before the cursor
     - [x] `Ctrl+u` - Delete to the beginning of the line
     - [x] `Ctrl+h` - Delete character before the cursor
-    - [ ] `Ctrl+t` - Indent current line
+    - [x] `Ctrl+t` - Indent current line
     - [ ] `Ctrl+d` - De-indent current line
-    - [ ] `Ctrl+r` `{register}` - Insert contents of a register
-    - [ ] `Ctrl+o` - Execute a single normal mode command
-    - [ ] `Ctrl+p`, `Ctrl+n` - Autocomplete previous/next match
     - [ ] `Ctrl+v` - Insert character literally
 - [ ] 📊 **Daily notes / Journal mode** — Auto-create daily notes template
 - [ ] 📋 **Paste as new note** — Paste clipboard contents directly as a new note (inspired by NV)

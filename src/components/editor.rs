@@ -429,6 +429,14 @@ impl Editor<'_> {
             {
                 ta.delete_word()
             } else if key.modifiers.contains(KeyModifiers::CONTROL)
+                && key.code == KeyCode::Char('t')
+            {
+                let (row, col) = ta.cursor();
+                ta.move_cursor(tui_textarea::CursorMove::Head);
+                ta.insert_str("    ");
+                ta.move_cursor(tui_textarea::CursorMove::Jump(row as u16, (col + 4) as u16));
+                true
+            } else if key.modifiers.contains(KeyModifiers::CONTROL)
                 && key.code == KeyCode::Char('u')
             {
                 ta.delete_line_by_head()

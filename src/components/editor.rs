@@ -336,6 +336,14 @@ impl Editor<'_> {
                         KeyCode::Char('e') | KeyCode::Char('i') | KeyCode::Enter => {
                             self.is_editing = true;
                         }
+                        KeyCode::Char('a') => {
+                            ta.move_cursor(tui_textarea::CursorMove::Forward);
+                            self.is_editing = true;
+                        }
+                        KeyCode::Char('I') => {
+                            ta.move_cursor(tui_textarea::CursorMove::Head);
+                            self.is_editing = true;
+                        }
                         KeyCode::PageDown => {
                             for _ in 0..10 {
                                 ta.move_cursor(tui_textarea::CursorMove::Down);

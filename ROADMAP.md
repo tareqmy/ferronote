@@ -231,8 +231,8 @@
     - [x] `x` - Delete character under cursor
   - [ ] **Entering Insert Mode Precisely:**
     - [x] `i` - Insert before cursor
-    - [ ] `a` - Append after cursor
-    - [ ] `I` - Insert at the beginning of the line (first non-blank char)
+    - [x] `a` - Append after cursor
+    - [x] `I` - Insert at the beginning of the line (first non-blank char)
     - [ ] `A` - Append at the end of the line
     - [ ] `o` - Open a new line below current line and enter Insert mode
     - [ ] `O` - Open a new line above current line and enter Insert mode

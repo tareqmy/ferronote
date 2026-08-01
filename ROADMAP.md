@@ -226,7 +226,7 @@
     - [x] `dd` - Delete current line
     - [x] `yy` - Yank (copy) current line
     - [x] `p`, `P` - Paste after/before cursor
-    - [ ] `u`, `Ctrl+r` - Undo / Redo
+    - [x] `u`, `Ctrl+r` - Undo / Redo
     - [ ] `/`, `n`, `N` - Search forward, next match, previous match
     - [ ] `x` - Delete character under cursor
   - [ ] **Edit (Insert) Mode Shortcuts:**

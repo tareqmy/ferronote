@@ -283,6 +283,12 @@ impl Editor<'_> {
                             ta.paste();
                         }
                         modified = true;
+                    } else if key.code == KeyCode::Char('u') {
+                        ta.undo();
+                        modified = true;
+                    } else if key.code == KeyCode::Char('r') && key.modifiers.contains(KeyModifiers::CONTROL) {
+                        ta.redo();
+                        modified = true;
                     } else {
                         match key.code {
                         KeyCode::Char('e') | KeyCode::Char('i') | KeyCode::Enter => {

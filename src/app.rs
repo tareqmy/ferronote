@@ -1383,6 +1383,7 @@ impl App<'_> {
                 ("dd", "Delete current line (View mode)"),
                 ("yy", "Yank (copy) current line (View mode)"),
                 ("p, P", "Paste after/before cursor (View mode)"),
+                ("u, Ctrl+r", "Undo / Redo (View mode)"),
                 ("Ctrl+W", "Delete word before cursor (Edit mode)"),
                 ("Ctrl+U", "Delete to beginning of line (Edit mode)"),
                 ("Ctrl+H", "Delete character before cursor (Edit mode)"),

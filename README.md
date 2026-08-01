@@ -73,6 +73,7 @@ fn --import ~/backup.zip
 | Key | Action |
 | :--- | :--- |
 | `/` or `Ctrl+L` | Focus search bar |
+| `Esc` | Clear global search bar |
 | `Tab` / `Shift+Tab` | Cycle focus (Search → Note List → Editor) |
 | `Enter` | Open selected note / Create new note / Follow wiki-link |
 | `Ctrl+O` | Open active note in external editor (configured in Settings, or `$VISUAL` / `$EDITOR`) |

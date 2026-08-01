@@ -25,8 +25,31 @@ Ferronote is built from the ground up for keyboard efficiency.
 | `?` | Toggle Help Overlay | Global |
 | `Mouse Click` | Focus panel / select note item | Global |
 | `Mouse Drag` | Drag panel divider to resize notes list and content (20%-40%) | Global |
-| `Esc` | Close overlay / Return focus to search bar | Global / Overlay |
+| `Esc` | Close overlay / Clear search bar / Return focus | Global / Overlay |
 | `Ctrl+Q` | Quit application | Global |
+
+---
+
+## ⚡ Vim Keybindings (Experimental)
+
+These keybindings are active only when focused on the **Editor** in **View** mode. Press `i`, `a`, or `o` to enter **Insert** mode for normal typing.
+
+| Key | Action | Context |
+| :--- | :--- | :--- |
+| `h`, `j`, `k`, `l` | Move cursor left, down, up, right | View mode |
+| `w`, `b` | Move word forward, backward | View mode |
+| `0`, `$` | Move to beginning, end of line | View mode |
+| `gg`, `G` | Move to beginning, end of file | View mode |
+| `dd` | Delete current line | View mode |
+| `yy` | Yank (copy) current line | View mode |
+| `p`, `P` | Paste after, before cursor | View mode |
+| `u`, `Ctrl+R` | Undo, Redo | View mode |
+| `/` | Search locally in file | View mode |
+| `n`, `N` | Next match, previous match | View mode |
+| `x` | Delete character under cursor | View mode |
+| `i`, `a`, `o` | Enter Insert mode | View mode |
+| `v`, `V` | Enter Visual mode (char / line) | View mode |
+| `Esc` | Exit back to View mode / Clear local search | Insert / View mode |
 
 ---
 

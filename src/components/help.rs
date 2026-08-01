@@ -57,8 +57,9 @@ impl DrawableComponent for HelpPopup {
     fn draw(&self, frame: &mut Frame, area: Rect) -> color_eyre::Result<()> {
         let keybindings_data = [
             ("/ or Ctrl+L", "Focus search bar"),
-            ("Ctrl+N", "New note / Clear search bar"),
-            ("Tab / Esc", "Switch Focus (Search → List → Editor)"),
+            ("Esc", "Clear global search bar"),
+            ("Ctrl+N", "Start a new note"),
+            ("Tab", "Cycle focus forwards"),
             ("Enter", "Open selected note / Create / Wiki-link"),
             ("Up / Down", "Navigate note list"),
             ("PgUp / PgDn", "Scroll note list page by page"),
@@ -85,10 +86,16 @@ impl DrawableComponent for HelpPopup {
             ("d, dd", "Cut (delete) selection / line"),
             ("p, P", "Paste after / before cursor"),
             ("u, Ctrl+R", "Undo / Redo (Vim mode)"),
+            ("/", "Search locally in file (View mode)"),
+            ("n, N", "Next / Prev search match (View mode)"),
             ("Esc", "Exit back to View mode"),
         ];
 
-        let popup_area = centered_rect(60, 80, area);
+        let width = std::cmp::min(74, area.width.saturating_mul(80) / 100);
+        let height = std::cmp::min(keybindings_data.len() as u16 + 2, area.height.saturating_mul(80) / 100);
+        let x = area.width.saturating_sub(width) / 2;
+        let y = area.height.saturating_sub(height) / 2;
+        let popup_area = ratatui::layout::Rect::new(x, y, width, height);
         frame.render_widget(Clear, popup_area);
 
         let help_block = Block::default()
@@ -121,23 +128,4 @@ impl DrawableComponent for HelpPopup {
     }
 }
 
-/// Helper function to create a centered rect using up certain percentage of the available rect `r`
-fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
-    let popup_layout = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints([
-            Constraint::Percentage((100 - percent_y) / 2),
-            Constraint::Percentage(percent_y),
-            Constraint::Percentage((100 - percent_y) / 2),
-        ])
-        .split(r);
 
-    Layout::default()
-        .direction(Direction::Horizontal)
-        .constraints([
-            Constraint::Percentage((100 - percent_x) / 2),
-            Constraint::Percentage(percent_x),
-            Constraint::Percentage((100 - percent_x) / 2),
-        ])
-        .split(popup_layout[1])[1]
-}

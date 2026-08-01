@@ -73,8 +73,9 @@ You don't need a separate "New Note" button!
 
 ## ⌨️ Essential Keybindings
 - / or Ctrl+L: Focus search bar.
-- Ctrl+N: Clear search bar and start a new note.
-- Tab / Esc: Cycle focus between Search Bar, Note List, and Editor.
+- Esc: Clear global search bar.
+- Ctrl+N: Start a new note.
+- Tab: Cycle focus between Search Bar, Note List, and Editor.
 - Up / Down: Navigate notes in the list.
 - PgUp / PgDn: Scroll note list page by page.
 - Home / End: Jump to top or bottom of notes list.

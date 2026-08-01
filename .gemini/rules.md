@@ -22,6 +22,7 @@
    - The Documentation (`README.md` keybindings table, `.gemini/STYLE_GUIDE.md`, etc.)
    - The Default Welcome Note (`create_default_welcome_note` in `src/note_store.rs`)
    - The Status Bar (`src/app.rs` bottom footer hints)
+10. **Changelog Maintenance** — Whenever a new version is released, you MUST update the `CHANGELOG.md` file following the "Keep a Changelog" format.
 
 
 

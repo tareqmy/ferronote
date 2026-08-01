@@ -242,7 +242,7 @@
     - [x] `Ctrl+u` - Delete to the beginning of the line
     - [x] `Ctrl+h` - Delete character before the cursor
     - [x] `Ctrl+t` - Indent current line
-    - [ ] `Ctrl+d` - De-indent current line
+    - [x] `Ctrl+d` - De-indent current line
     - [ ] `Ctrl+v` - Insert character literally
 - [ ] 📊 **Daily notes / Journal mode** — Auto-create daily notes template
 - [ ] 📋 **Paste as new note** — Paste clipboard contents directly as a new note (inspired by NV)

@@ -437,6 +437,26 @@ impl Editor<'_> {
                 ta.move_cursor(tui_textarea::CursorMove::Jump(row as u16, (col + 4) as u16));
                 true
             } else if key.modifiers.contains(KeyModifiers::CONTROL)
+                && key.code == KeyCode::Char('d')
+            {
+                let (row, col) = ta.cursor();
+                ta.move_cursor(tui_textarea::CursorMove::Head);
+                let line = ta.lines()[row].clone();
+                let mut spaces_to_remove = 0;
+                for c in line.chars().take(4) {
+                    if c == ' ' {
+                        spaces_to_remove += 1;
+                    } else {
+                        break;
+                    }
+                }
+                for _ in 0..spaces_to_remove {
+                    ta.delete_next_char();
+                }
+                let new_col = col.saturating_sub(spaces_to_remove);
+                ta.move_cursor(tui_textarea::CursorMove::Jump(row as u16, new_col as u16));
+                spaces_to_remove > 0
+            } else if key.modifiers.contains(KeyModifiers::CONTROL)
                 && key.code == KeyCode::Char('u')
             {
                 ta.delete_line_by_head()

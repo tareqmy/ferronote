@@ -235,7 +235,7 @@
     - [x] `I` - Insert at the beginning of the line (first non-blank char)
     - [x] `A` - Append at the end of the line
     - [x] `o` - Open a new line below current line and enter Insert mode
-    - [ ] `O` - Open a new line above current line and enter Insert mode
+    - [x] `O` - Open a new line above current line and enter Insert mode
   - [ ] **Edit (Insert) Mode Shortcuts:**
     - [x] `Esc` or `Ctrl+c` - Return to normal mode
     - [x] `Ctrl+w` - Delete word before the cursor

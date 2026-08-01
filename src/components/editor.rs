@@ -216,6 +216,12 @@ impl Editor<'_> {
                     KeyCode::Right | KeyCode::Char('l') => {
                         ta.move_cursor(tui_textarea::CursorMove::Forward);
                     }
+                    KeyCode::Char('w') => {
+                        ta.move_cursor(tui_textarea::CursorMove::WordForward);
+                    }
+                    KeyCode::Char('b') => {
+                        ta.move_cursor(tui_textarea::CursorMove::WordBack);
+                    }
                     KeyCode::Home => {
                         ta.move_cursor(tui_textarea::CursorMove::Head);
                     }

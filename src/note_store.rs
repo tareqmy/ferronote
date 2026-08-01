@@ -104,6 +104,7 @@ You don't need a separate "New Note" button!
 
 ## ⚡ Vim Keybindings (Experimental)
 - h, j, k, l: Move cursor left, down, up, right (View mode).
+- w, b: Move word forward, backward (View mode).
 - Ctrl+W: Delete word before cursor (Edit mode).
 - Ctrl+U: Delete to beginning of line (Edit mode).
 - Ctrl+H: Delete character before cursor (Edit mode).

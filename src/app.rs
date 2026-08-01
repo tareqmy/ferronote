@@ -1377,6 +1377,7 @@ impl App<'_> {
                 ("Ctrl+Q", "Quit Application"),
                 ("", ""),
                 ("h, j, k, l", "Move cursor (View mode)"),
+                ("w, b", "Move word forward/backward (View mode)"),
                 ("Ctrl+W", "Delete word before cursor (Edit mode)"),
                 ("Ctrl+U", "Delete to beginning of line (Edit mode)"),
                 ("Ctrl+H", "Delete character before cursor (Edit mode)"),

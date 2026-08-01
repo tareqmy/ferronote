@@ -220,7 +220,7 @@
 - [ ] ⚡ **Vim keybindings** — Modal editing mode for vim users
   - [ ] **View (Normal) Mode Shortcuts:**
     - [x] `h`, `j`, `k`, `l` - Move cursor left, down, up, right
-    - [ ] `w`, `b` - Move forward/backward by word
+    - [x] `w`, `b` - Move forward/backward by word
     - [ ] `0`, `$` - Move to beginning/end of line
     - [ ] `gg`, `G` - Move to beginning/end of file
     - [ ] `dd` - Delete current line

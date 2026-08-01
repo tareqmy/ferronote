@@ -31,6 +31,8 @@ pub struct Editor<'a> {
     pub pending_d: bool,
     /// Pending 'y' keypress for 'yy' normal mode vim shortcut.
     pub pending_y: bool,
+    /// Active search textarea input. If Some, search mode is active.
+    pub search_textarea: Option<TextArea<'a>>,
 }
 
 impl Default for Editor<'_> {
@@ -159,6 +161,7 @@ impl Editor<'_> {
             pending_g: false,
             pending_d: false,
             pending_y: false,
+            search_textarea: None,
         }
     }
 
@@ -201,6 +204,24 @@ impl Editor<'_> {
         if let Some(ref note) = self.current_note
             && let Some(ta) = self.textareas.get_mut(note)
         {
+            if let Some(ref mut search_ta) = self.search_textarea {
+                match key.code {
+                    KeyCode::Esc => {
+                        self.search_textarea = None;
+                    }
+                    KeyCode::Enter => {
+                        let query = search_ta.lines()[0].clone();
+                        let _ = ta.set_search_pattern(&query);
+                        ta.search_forward(false);
+                        self.search_textarea = None;
+                    }
+                    _ => {
+                        search_ta.input(key);
+                    }
+                }
+                return;
+            }
+
             if !self.is_editing {
                 let mut modified = false;
                 
@@ -295,6 +316,16 @@ impl Editor<'_> {
                             ta.delete_next_char();
                             modified = true;
                         }
+                    } else if key.code == KeyCode::Char('/') {
+                        let mut sta = TextArea::default();
+                        sta.set_block(Block::default().borders(Borders::ALL).title("Search (Enter to search, Esc to cancel)"));
+                        sta.set_cursor_line_style(Style::default());
+                        self.search_textarea = Some(sta);
+                        return;
+                    } else if key.code == KeyCode::Char('n') {
+                        ta.search_forward(false);
+                    } else if key.code == KeyCode::Char('N') {
+                        ta.search_back(false);
                     } else {
                         match key.code {
                         KeyCode::Char('e') | KeyCode::Char('i') | KeyCode::Enter => {
@@ -438,6 +469,17 @@ impl Editor<'_> {
                 ta_clone.set_cursor_style(Style::default().bg(Color::Reset).fg(Color::Reset));
             }
             frame.render_widget(&ta_clone, area);
+
+            if let Some(ref search_ta) = self.search_textarea {
+                let search_area = ratatui::layout::Layout::default()
+                    .direction(ratatui::layout::Direction::Vertical)
+                    .constraints([
+                        ratatui::layout::Constraint::Min(0),
+                        ratatui::layout::Constraint::Length(3),
+                    ])
+                    .split(area)[1];
+                frame.render_widget(search_ta, search_area);
+            }
             return;
         }
 

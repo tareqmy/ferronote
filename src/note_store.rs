@@ -111,6 +111,7 @@ You don't need a separate "New Note" button!
 - yy: Yank (copy) current line (View mode).
 - p, P: Paste after, before cursor (View mode).
 - u, Ctrl+r: Undo, Redo (View mode).
+- /, n, N: Search forward, next match, previous match (View mode).
 - x: Delete character under cursor (View mode).
 - Ctrl+W: Delete word before cursor (Edit mode).
 - Ctrl+U: Delete to beginning of line (Edit mode).

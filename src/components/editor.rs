@@ -222,10 +222,10 @@ impl Editor<'_> {
                     KeyCode::Char('b') => {
                         ta.move_cursor(tui_textarea::CursorMove::WordBack);
                     }
-                    KeyCode::Home => {
+                    KeyCode::Home | KeyCode::Char('0') => {
                         ta.move_cursor(tui_textarea::CursorMove::Head);
                     }
-                    KeyCode::End => {
+                    KeyCode::End | KeyCode::Char('$') => {
                         ta.move_cursor(tui_textarea::CursorMove::End);
                     }
                     _ => {}

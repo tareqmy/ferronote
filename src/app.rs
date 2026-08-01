@@ -556,6 +556,10 @@ impl App<'_> {
             KeyCode::Char('?') if self.focus != Focus::Editor => {
                 return Some(Action::ToggleHelp);
             }
+            KeyCode::Char('/') if self.focus != Focus::Editor => {
+                self.focus = Focus::SearchBar;
+                return None;
+            }
             _ => {}
         }
 

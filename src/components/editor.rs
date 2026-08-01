@@ -251,7 +251,40 @@ impl Editor<'_> {
                 } else {
                     self.pending_d = false;
                     self.pending_y = false;
-                    match key.code {
+                    
+                    if key.code == KeyCode::Char('p') {
+                        let text = ta.yank_text();
+                        let is_line_yank = text.ends_with('\n');
+                        if is_line_yank {
+                            let old_row = ta.cursor().0;
+                            ta.move_cursor(tui_textarea::CursorMove::Down);
+                            if ta.cursor().0 == old_row {
+                                ta.move_cursor(tui_textarea::CursorMove::End);
+                                ta.insert_newline();
+                                ta.paste();
+                                ta.delete_char();
+                            } else {
+                                ta.move_cursor(tui_textarea::CursorMove::Head);
+                                ta.paste();
+                            }
+                        } else {
+                            ta.move_cursor(tui_textarea::CursorMove::Forward);
+                            ta.paste();
+                            ta.move_cursor(tui_textarea::CursorMove::Back);
+                        }
+                        modified = true;
+                    } else if key.code == KeyCode::Char('P') {
+                        let text = ta.yank_text();
+                        let is_line_yank = text.ends_with('\n');
+                        if is_line_yank {
+                            ta.move_cursor(tui_textarea::CursorMove::Head);
+                            ta.paste();
+                        } else {
+                            ta.paste();
+                        }
+                        modified = true;
+                    } else {
+                        match key.code {
                         KeyCode::Char('e') | KeyCode::Char('i') | KeyCode::Enter => {
                             self.is_editing = true;
                         }
@@ -295,6 +328,7 @@ impl Editor<'_> {
                         _ => {}
                     }
                 }
+            }
                 
                 if modified {
                     self.last_edit_time = Some(std::time::Instant::now());

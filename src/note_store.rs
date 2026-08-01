@@ -109,6 +109,7 @@ You don't need a separate "New Note" button!
 - gg, G: Move to beginning, end of file (View mode).
 - dd: Delete current line (View mode).
 - yy: Yank (copy) current line (View mode).
+- p, P: Paste after, before cursor (View mode).
 - Ctrl+W: Delete word before cursor (Edit mode).
 - Ctrl+U: Delete to beginning of line (Edit mode).
 - Ctrl+H: Delete character before cursor (Edit mode).

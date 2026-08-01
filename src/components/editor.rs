@@ -212,8 +212,9 @@ impl Editor<'_> {
                     }
                     KeyCode::Enter => {
                         let query = search_ta.lines()[0].clone();
-                        let _ = ta.set_search_pattern(&query);
-                        self.current_search_query = Some(query.clone());
+                        let pattern = format!("(?i){}", query);
+                        let _ = ta.set_search_pattern(&pattern);
+                        self.current_search_query = Some(pattern);
                         ta.search_forward(false);
                         self.search_textarea = None;
                     }

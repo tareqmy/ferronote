@@ -61,21 +61,7 @@ impl NoteStore {
         let path = self.notes_dir.join(&filename);
 
         if !path.exists() {
-            let content = format!("# {title}\n\n");
-            std::fs::write(&path, content)?;
-
-            let now = Utc::now();
-            self.metadata.insert(
-                filename.clone(),
-                NoteMetadata {
-                    created_at: now,
-                    modified_at: now,
-                },
-            );
-            self.save_metadata()?;
-        }
-
-        let content = r#"# Welcome to Ferronote
+            let content = r#"# Welcome to Ferronote
 
 Ferronote is a blazing-fast terminal note-taking app inspired by Notational Velocity.
 
@@ -123,20 +109,6 @@ You don't need a separate "New Note" button!
 
 Happy note taking!
 "#;
-        self.save_note(&filename, content)?;
-        Ok(filename)
-    }
-
-    /// Creates or updates the default secondary note with Lorem Ipsum text.
-    /// # Errors
-    /// Returns an error if saving the note fails.
-    pub fn create_default_lorem_ipsum_note(&mut self) -> Result<String> {
-        let title = "Lorem Ipsum";
-        let filename = format!("{title}.md");
-        let path = self.notes_dir.join(&filename);
-
-        if !path.exists() {
-            let content = format!("# {title}\n\n");
             std::fs::write(&path, content)?;
 
             let now = Utc::now();
@@ -150,7 +122,19 @@ Happy note taking!
             self.save_metadata()?;
         }
 
-        let content = r#"# Lorem Ipsum
+        Ok(filename)
+    }
+
+    /// Creates or updates the default secondary note with Lorem Ipsum text.
+    /// # Errors
+    /// Returns an error if saving the note fails.
+    pub fn create_default_lorem_ipsum_note(&mut self) -> Result<String> {
+        let title = "Lorem Ipsum";
+        let filename = format!("{title}.md");
+        let path = self.notes_dir.join(&filename);
+
+        if !path.exists() {
+            let content = r#"# Lorem Ipsum
 
 Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
 
@@ -160,7 +144,19 @@ Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu 
 💡 Referencing [[Welcome to Ferronote]]
 💡 Press `Ctrl+O` to open this note in your advanced external editor!
 "#;
-        self.save_note(&filename, content)?;
+            std::fs::write(&path, content)?;
+
+            let now = Utc::now();
+            self.metadata.insert(
+                filename.clone(),
+                NoteMetadata {
+                    created_at: now,
+                    modified_at: now,
+                },
+            );
+            self.save_metadata()?;
+        }
+
         Ok(filename)
     }
 

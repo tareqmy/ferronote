@@ -222,9 +222,8 @@ impl Index {
 
                 if let Some(start) = content_lower.find(&word_lower) {
                     word_matched = true;
-                    let char_start = content_lower[..start].chars().count();
-                    let char_len = word_lower.chars().count();
-                    for i in char_start..char_start + char_len {
+                    let byte_len = word_lower.len();
+                    for i in start..start + byte_len {
                         if !all_content_indices.contains(&i) {
                             all_content_indices.push(i);
                         }

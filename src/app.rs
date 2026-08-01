@@ -561,7 +561,11 @@ impl App<'_> {
 
         match self.focus {
             Focus::SearchBar => {
-                if key.code == KeyCode::Enter {
+                if key.code == KeyCode::Esc {
+                    self.search_bar.clear();
+                    self.update_search();
+                    return None;
+                } else if key.code == KeyCode::Enter {
                     return Some(Action::SubmitSearch);
                 } else if matches!(
                     key.code,

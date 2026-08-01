@@ -514,16 +514,18 @@ impl App<'_> {
             return Some(Action::ToggleAbout);
         }
 
+        let is_editing = self.focus == Focus::Editor && self.editor.is_editing;
+
         if key
             .modifiers
             .contains(crossterm::event::KeyModifiers::CONTROL)
         {
             match key.code {
-                KeyCode::Char('v') => return Some(Action::ToggleAbout),
+                KeyCode::Char('v') if !is_editing => return Some(Action::ToggleAbout),
                 KeyCode::Char('p') => return Some(Action::ToggleSettings),
                 KeyCode::Char('q') => return Some(Action::Quit),
                 KeyCode::Char('r') => return Some(Action::PromptRenameNote),
-                KeyCode::Char('d') => return Some(Action::PromptDeleteNote),
+                KeyCode::Char('d') if !is_editing => return Some(Action::PromptDeleteNote),
                 KeyCode::Char('b') => return Some(Action::ToggleNotesList),
                 KeyCode::Char('e') => return Some(Action::ToggleMoreShortcuts),
                 KeyCode::Char('s') => return Some(Action::SaveNote),

@@ -1,4 +1,5 @@
-use ferronote::{action::Action, app::App, config::Config, focus::Focus, note_store::NoteStore};
+use ferronote::{action::Action, app::App, config::Config, focus::Focus};
+use ferronote_store::NoteStore;
 use std::fs;
 use tempfile::tempdir;
 

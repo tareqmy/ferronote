@@ -1,5 +1,5 @@
-use crate::note_store::format_timestamp;
-use crate::search::SearchResult;
+use ferronote_store::format_timestamp;
+use ferronote_search::SearchResult;
 use ratatui::{
     Frame,
     layout::Rect,
@@ -363,7 +363,7 @@ impl crate::components::Component for NoteList {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::search::SearchResult;
+    use ferronote_search::SearchResult;
 
     fn make_mock_results(count: usize) -> Vec<SearchResult> {
         (0..count)

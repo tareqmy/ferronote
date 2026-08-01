@@ -729,14 +729,6 @@ mod tests {
         assert!(lorem_content.contains("# Lorem Ipsum"));
         assert!(lorem_content.contains("[[Welcome to Ferronote]]"));
 
-        let app = crate::app::App::new(store);
-        let backlinks_lorem = app.index.get_backlinks("Lorem Ipsum");
-        assert_eq!(backlinks_lorem.len(), 1);
-        assert_eq!(backlinks_lorem[0].filename, "Welcome to Ferronote.md");
-
-        let backlinks_welcome = app.index.get_backlinks("Welcome to Ferronote");
-        assert_eq!(backlinks_welcome.len(), 1);
-        assert_eq!(backlinks_welcome[0].filename, "Lorem Ipsum.md");
     }
 
     #[test]

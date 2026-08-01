@@ -1,4 +1,5 @@
-use ferronote::{app::App, config::Config, event::EventHandler, note_store::NoteStore, tui::Tui};
+use ferronote::{app::App, config::Config, event::EventHandler, tui::Tui};
+use ferronote_store::NoteStore;
 
 use clap::Parser;
 use color_eyre::Result;

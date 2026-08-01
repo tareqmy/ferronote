@@ -1,6 +1,7 @@
 use clap::Parser;
 use color_eyre::Result;
-use ferronote::{app::App, config::Config, event::EventHandler, note_store::NoteStore, tui::Tui};
+use ferronote::{app::App, config::Config, event::EventHandler, tui::Tui};
+use ferronote_store::NoteStore;
 use std::path::PathBuf;
 
 #[derive(Parser, Debug)]

@@ -16,10 +16,10 @@ use crate::{
     config::Config,
     event::{Event, EventHandler},
     focus::Focus,
-    note_store::{NoteStore, format_timestamp},
-    search::Index,
     tui::Tui,
 };
+use ferronote_store::{NoteStore, format_timestamp};
+use ferronote_search::Index;
 use std::time::Instant;
 
 #[derive(Debug)]
@@ -108,7 +108,7 @@ impl App<'_> {
         if !query.is_empty() {
             results.insert(
                 0,
-                crate::search::SearchResult {
+                ferronote_search::SearchResult {
                     filename: String::new(),
                     title: format!("Create new note: '{}'", query),
                     score: i64::MAX,

@@ -1,5 +1,5 @@
 use criterion::{Criterion, criterion_group, criterion_main};
-use ferronote::search::Index;
+use ferronote_search::Index;
 
 fn build_mock_index(num_notes: usize) -> Index {
     let mut index = Index::new();
@@ -19,7 +19,7 @@ fn bench_search(c: &mut Criterion) {
 
     c.bench_function("search 10000 notes", |b| {
         b.iter(|| {
-            let _ = index.search("rusty terminal fast");
+            let _ = index.search("rusty terminal fast", "modified");
         })
     });
 }

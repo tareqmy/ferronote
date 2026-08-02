@@ -629,6 +629,40 @@ impl Editor<'_> {
                                     ta.move_cursor(tui_textarea::CursorMove::Jump(r as u16, new_col as u16));
                                 }
                             }
+                            EditorViewAction::NextLineFirstNonBlank => {
+                                ta.move_cursor(tui_textarea::CursorMove::Down);
+                                let lines = ta.lines();
+                                let (r, _) = ta.cursor();
+                                if r < lines.len() {
+                                    let current_line = &lines[r];
+                                    let mut new_col = 0;
+                                    for (i, ch) in current_line.chars().enumerate() {
+                                        if !ch.is_whitespace() {
+                                            new_col = i;
+                                            break;
+                                        }
+                                        new_col = i;
+                                    }
+                                    ta.move_cursor(tui_textarea::CursorMove::Jump(r as u16, new_col as u16));
+                                }
+                            }
+                            EditorViewAction::PrevLineFirstNonBlank => {
+                                ta.move_cursor(tui_textarea::CursorMove::Up);
+                                let lines = ta.lines();
+                                let (r, _) = ta.cursor();
+                                if r < lines.len() {
+                                    let current_line = &lines[r];
+                                    let mut new_col = 0;
+                                    for (i, ch) in current_line.chars().enumerate() {
+                                        if !ch.is_whitespace() {
+                                            new_col = i;
+                                            break;
+                                        }
+                                        new_col = i;
+                                    }
+                                    ta.move_cursor(tui_textarea::CursorMove::Jump(r as u16, new_col as u16));
+                                }
+                            }
                             EditorViewAction::LineEnd => {
                                 ta.move_cursor(tui_textarea::CursorMove::End);
                             }

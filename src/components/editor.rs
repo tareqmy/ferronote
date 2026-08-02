@@ -716,6 +716,38 @@ impl Editor<'_> {
         }
         None
     }
+
+    pub fn extract_url_at_cursor(&self) -> Option<String> {
+        if let Some(ref note) = self.current_note
+            && let Some(ta) = self.textareas.get(note)
+        {
+            let (row, col) = ta.cursor();
+            if let Some(line) = ta.lines().get(row) {
+                let chars: Vec<char> = line.chars().collect();
+                if col >= chars.len() || chars[col].is_whitespace() {
+                    return None;
+                }
+                
+                let mut start_idx = col;
+                let mut end_idx = col;
+                
+                while start_idx > 0 && !chars[start_idx - 1].is_whitespace() {
+                    start_idx -= 1;
+                }
+                while end_idx < chars.len() && !chars[end_idx].is_whitespace() {
+                    end_idx += 1;
+                }
+                
+                let word: String = chars[start_idx..end_idx].iter().collect();
+                if word.starts_with("http://") || word.starts_with("https://") {
+                    // strip common trailing punctuation that might be caught
+                    let trimmed = word.trim_end_matches(&[',', '.', ';', '?', '!', ')', ']'][..]);
+                    return Some(trimmed.to_string());
+                }
+            }
+        }
+        None
+    }
 }
 
 impl crate::components::Component for Editor<'_> {

@@ -609,6 +609,11 @@ impl App<'_> {
                     let _ = self.editor.event(&crate::event::Event::Key(key));
                     return None;
                 } else if key.code == KeyCode::Enter
+                    && let Some(url) = self.editor.extract_url_at_cursor()
+                {
+                    let _ = open::that(url);
+                    return None;
+                } else if key.code == KeyCode::Enter
                     && let Some(link) = self.editor.extract_wiki_link_at_cursor()
                 {
                     self.update(Action::SaveNote);

@@ -244,11 +244,24 @@
     - [x] `Ctrl+t` - Indent current line
     - [x] `Ctrl+d` - De-indent current line
     - [x] `Ctrl+v` - Insert character literally
+  - [ ] **Advanced View (Normal) Mode Shortcuts:**
+    - [ ] `cw`, `ciw`, `cc`, `C` - Change word, inner word, line, to end of line
+    - [ ] `dw`, `diw`, `D` - Delete word, inner word, to end of line
+    - [ ] `yw`, `yiw`, `Y` - Yank word, inner word, to end of line
+    - [ ] `r` - Replace single character
+    - [ ] `J` - Join line below to current
+    - [ ] `^` - Move to first non-blank character of line
+    - [ ] `f`, `t`, `F`, `T`, `;`, `,` - In-line character search
+    - [ ] `e`, `ge` - Move to end of word (forward/backward)
+    - [ ] `Ctrl+d`, `Ctrl+u`, `Ctrl+f`, `Ctrl+b` - Page scrolling
+    - [ ] `H`, `M`, `L`, `zz` - Screen positioning
+  - [ ] **Visual Mode:**
+    - [ ] `v`, `V` - Start character-wise / line-wise visual selection
 - [ ] 📊 **Daily notes / Journal mode** — Auto-create daily notes template
 - [ ] 📋 **Paste as new note** — Paste clipboard contents directly as a new note (inspired by NV)
 - [x] ✏️ **Rename from UI** — Shortcut to easily rename the currently selected note (inspired by NV)
 - [x] 🔍 **In-note search** — Find next/previous occurrence of text within the editor (inspired by NV)
-- [ ] 🔗 **Open URLs** — Shortcut to open URL under the cursor in the default web browser (inspired by NV)
+- [x] 🔗 **Open URLs** — Shortcut to open URL under the cursor in the default web browser (inspired by NV)
 - [x] 📌 **Bookmarks / Pins** — Pin or bookmark frequently used notes (inspired by NV)
 - [ ] 🖨️ **Print support** — Print notes directly from the application (inspired by NV)
 - [ ] 📤 **Export from UI** — Trigger export to HTML/Zip via a UI shortcut (inspired by NV)

@@ -210,7 +210,7 @@ impl ShortcutRegistry {
             ("Esc", "Clear search bar / Close overlay"),
             ("Ctrl+N", "Start a new note"),
             ("Tab", "Cycle focus forwards"),
-            ("Enter", "Open selected note / Create / Wiki-link"),
+            ("Enter", "Open selected note / Create / Wiki-link or Web URL"),
             ("Up / Down", "Navigate note list"),
             ("PgUp / PgDn", "Scroll note list page by page"),
             ("Home / End", "Jump to top / bottom of note list"),

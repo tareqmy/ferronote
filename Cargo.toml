@@ -40,6 +40,7 @@ tui-textarea = { version = "0.7", features = ["search"] }
 chrono = { version = "0.4", features = ["serde"] }
 clap = { version = "4", features = ["derive", "env"] }
 notify = "8.2.0"
+open = "5"
 ferronote-store = { version = "1.2.4", path = "ferronote-store" }
 ferronote-search = { version = "1.2.4", path = "ferronote-search" }
 

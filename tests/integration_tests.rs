@@ -137,6 +137,7 @@ fn test_settings_overlay_and_config_persistence() {
     let mut app = App::new(store);
 
     app.config.notes_dir = vault_dir.path().to_path_buf();
+    app.config.config_dir = Some(vault_dir.path().to_path_buf());
 
     // Toggle settings overlay
     app.update(Action::ToggleSettings);

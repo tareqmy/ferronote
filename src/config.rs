@@ -6,6 +6,7 @@ fn default_notes_dir() -> PathBuf {
     dirs::home_dir()
         .unwrap_or_else(|| PathBuf::from("."))
         .join(".ferronote")
+        .join("notes")
 }
 
 fn default_extension() -> String {
@@ -63,6 +64,10 @@ pub struct Config {
     #[serde(default = "default_notes_dir")]
     pub notes_dir: PathBuf,
 
+    /// Optional path where the config was loaded from, used for saving.
+    #[serde(skip)]
+    pub config_dir: Option<PathBuf>,
+
     /// Default file extension for newly created notes (e.g. `md`).
     #[serde(default = "default_extension")]
     pub default_extension: String,
@@ -116,6 +121,7 @@ impl Default for Config {
     fn default() -> Self {
         Self {
             notes_dir: default_notes_dir(),
+            config_dir: None,
             default_extension: default_extension(),
             auto_save_delay_ms: default_auto_save_delay_ms(),
             tab_size: default_tab_size(),
@@ -135,13 +141,19 @@ impl Default for Config {
 impl Config {
     /// # Errors
     /// Returns an error if it fails to read or write the config file.
-    pub fn load() -> Result<Self> {
+    pub fn load(config_dir: Option<PathBuf>) -> Result<Self> {
         let default_config = Self::default();
-        let config_path = default_config.notes_dir.join("config.json");
+        let dir = config_dir.clone().unwrap_or_else(|| {
+            dirs::home_dir()
+                .unwrap_or_else(|| PathBuf::from("."))
+                .join(".ferronote")
+        });
+        let config_path = dir.join("config.json");
 
         if config_path.exists() {
             let content = std::fs::read_to_string(&config_path)?;
-            let config: Self = serde_json::from_str(&content)?;
+            let mut config: Self = serde_json::from_str(&content)?;
+            config.config_dir = config_dir;
             Ok(config)
         } else {
             default_config.save()?;
@@ -152,11 +164,17 @@ impl Config {
     /// # Errors
     /// Returns an error if it fails to write the config file.
     pub fn save(&self) -> Result<()> {
-        if !self.notes_dir.exists() {
-            std::fs::create_dir_all(&self.notes_dir)?;
+        let dir = self.config_dir.clone().unwrap_or_else(|| {
+            dirs::home_dir()
+                .unwrap_or_else(|| PathBuf::from("."))
+                .join(".ferronote")
+        });
+
+        if !dir.exists() {
+            std::fs::create_dir_all(&dir)?;
         }
 
-        let config_path = self.notes_dir.join("config.json");
+        let config_path = dir.join("config.json");
         let content = serde_json::to_string_pretty(self)?;
         std::fs::write(config_path, content)?;
         Ok(())
@@ -195,12 +213,13 @@ mod tests {
     #[test]
     fn test_config_save_and_reload() {
         let temp_dir = tempfile::tempdir().unwrap();
-        let config = Config {
+        let mut config = Config {
             notes_dir: temp_dir.path().to_path_buf(),
             theme: "nord".to_string(),
             tab_size: 2,
             ..Default::default()
         };
+        config.config_dir = Some(temp_dir.path().to_path_buf());
 
         config.save().unwrap();
 

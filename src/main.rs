@@ -8,8 +8,12 @@ use std::path::PathBuf;
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
 struct Args {
+    /// Optional custom config directory
+    #[arg(short = 'c', long, env = "FERRONOTE_CONFIG_DIR")]
+    config_dir: Option<PathBuf>,
+
     /// Optional custom notes directory
-    #[arg(short, long)]
+    #[arg(short, long, env = "FERRONOTE_NOTES_DIR")]
     dir: Option<PathBuf>,
 
     /// Path to file, directory, or .zip archive to import
@@ -38,7 +42,7 @@ async fn main() -> Result<()> {
     let args = Args::parse();
 
     // 3. Load config and initialize NoteStore
-    let mut config = Config::load()?;
+    let mut config = Config::load(args.config_dir)?;
     if let Some(custom_dir) = args.dir {
         config.notes_dir = custom_dir;
     }

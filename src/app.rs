@@ -65,7 +65,7 @@ impl App<'_> {
             }
         }
 
-        let config = Config::load().unwrap_or_default();
+        let config = Config::load(None).unwrap_or_default();
         let env = crate::environment::Environment::new();
 
         let mut app = Self {
@@ -456,7 +456,7 @@ impl App<'_> {
                 _ => {}
             }
 
-            if self.settings_selected_index == 11 {
+            if self.settings_selected_index >= 11 {
                 match key.code {
                     KeyCode::Up => return Some(Action::PrevSetting),
                     KeyCode::Down => return Some(Action::NextSetting),
@@ -645,9 +645,12 @@ impl App<'_> {
         match action {
             Action::ToggleSettings => {
                 self.show_settings = !self.show_settings;
+                if !self.show_settings {
+                    let _ = self.config.save();
+                }
             }
             Action::NextSetting => {
-                if self.settings_selected_index < 11 {
+                if self.settings_selected_index < 13 {
                     self.settings_selected_index += 1;
                 }
             }
@@ -658,13 +661,13 @@ impl App<'_> {
                 self.settings_selected_index = self.settings_selected_index.saturating_sub(5);
             }
             Action::PageDownSetting => {
-                self.settings_selected_index = std::cmp::min(self.settings_selected_index.saturating_add(5), 11);
+                self.settings_selected_index = std::cmp::min(self.settings_selected_index.saturating_add(5), 13);
             }
             Action::FirstSetting => {
                 self.settings_selected_index = 0;
             }
             Action::LastSetting => {
-                self.settings_selected_index = 11;
+                self.settings_selected_index = 13;
             }
             Action::ChangeSettingOption(forward) => {
                 self.cycle_setting(forward);
@@ -672,13 +675,27 @@ impl App<'_> {
             Action::SettingsTypeChar(c) => {
                 if self.settings_selected_index == 11 {
                     self.config.external_editor.push(c);
-                    let _ = self.config.save();
+                } else if self.settings_selected_index == 12 {
+                    let mut s = self.config.notes_dir.to_string_lossy().into_owned();
+                    s.push(c);
+                    self.config.notes_dir = std::path::PathBuf::from(s);
+                } else if self.settings_selected_index == 13 {
+                    let mut s = self.config.config_dir.as_ref().map(|p| p.to_string_lossy().into_owned()).unwrap_or_default();
+                    s.push(c);
+                    self.config.config_dir = if s.is_empty() { None } else { Some(std::path::PathBuf::from(s)) };
                 }
             }
             Action::SettingsBackspace => {
                 if self.settings_selected_index == 11 {
                     self.config.external_editor.pop();
-                    let _ = self.config.save();
+                } else if self.settings_selected_index == 12 {
+                    let mut s = self.config.notes_dir.to_string_lossy().into_owned();
+                    s.pop();
+                    self.config.notes_dir = std::path::PathBuf::from(s);
+                } else if self.settings_selected_index == 13 {
+                    let mut s = self.config.config_dir.as_ref().map(|p| p.to_string_lossy().into_owned()).unwrap_or_default();
+                    s.pop();
+                    self.config.config_dir = if s.is_empty() { None } else { Some(std::path::PathBuf::from(s)) };
                 }
             }
             Action::ToggleHelp => {
@@ -1484,6 +1501,22 @@ impl App<'_> {
                         self.config.external_editor.clone()
                     },
                 ),
+                (
+                    "Notes Directory",
+                    if self.show_settings && self.settings_selected_index == 12 {
+                        format!("{}█", self.config.notes_dir.to_string_lossy())
+                    } else {
+                        self.config.notes_dir.to_string_lossy().into_owned()
+                    },
+                ),
+                (
+                    "Settings Directory",
+                    if self.show_settings && self.settings_selected_index == 13 {
+                        format!("{}█", self.config.config_dir.as_ref().map(|p| p.to_string_lossy().into_owned()).unwrap_or_default())
+                    } else {
+                        self.config.config_dir.as_ref().map(|p| p.to_string_lossy().into_owned()).unwrap_or_else(|| "Default (~/.ferronote)".to_string())
+                    },
+                ),
             ];
 
             let mut lines = vec![
@@ -1522,9 +1555,9 @@ impl App<'_> {
                 lines.push(Line::from(vec![
                     Span::raw(indent),
                     Span::styled(prefix, label_style),
-                    Span::styled(format!("{:<22}", label), label_style),
+                    Span::styled(format!("{:<24}", label), label_style),
                     Span::styled(": ", sep_style),
-                    Span::styled(format!("[ {:<30} ]", val), val_style),
+                    Span::styled(format!("[ {:<54} ]", val), val_style),
                 ]));
             }
 
@@ -1541,8 +1574,8 @@ impl App<'_> {
             );
 
             let area = frame.area();
-            let width = 72;
-            let height = 18;
+            let width = 100;
+            let height = 22;
             let x = (area.width.saturating_sub(width)) / 2;
             let y = (area.height.saturating_sub(height)) / 2;
             let popup_area = ratatui::layout::Rect::new(x, y, width, height);
@@ -1735,22 +1768,22 @@ mod tests {
         app.update(Action::FirstSetting);
         assert_eq!(app.settings_selected_index, 0);
         app.update(Action::LastSetting);
-        assert_eq!(app.settings_selected_index, 11);
+        assert_eq!(app.settings_selected_index, 13);
 
         // Test PageUp / PageDownSetting
         app.update(Action::PageUpSetting);
-        assert_eq!(app.settings_selected_index, 6); // 11 - 5 = 6
+        assert_eq!(app.settings_selected_index, 8); // 13 - 5 = 8
         app.update(Action::PageUpSetting);
-        assert_eq!(app.settings_selected_index, 1); // 6 - 5 = 1
+        assert_eq!(app.settings_selected_index, 3); // 8 - 5 = 3
         app.update(Action::PageUpSetting);
-        assert_eq!(app.settings_selected_index, 0); // 1 - 5 = 0 (saturates)
+        assert_eq!(app.settings_selected_index, 0); // 3 - 5 = 0 (saturates)
 
         app.update(Action::PageDownSetting);
         assert_eq!(app.settings_selected_index, 5); // 0 + 5 = 5
         app.update(Action::PageDownSetting);
         assert_eq!(app.settings_selected_index, 10); // 5 + 5 = 10
         app.update(Action::PageDownSetting);
-        assert_eq!(app.settings_selected_index, 11); // 10 + 5 = 15 (capped at 11)
+        assert_eq!(app.settings_selected_index, 13); // 10 + 5 = 15 (capped at 13)
 
         app.update(Action::ToggleSettings);
         assert!(!app.show_settings);

@@ -39,8 +39,6 @@ dirs = "6"
 tui-textarea = { version = "0.7", features = ["search"] }
 chrono = { version = "0.4", features = ["serde"] }
 clap = { version = "4", features = ["derive", "env"] }
-tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 notify = "8.2.0"
 ferronote-store = { version = "1.2.4", path = "ferronote-store" }
 ferronote-search = { version = "1.2.4", path = "ferronote-search" }

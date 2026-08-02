@@ -94,9 +94,12 @@ You don't need a separate "New Note" button!
 
 ## ⚡ Vim Keybindings (Experimental)
 - h, j, k, l: Move cursor left, down, up, right (View mode).
-- w, b: Move word forward, backward (View mode).
-- 0, $: Move to beginning, end of line (View mode).
+- w, b, W, B: Move word forward/backward, and by whitespace (View mode).
+- e, ge: Move to end of word forward/backward (View mode).
+- 0, ^, $: Move to beginning, first non-blank, and end of line (View mode).
+- +, -: Move to first non-blank char of next/prev line (View mode).
 - gg, G: Move to beginning, end of file (View mode).
+- %: Jump to matching brace/bracket (View mode).
 - dd, dNd: Delete current line, or N lines (View mode).
 - yy, yNy: Yank (copy) current line, or N lines (View mode).
 - p, P: Paste after, before cursor (View mode).

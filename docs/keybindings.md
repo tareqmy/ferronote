@@ -38,9 +38,12 @@ These keybindings are active only when focused on the **Editor** in **View** mod
 | Key | Action | Context |
 | :--- | :--- | :--- |
 | `h`, `j`, `k`, `l` | Move cursor left, down, up, right | View mode |
-| `w`, `b` | Move word forward, backward | View mode |
-| `0`, `$` | Move to beginning, end of line | View mode |
+| `w`, `b`, `W`, `B` | Move word forward, backward, by whitespace | View mode |
+| `e`, `ge` | Move to end of word (forward/backward) | View mode |
+| `0`, `^`, `$` | Move to beginning, first non-blank, end of line | View mode |
+| `+`, `-` | Move to first non-blank of next/prev line | View mode |
 | `gg`, `G` | Move to beginning, end of file | View mode |
+| `%` | Jump to matching brace/bracket | View mode |
 | `dd`, `dNd` | Delete current line / N lines | View mode |
 | `yy`, `yNy` | Yank (copy) current line / N lines | View mode |
 | `p`, `P` | Paste after, before cursor | View mode |

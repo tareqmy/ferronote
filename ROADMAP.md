@@ -250,9 +250,12 @@
     - [ ] `yw`, `yiw`, `Y` - Yank word, inner word, to end of line
     - [ ] `r` - Replace single character
     - [ ] `J` - Join line below to current
-    - [ ] `^` - Move to first non-blank character of line
+    - [x] `^` - Move to first non-blank character of line
     - [ ] `f`, `t`, `F`, `T`, `;`, `,` - In-line character search
-    - [ ] `e`, `ge` - Move to end of word (forward/backward)
+    - [x] `e`, `ge` - Move to end of word (forward/backward)
+    - [x] `W`, `B` - Move forward/backward by whitespace-separated word
+    - [x] `+`, `-` - Move to first non-blank character of next/previous line
+    - [x] `%` - Jump to matching brace, bracket, or parenthesis
     - [ ] `Ctrl+d`, `Ctrl+u`, `Ctrl+f`, `Ctrl+b` - Page scrolling
     - [ ] `H`, `M`, `L`, `zz` - Screen positioning
   - [ ] **Visual Mode:**

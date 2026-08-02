@@ -613,6 +613,22 @@ impl Editor<'_> {
                             EditorViewAction::LineHead => {
                                 ta.move_cursor(tui_textarea::CursorMove::Head);
                             }
+                            EditorViewAction::LineFirstNonBlank => {
+                                let lines = ta.lines();
+                                let (r, _) = ta.cursor();
+                                if r < lines.len() {
+                                    let current_line = &lines[r];
+                                    let mut new_col = 0;
+                                    for (i, ch) in current_line.chars().enumerate() {
+                                        if !ch.is_whitespace() {
+                                            new_col = i;
+                                            break;
+                                        }
+                                        new_col = i; // if all whitespace, go to end of whitespace
+                                    }
+                                    ta.move_cursor(tui_textarea::CursorMove::Jump(r as u16, new_col as u16));
+                                }
+                            }
                             EditorViewAction::LineEnd => {
                                 ta.move_cursor(tui_textarea::CursorMove::End);
                             }

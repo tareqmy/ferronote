@@ -663,6 +663,55 @@ impl Editor<'_> {
                                     ta.move_cursor(tui_textarea::CursorMove::Jump(r as u16, new_col as u16));
                                 }
                             }
+                            EditorViewAction::MatchBrace => {
+                                let lines = ta.lines();
+                                let (r, c) = ta.cursor();
+                                if r < lines.len() {
+                                    let current_line: Vec<char> = lines[r].chars().collect();
+                                    if c < current_line.len() {
+                                        let ch = current_line[c];
+                                        let (open, close, dir) = match ch {
+                                            '(' => ('(', ')', 1),
+                                            '{' => ('{', '}', 1),
+                                            '[' => ('[', ']', 1),
+                                            ')' => ('(', ')', -1),
+                                            '}' => ('{', '}', -1),
+                                            ']' => ('[', ']', -1),
+                                            _ => ('\0', '\0', 0),
+                                        };
+                                        if dir != 0 {
+                                            let mut nest = 0;
+                                            let mut tr = r as isize;
+                                            let mut tc = c as isize;
+                                            let mut found = false;
+                                            'outer: while tr >= 0 && (tr as usize) < lines.len() {
+                                                let t_line: Vec<char> = lines[tr as usize].chars().collect();
+                                                while tc >= 0 && (tc as usize) < t_line.len() {
+                                                    let t_ch = t_line[tc as usize];
+                                                    if t_ch == open {
+                                                        nest += dir;
+                                                    } else if t_ch == close {
+                                                        nest -= dir;
+                                                    }
+                                                    if nest == 0 {
+                                                        found = true;
+                                                        break 'outer;
+                                                    }
+                                                    tc += dir;
+                                                }
+                                                tr += dir;
+                                                if tr >= 0 && (tr as usize) < lines.len() {
+                                                    let next_len = lines[tr as usize].chars().count();
+                                                    tc = if dir == 1 { 0 } else { (next_len as isize) - 1 };
+                                                }
+                                            }
+                                            if found {
+                                                ta.move_cursor(tui_textarea::CursorMove::Jump(tr as u16, tc as u16));
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                             EditorViewAction::LineEnd => {
                                 ta.move_cursor(tui_textarea::CursorMove::End);
                             }

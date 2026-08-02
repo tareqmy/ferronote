@@ -471,22 +471,20 @@ impl App<'_> {
                     KeyCode::Char(c) => return Some(Action::SettingsTypeChar(c)),
                     _ => return None,
                 }
-            } else {
-                match key.code {
-                    KeyCode::Up | KeyCode::Char('k') => return Some(Action::PrevSetting),
-                    KeyCode::Down | KeyCode::Char('j') => return Some(Action::NextSetting),
-                    KeyCode::PageUp => return Some(Action::PageUpSetting),
-                    KeyCode::PageDown => return Some(Action::PageDownSetting),
-                    KeyCode::Home => return Some(Action::FirstSetting),
-                    KeyCode::End => return Some(Action::LastSetting),
-                    KeyCode::Left | KeyCode::Char('h') => {
-                        return Some(Action::ChangeSettingOption(false));
-                    }
-                    KeyCode::Right | KeyCode::Char('l') | KeyCode::Enter | KeyCode::Char(' ') => {
-                        return Some(Action::ChangeSettingOption(true));
-                    }
-                    _ => return None,
+            } else if let Some(action) = self.shortcuts.match_settings_shortcut(&key) {
+                use crate::shortcuts::SettingsAction;
+                match action {
+                    SettingsAction::PrevSetting => return Some(Action::PrevSetting),
+                    SettingsAction::NextSetting => return Some(Action::NextSetting),
+                    SettingsAction::PageUpSetting => return Some(Action::PageUpSetting),
+                    SettingsAction::PageDownSetting => return Some(Action::PageDownSetting),
+                    SettingsAction::FirstSetting => return Some(Action::FirstSetting),
+                    SettingsAction::LastSetting => return Some(Action::LastSetting),
+                    SettingsAction::OptionPrev => return Some(Action::ChangeSettingOption(false)),
+                    SettingsAction::OptionNext => return Some(Action::ChangeSettingOption(true)),
                 }
+            } else {
+                return None;
             }
         }
 

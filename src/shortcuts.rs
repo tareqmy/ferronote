@@ -31,6 +31,66 @@ impl KeyCombo {
     }
 }
 
+/// Actions executable in Editor View Mode (Vim controls).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum EditorViewAction {
+    CursorUp,
+    CursorDown,
+    CursorLeft,
+    CursorRight,
+    WordForward,
+    WordBack,
+    LineHead,
+    LineEnd,
+    FileTop,
+    FileBottom,
+    PageUp,
+    PageDown,
+    EnterInsert,
+    EnterInsertAppend,
+    EnterInsertHead,
+    EnterInsertEnd,
+    EnterInsertOpenBelow,
+    EnterInsertOpenAbove,
+    Yank,
+    Delete,
+    PasteAfter,
+    PasteBefore,
+    Undo,
+    Redo,
+    DeleteChar,
+    SearchPrompt,
+    SearchNext,
+    SearchPrev,
+    ClearSearch,
+}
+
+/// Actions executable when navigating the Note List component.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum NoteListAction {
+    NavUp,
+    NavDown,
+    PageUp,
+    PageDown,
+    NavHome,
+    NavEnd,
+    TogglePin,
+    OpenSelected,
+}
+
+/// Actions executable when navigating the Settings overlay.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SettingsAction {
+    PrevSetting,
+    NextSetting,
+    PageUpSetting,
+    PageDownSetting,
+    FirstSetting,
+    LastSetting,
+    OptionPrev,
+    OptionNext,
+}
+
 /// Central shortcut registry that governs all application keybindings,
 /// key event matching, and help overlay documentation.
 #[derive(Debug, Clone, Default)]
@@ -62,6 +122,82 @@ impl ShortcutRegistry {
             KeyCode::Char('o') => Some(Action::OpenExternalEditor),
             KeyCode::Char('l') => Some(Action::FocusSearchBar),
             KeyCode::Char('n') => Some(Action::SaveNote),
+            _ => None,
+        }
+    }
+
+    /// Evaluates Editor View Mode (Vim navigation / editing) key events.
+    #[must_use]
+    pub fn match_editor_view_shortcut(&self, event: &KeyEvent) -> Option<EditorViewAction> {
+        if event.modifiers.contains(KeyModifiers::CONTROL) {
+            return match event.code {
+                KeyCode::Char('r') => Some(EditorViewAction::Redo),
+                _ => None,
+            };
+        }
+
+        match event.code {
+            KeyCode::Up | KeyCode::Char('k') => Some(EditorViewAction::CursorUp),
+            KeyCode::Down | KeyCode::Char('j') => Some(EditorViewAction::CursorDown),
+            KeyCode::Left | KeyCode::Char('h') => Some(EditorViewAction::CursorLeft),
+            KeyCode::Right | KeyCode::Char('l') => Some(EditorViewAction::CursorRight),
+            KeyCode::Char('w') => Some(EditorViewAction::WordForward),
+            KeyCode::Char('b') => Some(EditorViewAction::WordBack),
+            KeyCode::Home | KeyCode::Char('0') => Some(EditorViewAction::LineHead),
+            KeyCode::End | KeyCode::Char('$') => Some(EditorViewAction::LineEnd),
+            KeyCode::Char('G') => Some(EditorViewAction::FileBottom),
+            KeyCode::PageUp => Some(EditorViewAction::PageUp),
+            KeyCode::PageDown => Some(EditorViewAction::PageDown),
+            KeyCode::Char('i') | KeyCode::Char('e') | KeyCode::Enter => Some(EditorViewAction::EnterInsert),
+            KeyCode::Char('a') => Some(EditorViewAction::EnterInsertAppend),
+            KeyCode::Char('I') => Some(EditorViewAction::EnterInsertHead),
+            KeyCode::Char('A') => Some(EditorViewAction::EnterInsertEnd),
+            KeyCode::Char('o') => Some(EditorViewAction::EnterInsertOpenBelow),
+            KeyCode::Char('O') => Some(EditorViewAction::EnterInsertOpenAbove),
+            KeyCode::Char('y') => Some(EditorViewAction::Yank),
+            KeyCode::Char('d') => Some(EditorViewAction::Delete),
+            KeyCode::Char('p') => Some(EditorViewAction::PasteAfter),
+            KeyCode::Char('P') => Some(EditorViewAction::PasteBefore),
+            KeyCode::Char('u') => Some(EditorViewAction::Undo),
+            KeyCode::Char('x') => Some(EditorViewAction::DeleteChar),
+            KeyCode::Char('/') => Some(EditorViewAction::SearchPrompt),
+            KeyCode::Char('n') => Some(EditorViewAction::SearchNext),
+            KeyCode::Char('N') => Some(EditorViewAction::SearchPrev),
+            KeyCode::Esc => Some(EditorViewAction::ClearSearch),
+            _ => None,
+        }
+    }
+
+    /// Evaluates Note List navigation key events.
+    #[must_use]
+    pub fn match_notelist_shortcut(&self, event: &KeyEvent) -> Option<NoteListAction> {
+        match event.code {
+            KeyCode::Up | KeyCode::Char('k') => Some(NoteListAction::NavUp),
+            KeyCode::Down | KeyCode::Char('j') => Some(NoteListAction::NavDown),
+            KeyCode::PageUp => Some(NoteListAction::PageUp),
+            KeyCode::PageDown => Some(NoteListAction::PageDown),
+            KeyCode::Home => Some(NoteListAction::NavHome),
+            KeyCode::End => Some(NoteListAction::NavEnd),
+            KeyCode::Char('p') | KeyCode::Char('P') => Some(NoteListAction::TogglePin),
+            KeyCode::Enter => Some(NoteListAction::OpenSelected),
+            _ => None,
+        }
+    }
+
+    /// Evaluates Settings menu navigation key events.
+    #[must_use]
+    pub fn match_settings_shortcut(&self, event: &KeyEvent) -> Option<SettingsAction> {
+        match event.code {
+            KeyCode::Up | KeyCode::Char('k') => Some(SettingsAction::PrevSetting),
+            KeyCode::Down | KeyCode::Char('j') => Some(SettingsAction::NextSetting),
+            KeyCode::PageUp => Some(SettingsAction::PageUpSetting),
+            KeyCode::PageDown => Some(SettingsAction::PageDownSetting),
+            KeyCode::Home => Some(SettingsAction::FirstSetting),
+            KeyCode::End => Some(SettingsAction::LastSetting),
+            KeyCode::Left | KeyCode::Char('h') => Some(SettingsAction::OptionPrev),
+            KeyCode::Right | KeyCode::Char('l') | KeyCode::Enter | KeyCode::Char(' ') => {
+                Some(SettingsAction::OptionNext)
+            }
             _ => None,
         }
     }
@@ -130,6 +266,38 @@ mod tests {
 
         assert_eq!(registry.match_control_shortcut(&event_k, false), Some(Action::TogglePinNote));
         assert_eq!(registry.match_control_shortcut(&event_p, false), Some(Action::ToggleSettings));
+    }
+
+    #[test]
+    fn test_match_editor_view_shortcuts() {
+        let registry = ShortcutRegistry::new();
+        let event_j = KeyEvent::new(KeyCode::Char('j'), KeyModifiers::NONE);
+        let event_w = KeyEvent::new(KeyCode::Char('w'), KeyModifiers::NONE);
+        let event_redo = KeyEvent::new(KeyCode::Char('r'), KeyModifiers::CONTROL);
+
+        assert_eq!(registry.match_editor_view_shortcut(&event_j), Some(EditorViewAction::CursorDown));
+        assert_eq!(registry.match_editor_view_shortcut(&event_w), Some(EditorViewAction::WordForward));
+        assert_eq!(registry.match_editor_view_shortcut(&event_redo), Some(EditorViewAction::Redo));
+    }
+
+    #[test]
+    fn test_match_notelist_shortcuts() {
+        let registry = ShortcutRegistry::new();
+        let event_p = KeyEvent::new(KeyCode::Char('p'), KeyModifiers::NONE);
+        let event_up = KeyEvent::new(KeyCode::Up, KeyModifiers::NONE);
+
+        assert_eq!(registry.match_notelist_shortcut(&event_p), Some(NoteListAction::TogglePin));
+        assert_eq!(registry.match_notelist_shortcut(&event_up), Some(NoteListAction::NavUp));
+    }
+
+    #[test]
+    fn test_match_settings_shortcuts() {
+        let registry = ShortcutRegistry::new();
+        let event_k = KeyEvent::new(KeyCode::Char('k'), KeyModifiers::NONE);
+        let event_l = KeyEvent::new(KeyCode::Char('l'), KeyModifiers::NONE);
+
+        assert_eq!(registry.match_settings_shortcut(&event_k), Some(SettingsAction::PrevSetting));
+        assert_eq!(registry.match_settings_shortcut(&event_l), Some(SettingsAction::OptionNext));
     }
 
     #[test]

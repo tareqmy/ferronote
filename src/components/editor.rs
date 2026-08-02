@@ -324,131 +324,145 @@ impl Editor<'_> {
                     self.pending_y = false;
                     self.pending_y_count = 0;
                     
-                    if key.code == KeyCode::Char('p') {
-                        let text = ta.yank_text();
-                        let is_line_yank = text.ends_with('\n');
-                        if is_line_yank {
-                            let old_row = ta.cursor().0;
-                            ta.move_cursor(tui_textarea::CursorMove::Down);
-                            if ta.cursor().0 == old_row {
+                    use crate::shortcuts::EditorViewAction;
+                    let registry = crate::shortcuts::ShortcutRegistry::new();
+                    if let Some(action) = registry.match_editor_view_shortcut(&key) {
+                        match action {
+                            EditorViewAction::PasteAfter => {
+                                let text = ta.yank_text();
+                                let is_line_yank = text.ends_with('\n');
+                                if is_line_yank {
+                                    let old_row = ta.cursor().0;
+                                    ta.move_cursor(tui_textarea::CursorMove::Down);
+                                    if ta.cursor().0 == old_row {
+                                        ta.move_cursor(tui_textarea::CursorMove::End);
+                                        ta.insert_newline();
+                                        ta.paste();
+                                        ta.delete_char();
+                                    } else {
+                                        ta.move_cursor(tui_textarea::CursorMove::Head);
+                                        ta.paste();
+                                    }
+                                } else {
+                                    ta.move_cursor(tui_textarea::CursorMove::Forward);
+                                    ta.paste();
+                                    ta.move_cursor(tui_textarea::CursorMove::Back);
+                                }
+                                modified = true;
+                            }
+                            EditorViewAction::PasteBefore => {
+                                let text = ta.yank_text();
+                                let is_line_yank = text.ends_with('\n');
+                                if is_line_yank {
+                                    ta.move_cursor(tui_textarea::CursorMove::Head);
+                                    ta.paste();
+                                } else {
+                                    ta.paste();
+                                }
+                                modified = true;
+                            }
+                            EditorViewAction::Undo => {
+                                ta.undo();
+                                modified = true;
+                            }
+                            EditorViewAction::Redo => {
+                                ta.redo();
+                                modified = true;
+                            }
+                            EditorViewAction::DeleteChar => {
+                                let (row, col) = ta.cursor();
+                                if col < ta.lines()[row].len() {
+                                    ta.delete_next_char();
+                                    modified = true;
+                                }
+                            }
+                            EditorViewAction::SearchPrompt => {
+                                let mut sta = TextArea::default();
+                                sta.set_block(
+                                    Block::default()
+                                        .borders(Borders::ALL)
+                                        .title("Search (Enter to search, Esc to cancel)"),
+                                );
+                                sta.set_cursor_line_style(Style::default());
+                                self.search_textarea = Some(sta);
+                                return;
+                            }
+                            EditorViewAction::SearchNext => {
+                                ta.search_forward(false);
+                            }
+                            EditorViewAction::SearchPrev => {
+                                ta.search_back(false);
+                            }
+                            EditorViewAction::EnterInsert => {
+                                self.is_editing = true;
+                            }
+                            EditorViewAction::EnterInsertAppend => {
+                                ta.move_cursor(tui_textarea::CursorMove::Forward);
+                                self.is_editing = true;
+                            }
+                            EditorViewAction::EnterInsertHead => {
+                                ta.move_cursor(tui_textarea::CursorMove::Head);
+                                self.is_editing = true;
+                            }
+                            EditorViewAction::EnterInsertEnd => {
+                                ta.move_cursor(tui_textarea::CursorMove::End);
+                                self.is_editing = true;
+                            }
+                            EditorViewAction::EnterInsertOpenBelow => {
                                 ta.move_cursor(tui_textarea::CursorMove::End);
                                 ta.insert_newline();
-                                ta.paste();
-                                ta.delete_char();
-                            } else {
+                                self.is_editing = true;
+                            }
+                            EditorViewAction::EnterInsertOpenAbove => {
                                 ta.move_cursor(tui_textarea::CursorMove::Head);
-                                ta.paste();
+                                ta.insert_newline();
+                                ta.move_cursor(tui_textarea::CursorMove::Up);
+                                self.is_editing = true;
                             }
-                        } else {
-                            ta.move_cursor(tui_textarea::CursorMove::Forward);
-                            ta.paste();
-                            ta.move_cursor(tui_textarea::CursorMove::Back);
-                        }
-                        modified = true;
-                    } else if key.code == KeyCode::Char('P') {
-                        let text = ta.yank_text();
-                        let is_line_yank = text.ends_with('\n');
-                        if is_line_yank {
-                            ta.move_cursor(tui_textarea::CursorMove::Head);
-                            ta.paste();
-                        } else {
-                            ta.paste();
-                        }
-                        modified = true;
-                    } else if key.code == KeyCode::Char('u') {
-                        ta.undo();
-                        modified = true;
-                    } else if key.code == KeyCode::Char('r') && key.modifiers.contains(KeyModifiers::CONTROL) {
-                        ta.redo();
-                        modified = true;
-                    } else if key.code == KeyCode::Char('x') {
-                        let (row, col) = ta.cursor();
-                        if col < ta.lines()[row].len() {
-                            ta.delete_next_char();
-                            modified = true;
-                        }
-                    } else if key.code == KeyCode::Char('/') {
-                        let mut sta = TextArea::default();
-                        sta.set_block(Block::default().borders(Borders::ALL).title("Search (Enter to search, Esc to cancel)"));
-                        sta.set_cursor_line_style(Style::default());
-                        self.search_textarea = Some(sta);
-                        return;
-                    } else if key.code == KeyCode::Char('n') {
-                        ta.search_forward(false);
-                    } else if key.code == KeyCode::Char('N') {
-                        ta.search_back(false);
-                    } else {
-                        match key.code {
-                        KeyCode::Char('e') | KeyCode::Char('i') | KeyCode::Enter => {
-                            self.is_editing = true;
-                        }
-                        KeyCode::Char('a') => {
-                            ta.move_cursor(tui_textarea::CursorMove::Forward);
-                            self.is_editing = true;
-                        }
-                        KeyCode::Char('I') => {
-                            ta.move_cursor(tui_textarea::CursorMove::Head);
-                            self.is_editing = true;
-                        }
-                        KeyCode::Char('A') => {
-                            ta.move_cursor(tui_textarea::CursorMove::End);
-                            self.is_editing = true;
-                        }
-                        KeyCode::Char('o') => {
-                            ta.move_cursor(tui_textarea::CursorMove::End);
-                            ta.insert_newline();
-                            self.is_editing = true;
-                        }
-                        KeyCode::Char('O') => {
-                            ta.move_cursor(tui_textarea::CursorMove::Head);
-                            ta.insert_newline();
-                            ta.move_cursor(tui_textarea::CursorMove::Up);
-                            self.is_editing = true;
-                        }
-                        KeyCode::PageDown => {
-                            for _ in 0..10 {
-                                ta.move_cursor(tui_textarea::CursorMove::Down);
+                            EditorViewAction::PageDown => {
+                                for _ in 0..10 {
+                                    ta.move_cursor(tui_textarea::CursorMove::Down);
+                                }
                             }
-                        }
-                        KeyCode::PageUp => {
-                            for _ in 0..10 {
+                            EditorViewAction::PageUp => {
+                                for _ in 0..10 {
+                                    ta.move_cursor(tui_textarea::CursorMove::Up);
+                                }
+                            }
+                            EditorViewAction::CursorUp => {
                                 ta.move_cursor(tui_textarea::CursorMove::Up);
                             }
+                            EditorViewAction::CursorDown => {
+                                ta.move_cursor(tui_textarea::CursorMove::Down);
+                            }
+                            EditorViewAction::CursorLeft => {
+                                ta.move_cursor(tui_textarea::CursorMove::Back);
+                            }
+                            EditorViewAction::CursorRight => {
+                                ta.move_cursor(tui_textarea::CursorMove::Forward);
+                            }
+                            EditorViewAction::WordForward => {
+                                ta.move_cursor(tui_textarea::CursorMove::WordForward);
+                            }
+                            EditorViewAction::WordBack => {
+                                ta.move_cursor(tui_textarea::CursorMove::WordBack);
+                            }
+                            EditorViewAction::LineHead => {
+                                ta.move_cursor(tui_textarea::CursorMove::Head);
+                            }
+                            EditorViewAction::LineEnd => {
+                                ta.move_cursor(tui_textarea::CursorMove::End);
+                            }
+                            EditorViewAction::FileBottom => {
+                                ta.move_cursor(tui_textarea::CursorMove::Bottom);
+                            }
+                            EditorViewAction::ClearSearch => {
+                                let _ = ta.set_search_pattern("");
+                                self.current_search_query.remove(note);
+                            }
+                            _ => {}
                         }
-                        KeyCode::Up | KeyCode::Char('k') => {
-                            ta.move_cursor(tui_textarea::CursorMove::Up);
-                        }
-                        KeyCode::Down | KeyCode::Char('j') => {
-                            ta.move_cursor(tui_textarea::CursorMove::Down);
-                        }
-                        KeyCode::Left | KeyCode::Char('h') => {
-                            ta.move_cursor(tui_textarea::CursorMove::Back);
-                        }
-                        KeyCode::Right | KeyCode::Char('l') => {
-                            ta.move_cursor(tui_textarea::CursorMove::Forward);
-                        }
-                        KeyCode::Char('w') => {
-                            ta.move_cursor(tui_textarea::CursorMove::WordForward);
-                        }
-                        KeyCode::Char('b') => {
-                            ta.move_cursor(tui_textarea::CursorMove::WordBack);
-                        }
-                        KeyCode::Home | KeyCode::Char('0') => {
-                            ta.move_cursor(tui_textarea::CursorMove::Head);
-                        }
-                        KeyCode::End | KeyCode::Char('$') => {
-                            ta.move_cursor(tui_textarea::CursorMove::End);
-                        }
-                        KeyCode::Char('G') => {
-                            ta.move_cursor(tui_textarea::CursorMove::Bottom);
-                        }
-                        KeyCode::Esc => {
-                            let _ = ta.set_search_pattern("");
-                            self.current_search_query.remove(note);
-                        }
-                        _ => {}
                     }
-                }
             }
                 
                 if modified {

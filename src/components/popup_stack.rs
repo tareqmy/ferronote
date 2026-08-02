@@ -84,3 +84,60 @@ impl DrawableComponent for PopupStack {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::components::help::HelpPopup;
+    use ratatui::crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+
+    #[test]
+    fn test_popup_stack_push_pop_clear() {
+        let queue = Queue::new();
+        let mut stack = PopupStack::new(queue.clone());
+        assert!(stack.is_empty());
+
+        let help = HelpPopup::new(queue.clone());
+        stack.push(AnyPopup::Help(help));
+        assert!(!stack.is_empty());
+
+        let popped = stack.pop();
+        assert!(popped.is_some());
+        assert!(stack.is_empty());
+
+        let help2 = HelpPopup::new(queue);
+        stack.push(AnyPopup::Help(help2));
+        stack.clear();
+        assert!(stack.is_empty());
+    }
+
+    #[test]
+    fn test_popup_stack_event_routing_and_draw() {
+        use ratatui::backend::TestBackend;
+        use ratatui::Terminal;
+        let backend = TestBackend::new(80, 24);
+        let mut terminal = Terminal::new(backend).unwrap();
+
+        let queue = Queue::new();
+        let mut stack = PopupStack::new(queue.clone());
+
+        // Event on empty stack returns NotConsumed
+        let ev = Event::Key(KeyEvent::new(KeyCode::Esc, KeyModifiers::NONE));
+        let res = stack.event(&ev).unwrap();
+        assert_eq!(res, EventState::NotConsumed);
+
+        // Push Help popup onto stack
+        let help = HelpPopup::new(queue);
+        stack.push(AnyPopup::Help(help));
+
+        // Event on non-empty stack routes to top popup
+        let res_top = stack.event(&ev).unwrap();
+        assert_eq!(res_top, EventState::Consumed);
+
+        // Draw stack
+        terminal.draw(|f| {
+            let area = f.area();
+            stack.draw(f, area).unwrap();
+        }).unwrap();
+    }
+}

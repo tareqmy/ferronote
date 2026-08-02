@@ -8,7 +8,7 @@ use crate::event::Event;
 use color_eyre::Result;
 use ratatui::{layout::Rect, Frame};
 
-#[derive(PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum EventState {
     Consumed,
     NotConsumed,

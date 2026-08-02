@@ -695,24 +695,21 @@ mod tests {
     }
 
     #[test]
-    fn test_welcome_note_updated_on_reopen() {
+    fn test_welcome_note_preserved_on_reopen() {
         let dir = setup_test_dir("welcome_update");
         let mut store1 = NoteStore::new(dir.clone()).unwrap();
         store1
-            .save_note("Welcome to Ferronote.md", "Old outdated content")
+            .save_note("Welcome to Ferronote.md", "User modified content")
             .unwrap();
         assert_eq!(
             store1.load_note("Welcome to Ferronote.md").unwrap(),
-            "Old outdated content"
+            "User modified content"
         );
 
-        // Reopening NoteStore should refresh Welcome to Ferronote.md with latest content
+        // Reopening NoteStore should preserve existing user modifications to Welcome note
         let store2 = NoteStore::new(dir).unwrap();
         let content = store2.load_note("Welcome to Ferronote.md").unwrap();
-        assert!(content.contains("# Welcome to Ferronote"));
-        assert!(content.contains("Ctrl+P"));
-        assert!(content.contains("Ctrl+V"));
-        assert!(content.contains("[[Lorem Ipsum]]"));
+        assert_eq!(content, "User modified content");
     }
 
     #[test]

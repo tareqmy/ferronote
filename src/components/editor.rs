@@ -781,4 +781,119 @@ mod tests {
             assert_eq!(ta.cursor(), (0, 0));
         }
     }
+
+    #[test]
+    fn test_editor_mode_switching() {
+        let queue = crate::queue::Queue::new();
+        let mut editor = Editor::new(queue);
+        editor.set_content("note.md", "Line 1\nLine 2");
+
+        assert!(!editor.is_editing);
+
+        // Enter edit mode via 'i'
+        editor.handle_key(KeyEvent::new(KeyCode::Char('i'), KeyModifiers::NONE));
+        assert!(editor.is_editing);
+
+        // Exit edit mode via Esc
+        editor.handle_key(KeyEvent::new(KeyCode::Esc, KeyModifiers::NONE));
+        assert!(!editor.is_editing);
+
+        // Enter edit mode via 'a'
+        editor.handle_key(KeyEvent::new(KeyCode::Char('a'), KeyModifiers::NONE));
+        assert!(editor.is_editing);
+        editor.handle_key(KeyEvent::new(KeyCode::Esc, KeyModifiers::NONE));
+        assert!(!editor.is_editing);
+
+        // Enter edit mode via 'o' (insert newline below)
+        editor.handle_key(KeyEvent::new(KeyCode::Char('o'), KeyModifiers::NONE));
+        assert!(editor.is_editing);
+        let content = editor.content();
+        assert!(content.contains("\n\n") || content.lines().count() == 3);
+    }
+
+    #[test]
+    fn test_editor_vim_navigation() {
+        let queue = crate::queue::Queue::new();
+        let mut editor = Editor::new(queue);
+        editor.set_content("note.md", "First word second word\nSecond line here");
+
+        // View mode movement keys: w, b, 0, $, gg, G
+        editor.handle_key(KeyEvent::new(KeyCode::Char('w'), KeyModifiers::NONE));
+        if let Some(ref note) = editor.current_note {
+            let ta = editor.textareas.get(note).unwrap();
+            assert!(ta.cursor().1 > 0);
+        }
+
+        editor.handle_key(KeyEvent::new(KeyCode::Char('$'), KeyModifiers::NONE));
+        if let Some(ref note) = editor.current_note {
+            let ta = editor.textareas.get(note).unwrap();
+            assert_eq!(ta.cursor().1, 22);
+        }
+
+        editor.handle_key(KeyEvent::new(KeyCode::Char('0'), KeyModifiers::NONE));
+        if let Some(ref note) = editor.current_note {
+            let ta = editor.textareas.get(note).unwrap();
+            assert_eq!(ta.cursor().1, 0);
+        }
+
+        // G moves to bottom
+        editor.handle_key(KeyEvent::new(KeyCode::Char('G'), KeyModifiers::NONE));
+        if let Some(ref note) = editor.current_note {
+            let ta = editor.textareas.get(note).unwrap();
+            assert_eq!(ta.cursor().0, 1);
+        }
+
+        // gg moves to top
+        editor.handle_key(KeyEvent::new(KeyCode::Char('g'), KeyModifiers::NONE));
+        editor.handle_key(KeyEvent::new(KeyCode::Char('g'), KeyModifiers::NONE));
+        if let Some(ref note) = editor.current_note {
+            let ta = editor.textareas.get(note).unwrap();
+            assert_eq!(ta.cursor().0, 0);
+        }
+    }
+
+    #[test]
+    fn test_editor_vim_search_prompt() {
+        let queue = crate::queue::Queue::new();
+        let mut editor = Editor::new(queue);
+        editor.set_content("note.md", "apple banana cherry apple");
+
+        // Activate search via '/'
+        editor.handle_key(KeyEvent::new(KeyCode::Char('/'), KeyModifiers::NONE));
+        assert!(editor.search_textarea.is_some());
+
+        // Type "apple"
+        for c in "apple".chars() {
+            editor.handle_key(KeyEvent::new(KeyCode::Char(c), KeyModifiers::NONE));
+        }
+
+        // Press Enter to perform search
+        editor.handle_key(KeyEvent::new(KeyCode::Enter, KeyModifiers::NONE));
+        assert!(editor.search_textarea.is_none());
+        assert!(editor.current_search_query.contains_key("note.md"));
+
+        // Press 'n' to jump to next match
+        editor.handle_key(KeyEvent::new(KeyCode::Char('n'), KeyModifiers::NONE));
+
+        // Press Esc to clear search highlight
+        editor.handle_key(KeyEvent::new(KeyCode::Esc, KeyModifiers::NONE));
+        assert!(!editor.current_search_query.contains_key("note.md"));
+    }
+
+    #[test]
+    fn test_editor_line_deletion_and_yank() {
+        let queue = crate::queue::Queue::new();
+        let mut editor = Editor::new(queue);
+        editor.set_content("note.md", "Line 1\nLine 2\nLine 3");
+
+        // dd deletes current line
+        editor.handle_key(KeyEvent::new(KeyCode::Char('d'), KeyModifiers::NONE));
+        editor.handle_key(KeyEvent::new(KeyCode::Char('d'), KeyModifiers::NONE));
+        assert!(!editor.content().starts_with("Line 1"));
+
+        // x deletes single character under cursor
+        let old_len = editor.content().len();
+        editor.handle_key(KeyEvent::new(KeyCode::Char('x'), KeyModifiers::NONE));
+        assert_eq!(editor.content().len(), old_len - 1);
+    }
 }

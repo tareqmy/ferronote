@@ -1990,4 +1990,55 @@ mod tests {
 
         app.update(Action::MouseUp(95, 10));
     }
+
+    #[test]
+    fn test_app_rename_note_flow() {
+        let (mut app, _temp_dir) = setup_test_app();
+        assert!(!app.show_rename_prompt);
+
+        // Trigger rename prompt action
+        app.update(Action::PromptRenameNote);
+        assert!(app.show_rename_prompt);
+
+        // Submit new name via handle_key inside rename prompt
+        app.rename_input = tui_textarea::TextArea::new(vec!["Renamed Note".to_string()]);
+        if let Some(action) = app.handle_key(KeyEvent::new(KeyCode::Enter, KeyModifiers::NONE)) {
+            app.update(action);
+        }
+
+        assert!(!app.show_rename_prompt);
+        assert!(app.note_store.filenames().contains(&"Renamed Note.md".to_string()));
+    }
+
+    #[test]
+    fn test_app_delete_confirmation_modal() {
+        let (mut app, _temp_dir) = setup_test_app();
+        assert!(!app.show_delete_confirmation);
+
+        // Trigger delete prompt
+        app.update(Action::PromptDeleteNote);
+        assert!(app.show_delete_confirmation);
+
+        // Confirm delete with 'y'
+        if let Some(action) = app.handle_key(KeyEvent::new(KeyCode::Char('y'), KeyModifiers::NONE)) {
+            app.update(action);
+        }
+        assert!(!app.show_delete_confirmation);
+    }
+
+    #[test]
+    fn test_app_draw() {
+        use ratatui::backend::TestBackend;
+        use ratatui::Terminal;
+        let backend = TestBackend::new(100, 30);
+        let mut terminal = Terminal::new(backend).unwrap();
+
+        let (mut app, _temp_dir) = setup_test_app();
+        app.show_about = true;
+        app.show_settings = true;
+
+        terminal.draw(|f| {
+            app.draw(f);
+        }).unwrap();
+    }
 }

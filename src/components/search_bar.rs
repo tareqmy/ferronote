@@ -127,4 +127,39 @@ mod tests {
         search_bar.clear();
         assert_eq!(search_bar.query(), "");
     }
+
+    #[test]
+    fn test_search_bar_component_event() {
+        use crate::components::Component;
+        let queue = crate::queue::Queue::new();
+        let mut search_bar = SearchBar::new(queue);
+
+        let ev = crate::event::Event::Key(KeyEvent::new(KeyCode::Char('a'), KeyModifiers::NONE));
+        let res = search_bar.event(&ev).unwrap();
+        assert_eq!(res, crate::components::EventState::Consumed);
+        assert_eq!(search_bar.query(), "a");
+    }
+
+    #[test]
+    fn test_search_bar_draw() {
+        use ratatui::backend::TestBackend;
+        use ratatui::Terminal;
+        let backend = TestBackend::new(30, 5);
+        let mut terminal = Terminal::new(backend).unwrap();
+
+        let queue = crate::queue::Queue::new();
+        let mut search_bar = SearchBar::new(queue);
+        search_bar.handle_key(KeyEvent::new(KeyCode::Char('n'), KeyModifiers::NONE));
+        let theme = crate::theme::ThemePalette::from_name("default");
+
+        terminal.draw(|f| {
+            let area = f.area();
+            search_bar.draw(f, area, true, &theme);
+        }).unwrap();
+
+        terminal.draw(|f| {
+            let area = f.area();
+            search_bar.draw(f, area, false, &theme);
+        }).unwrap();
+    }
 }

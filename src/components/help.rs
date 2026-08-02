@@ -128,4 +128,52 @@ impl DrawableComponent for HelpPopup {
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use ratatui::crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+
+    #[test]
+    fn test_help_popup_events() {
+        let queue = Queue::new();
+        let mut help = HelpPopup::new(queue.clone());
+        assert_eq!(help.scroll_offset, 0);
+
+        // Scroll down
+        let ev_down = Event::Key(KeyEvent::new(KeyCode::Char('j'), KeyModifiers::NONE));
+        let res1 = help.event(&ev_down).unwrap();
+        assert_eq!(res1, EventState::Consumed);
+        assert_eq!(help.scroll_offset, 1);
+
+        // Scroll up
+        let ev_up = Event::Key(KeyEvent::new(KeyCode::Char('k'), KeyModifiers::NONE));
+        let res2 = help.event(&ev_up).unwrap();
+        assert_eq!(res2, EventState::Consumed);
+        assert_eq!(help.scroll_offset, 0);
+
+        // Esc emits ToggleHelp action
+        let ev_esc = Event::Key(KeyEvent::new(KeyCode::Esc, KeyModifiers::NONE));
+        let res_esc = help.event(&ev_esc).unwrap();
+        assert_eq!(res_esc, EventState::Consumed);
+        assert_eq!(queue.pop(), Some(crate::action::Action::ToggleHelp));
+    }
+
+    #[test]
+    fn test_help_popup_draw() {
+        use ratatui::backend::TestBackend;
+        use ratatui::Terminal;
+        let backend = TestBackend::new(80, 24);
+        let mut terminal = Terminal::new(backend).unwrap();
+
+        let queue = Queue::new();
+        let mut help = HelpPopup::new(queue);
+        help.scroll_offset = 2;
+
+        terminal.draw(|f| {
+            let area = f.area();
+            help.draw(f, area).unwrap();
+        }).unwrap();
+    }
+}
+
 

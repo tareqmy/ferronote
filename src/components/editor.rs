@@ -447,6 +447,81 @@ impl Editor<'_> {
                             EditorViewAction::WordBack => {
                                 ta.move_cursor(tui_textarea::CursorMove::WordBack);
                             }
+                            EditorViewAction::WordForwardWhitespace => {
+                                let lines = ta.lines();
+                                let (mut r, mut c) = ta.cursor();
+                                if r < lines.len() {
+                                    let mut current_line: Vec<char> = lines[r].chars().collect();
+                                    let mut in_word = c < current_line.len() && !current_line[c].is_whitespace();
+                                    loop {
+                                        if c >= current_line.len() {
+                                            r += 1;
+                                            c = 0;
+                                            if r >= lines.len() {
+                                                r = lines.len() - 1;
+                                                c = lines[r].chars().count();
+                                                break;
+                                            }
+                                            current_line = lines[r].chars().collect();
+                                            in_word = false;
+                                        } else {
+                                            let is_ws = current_line[c].is_whitespace();
+                                            if in_word && is_ws {
+                                                in_word = false;
+                                            } else if !in_word && !is_ws {
+                                                break;
+                                            }
+                                            c += 1;
+                                        }
+                                    }
+                                    ta.move_cursor(tui_textarea::CursorMove::Jump(r as u16, c as u16));
+                                }
+                            }
+                            EditorViewAction::WordBackWhitespace => {
+                                let lines = ta.lines();
+                                let (mut r, mut c) = ta.cursor();
+                                if r < lines.len() {
+                                    if c > 0 {
+                                        c -= 1;
+                                    } else if r > 0 {
+                                        r -= 1;
+                                        c = lines[r].chars().count();
+                                        if c > 0 { c -= 1; }
+                                    }
+                                    
+                                    let mut current_line: Vec<char> = lines[r].chars().collect();
+                                    let mut in_word = c < current_line.len() && !current_line[c].is_whitespace();
+                                    
+                                    loop {
+                                        if c == 0 && (current_line.is_empty() || current_line[0].is_whitespace() || r == 0) {
+                                            if r == 0 {
+                                                c = 0;
+                                                break;
+                                            }
+                                            r -= 1;
+                                            current_line = lines[r].chars().collect();
+                                            c = current_line.len();
+                                            if c > 0 { c -= 1; }
+                                            in_word = false;
+                                        } else {
+                                            let is_ws = current_line[c].is_whitespace();
+                                            if !in_word && !is_ws {
+                                                in_word = true;
+                                            } else if in_word && is_ws {
+                                                c += 1;
+                                                break;
+                                            }
+                                            if c > 0 {
+                                                c -= 1;
+                                            } else if r == 0 {
+                                                c = 0;
+                                                break;
+                                            }
+                                        }
+                                    }
+                                    ta.move_cursor(tui_textarea::CursorMove::Jump(r as u16, c as u16));
+                                }
+                            }
                             EditorViewAction::LineHead => {
                                 ta.move_cursor(tui_textarea::CursorMove::Head);
                             }

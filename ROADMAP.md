@@ -223,8 +223,8 @@
     - [x] `w`, `b` - Move forward/backward by word
     - [x] `0`, `$` - Move to beginning/end of line
     - [x] `gg`, `G` - Move to beginning/end of file
-    - [x] `dd` - Delete current line
-    - [x] `yy` - Yank (copy) current line
+    - [x] `dd`, `dNd` - Delete current line, or N lines
+    - [x] `yy`, `yNy` - Yank (copy) current line, or N lines
     - [x] `p`, `P` - Paste after/before cursor
     - [x] `u`, `Ctrl+r` - Undo / Redo
     - [x] `/`, `n`, `N` - Search forward, next match, previous match

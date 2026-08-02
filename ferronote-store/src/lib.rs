@@ -83,6 +83,7 @@ You don't need a separate "New Note" button!
 - Home / End: Jump to top or bottom of notes list.
 - Ctrl+S: Force save current note.
 - Ctrl+D: Soft delete selected note (moves file to trash).
+- Ctrl+K: Toggle Pin / Bookmark on selected note (or 'p' in Note List).
 - Ctrl+B: Toggle Notes List panel visibility.
 - Ctrl+Z / Ctrl+Y: Undo / Redo inside the editor.
 - Ctrl+O: Open active note in external advanced editor (configure in Ctrl+P settings).
@@ -96,8 +97,8 @@ You don't need a separate "New Note" button!
 - w, b: Move word forward, backward (View mode).
 - 0, $: Move to beginning, end of line (View mode).
 - gg, G: Move to beginning, end of file (View mode).
-- dd: Delete current line (View mode).
-- yy: Yank (copy) current line (View mode).
+- dd, dNd: Delete current line, or N lines (View mode).
+- yy, yNy: Yank (copy) current line, or N lines (View mode).
 - p, P: Paste after, before cursor (View mode).
 - u, Ctrl+r: Undo, Redo (View mode).
 - /, n, N: Search forward (regex), next match, previous match (View mode).

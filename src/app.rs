@@ -1093,6 +1093,11 @@ impl App<'_> {
                 Span::styled(" │", sep_style),
             ]);
             shortcut_groups.push(vec![
+                Span::styled(" [Ctrl+K] ", key_style),
+                Span::styled("Pin", text_style),
+                Span::styled(" │", sep_style),
+            ]);
+            shortcut_groups.push(vec![
                 Span::styled(" [Enter] ", key_style),
                 Span::styled("Create/Edit", text_style),
                 Span::styled(" │", sep_style),

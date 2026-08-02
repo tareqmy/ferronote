@@ -18,6 +18,7 @@ Ferronote is built from the ground up for keyboard efficiency.
 | `Ctrl+D` | Delete active note (moves to trash) | Global |
 | `Ctrl+R` | Rename active note | Global |
 | `Ctrl+N` | Create new note | Global |
+| `Ctrl+K` | Toggle Pin / Bookmark note (or 'p' in Note List) | Global / List |
 | `Ctrl+O` | Open active note in external editor (configured in Settings, or `$VISUAL` / `$EDITOR`) | Global |
 | `Ctrl+Z` / `Ctrl+Y` | Undo / Redo text edits | Editor |
 | `Ctrl+P` | Toggle Interactive Settings Overlay | Global |
@@ -40,8 +41,8 @@ These keybindings are active only when focused on the **Editor** in **View** mod
 | `w`, `b` | Move word forward, backward | View mode |
 | `0`, `$` | Move to beginning, end of line | View mode |
 | `gg`, `G` | Move to beginning, end of file | View mode |
-| `dd` | Delete current line | View mode |
-| `yy` | Yank (copy) current line | View mode |
+| `dd`, `dNd` | Delete current line / N lines | View mode |
+| `yy`, `yNy` | Yank (copy) current line / N lines | View mode |
 | `p`, `P` | Paste after, before cursor | View mode |
 | `u`, `Ctrl+R` | Undo, Redo | View mode |
 | `/` | Search locally in file (regex supported) | View mode |

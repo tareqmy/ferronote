@@ -76,6 +76,7 @@ fn --import ~/backup.zip
 | `Esc` | Clear global search bar |
 | `Tab` / `Shift+Tab` | Cycle focus (Search → Note List → Editor) |
 | `Enter` | Open selected note / Create new note / Follow wiki-link |
+| `Ctrl+K` | Toggle Pin / Bookmark on selected note (or 'p' in Note List) |
 | `Ctrl+O` | Open active note in external editor (configured in Settings, or `$VISUAL` / `$EDITOR`) |
 | `Ctrl+P` | Toggle Interactive Settings Overlay |
 | `Mouse Drag` | Drag panel divider to resize notes list and content (20%-40%) |

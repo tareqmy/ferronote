@@ -73,7 +73,7 @@ You don't need a separate "New Note" button!
 
 ## ⌨️ Essential Keybindings
 - / or Ctrl+L: Focus search bar.
-- Esc: Clear global search bar.
+- Esc: Clear search bar / Close overlay.
 - Ctrl+N: Start a new note.
 - Tab: Cycle focus between Search Bar, Note List, and Editor.
 - Up / Down: Navigate notes in the list.
@@ -98,7 +98,7 @@ You don't need a separate "New Note" button!
 - yy: Yank (copy) current line (View mode).
 - p, P: Paste after, before cursor (View mode).
 - u, Ctrl+r: Undo, Redo (View mode).
-- /, n, N: Search forward, next match, previous match (View mode).
+- /, n, N: Search forward (regex), next match, previous match (View mode).
 - x: Delete character under cursor (View mode).
 - Ctrl+W: Delete word before cursor (Edit mode).
 - Ctrl+U: Delete to beginning of line (Edit mode).

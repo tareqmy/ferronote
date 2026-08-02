@@ -44,7 +44,7 @@ These keybindings are active only when focused on the **Editor** in **View** mod
 | `yy` | Yank (copy) current line | View mode |
 | `p`, `P` | Paste after, before cursor | View mode |
 | `u`, `Ctrl+R` | Undo, Redo | View mode |
-| `/` | Search locally in file | View mode |
+| `/` | Search locally in file (regex supported) | View mode |
 | `n`, `N` | Next match, previous match | View mode |
 | `x` | Delete character under cursor | View mode |
 | `i`, `a`, `o` | Enter Insert mode | View mode |

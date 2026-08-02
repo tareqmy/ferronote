@@ -57,7 +57,7 @@ impl DrawableComponent for HelpPopup {
     fn draw(&self, frame: &mut Frame, area: Rect) -> color_eyre::Result<()> {
         let keybindings_data = [
             ("/ or Ctrl+L", "Focus search bar"),
-            ("Esc", "Clear global search bar"),
+            ("Esc", "Clear search bar / Close overlay"),
             ("Ctrl+N", "Start a new note"),
             ("Tab", "Cycle focus forwards"),
             ("Enter", "Open selected note / Create / Wiki-link"),
@@ -86,7 +86,7 @@ impl DrawableComponent for HelpPopup {
             ("d, dd", "Cut (delete) selection / line"),
             ("p, P", "Paste after / before cursor"),
             ("u, Ctrl+R", "Undo / Redo (Vim mode)"),
-            ("/", "Search locally in file (View mode)"),
+            ("/", "Search locally (regex) in file (View mode)"),
             ("n, N", "Next / Prev search match (View mode)"),
             ("Esc", "Exit back to View mode"),
         ];

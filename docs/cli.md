@@ -1,6 +1,6 @@
 # 💻 CLI Commands & Options
 
-Ferronote provides a flexible command-line interface (`ferronote` or shortcut `fnt`) for launching the TUI app, managing note vaults, importing/exporting, and managing trash.
+Ferronote provides a flexible command-line interface (`ferronote` or shortcuts `fn` / `fnt`) for launching the TUI app, managing note vaults, importing/exporting, and managing trash.
 
 ---
 
@@ -8,7 +8,7 @@ Ferronote provides a flexible command-line interface (`ferronote` or shortcut `f
 
 | Command / Flag | Description | Example Usage |
 | :--- | :--- | :--- |
-| `ferronote` / `fnt` | Launch interactive TUI | `ferronote` or `fnt` |
+| `ferronote` / `fn` / `fnt` | Launch interactive TUI | `ferronote`, `fn` or `fnt` |
 | `-d`, `--dir <PATH>` | Specify custom notes directory | `fnt --dir ~/notes` |
 | `-i`, `--import <PATH>` | Import `.md`, `.txt`, directory, or `.zip` archive | `fnt --import ~/backup/notes.zip` |
 | `-e`, `--export <PATH>` | Export vault to `.zip` or single note to `.html` | `fnt --export ~/exports/note.html` |

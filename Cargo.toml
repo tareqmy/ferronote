@@ -42,8 +42,8 @@ clap = { version = "4", features = ["derive", "env"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 notify = "8.2.0"
-ferronote-store = { version = "0.1.0", path = "ferronote-store" }
-ferronote-search = { version = "0.1.0", path = "ferronote-search" }
+ferronote-store = { version = "1.2.3", path = "ferronote-store" }
+ferronote-search = { version = "1.2.3", path = "ferronote-search" }
 
 [profile.release]
 lto = true

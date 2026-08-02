@@ -1,11 +1,12 @@
 [package]
 name = "ferronote-search"
-version = "0.1.0"
+version = "1.2.3"
 edition = "2024"
 authors = ["Tareq M Y"]
 description = "Search backend for Ferronote"
 license = "MIT"
 repository = "https://github.com/tareqmy/ferronote"
+readme = "README.md"
 
 [dependencies]
 regex = "1.13.1"

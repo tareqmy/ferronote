@@ -2,6 +2,10 @@
 name = "ferronote-store"
 version = "0.1.0"
 edition = "2024"
+authors = ["Tareq M Y"]
+description = "Note storage backend for Ferronote"
+license = "MIT"
+repository = "https://github.com/tareqmy/ferronote"
 
 [dependencies]
 color-eyre = "0.6"

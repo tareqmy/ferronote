@@ -79,4 +79,6 @@ pub enum Action {
     UpdateApp,
     /// Toggle pinned status of selected note.
     TogglePinNote,
+    /// Move focus to search bar.
+    FocusSearchBar,
 }

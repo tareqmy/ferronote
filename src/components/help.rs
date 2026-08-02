@@ -55,42 +55,8 @@ impl Component for HelpPopup {
 
 impl DrawableComponent for HelpPopup {
     fn draw(&self, frame: &mut Frame, area: Rect) -> color_eyre::Result<()> {
-        let keybindings_data = [
-            ("/ or Ctrl+L", "Focus search bar"),
-            ("Esc", "Clear search bar / Close overlay"),
-            ("Ctrl+N", "Start a new note"),
-            ("Tab", "Cycle focus forwards"),
-            ("Enter", "Open selected note / Create / Wiki-link"),
-            ("Up / Down", "Navigate note list"),
-            ("PgUp / PgDn", "Scroll note list page by page"),
-            ("Home / End", "Jump to top / bottom of note list"),
-            ("Ctrl+S", "Force save current note"),
-            ("Ctrl+Z", "Undo in editor"),
-            ("Ctrl+Y", "Redo in editor"),
-            ("Ctrl+D", "Delete selected note (moves to trash)"),
-            ("Ctrl+K", "Toggle Pin / Bookmark note (or 'p' in Note List)"),
-            ("Ctrl+B", "Toggle Notes List panel visibility"),
-            ("Ctrl+O", "Open note in external editor"),
-            ("Ctrl+P", "Toggle Settings Overlay"),
-            ("Ctrl+V", "Toggle About Overlay"),
-            ("Mouse Drag", "Resize notes list and content panel"),
-            ("?", "Toggle Help Overlay"),
-            ("Ctrl+Q", "Quit Application"),
-            ("", ""),
-            ("h, j, k, l", "Move cursor (View mode)"),
-            ("w, b", "Move word forward/backward (View mode)"),
-            ("0, $", "Move to beginning/end of line (View mode)"),
-            ("gg, G", "Move to beginning/end of file (View mode)"),
-            ("i, a, o", "Enter Insert mode"),
-            ("v, V", "Enter Visual mode (char / line)"),
-            ("y, yy, yNy", "Copy (yank) selection / line / N lines"),
-            ("d, dd, dNd", "Cut (delete) selection / line / N lines"),
-            ("p, P", "Paste after / before cursor"),
-            ("u, Ctrl+R", "Undo / Redo (Vim mode)"),
-            ("/", "Search locally (regex) in file (View mode)"),
-            ("n, N", "Next / Prev search match (View mode)"),
-            ("Esc", "Exit back to View mode"),
-        ];
+        let registry = crate::shortcuts::ShortcutRegistry::new();
+        let keybindings_data = registry.help_entries();
 
         let width = std::cmp::min(74, area.width.saturating_mul(80) / 100);
         let height = std::cmp::min(keybindings_data.len() as u16 + 2, area.height.saturating_mul(80) / 100);

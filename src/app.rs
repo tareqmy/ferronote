@@ -51,6 +51,7 @@ pub struct App<'a> {
     pub latest_version: Option<String>,
     pub update_area: Option<Rect>,
     pub is_resizing_sidebar: bool,
+    pub shortcuts: crate::shortcuts::ShortcutRegistry,
 }
 
 impl App<'_> {
@@ -97,6 +98,7 @@ impl App<'_> {
             latest_version: None,
             update_area: None,
             is_resizing_sidebar: false,
+            shortcuts: crate::shortcuts::ShortcutRegistry::new(),
         };
         app.update_search();
         app
@@ -519,33 +521,18 @@ impl App<'_> {
 
         let is_editing = self.focus == Focus::Editor && self.editor.is_editing;
 
-        if key
-            .modifiers
-            .contains(crossterm::event::KeyModifiers::CONTROL)
-        {
-            match key.code {
-                KeyCode::Char('k') => return Some(Action::TogglePinNote),
-                KeyCode::Char('v') if !is_editing => return Some(Action::ToggleAbout),
-                KeyCode::Char('p') => return Some(Action::ToggleSettings),
-                KeyCode::Char('q') => return Some(Action::Quit),
-                KeyCode::Char('r') => return Some(Action::PromptRenameNote),
-                KeyCode::Char('d') if !is_editing => return Some(Action::PromptDeleteNote),
-                KeyCode::Char('b') => return Some(Action::ToggleNotesList),
-                KeyCode::Char('e') => return Some(Action::ToggleMoreShortcuts),
-                KeyCode::Char('s') => return Some(Action::SaveNote),
-                KeyCode::Char('o') => return Some(Action::OpenExternalEditor),
-                KeyCode::Char('n') => {
-                    self.search_bar.clear();
-                    self.update_search();
-                    self.focus = Focus::SearchBar;
-                    return Some(Action::SaveNote);
-                }
-                KeyCode::Char('l') => {
-                    self.focus = Focus::SearchBar;
-                    return None;
-                }
-                _ => {}
+        if let Some(action) = self.shortcuts.match_control_shortcut(&key, is_editing) {
+            if key.code == KeyCode::Char('n') {
+                self.search_bar.clear();
+                self.update_search();
+                self.focus = Focus::SearchBar;
+                return Some(Action::SaveNote);
             }
+            if action == Action::FocusSearchBar {
+                self.focus = Focus::SearchBar;
+                return None;
+            }
+            return Some(action);
         }
 
         match key.code {
@@ -768,6 +755,9 @@ impl App<'_> {
             }
             Action::OpenExternalEditor => {
                 // Handled in `App::run`
+            }
+            Action::FocusSearchBar => {
+                self.focus = Focus::SearchBar;
             }
             Action::SelectNote(maybe_filename) => {
                 self.update(Action::SaveNote);

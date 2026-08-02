@@ -11,5 +11,6 @@ pub mod environment;
 pub mod event;
 pub mod focus;
 pub mod queue;
+pub mod shortcuts;
 pub mod theme;
 pub mod tui;

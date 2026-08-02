@@ -274,6 +274,11 @@ impl Editor<'_> {
                     }
                     return;
                 }
+                
+                let mut override_action = None;
+                if self.pending_g && key.code == KeyCode::Char('e') {
+                    override_action = Some(crate::shortcuts::EditorViewAction::WordEndBack);
+                }
                 self.pending_g = false;
 
                 if key.code == KeyCode::Char('d') {
@@ -326,7 +331,7 @@ impl Editor<'_> {
                     
                     use crate::shortcuts::EditorViewAction;
                     let registry = crate::shortcuts::ShortcutRegistry::new();
-                    if let Some(action) = registry.match_editor_view_shortcut(&key) {
+                    if let Some(action) = override_action.or_else(|| registry.match_editor_view_shortcut(&key)) {
                         match action {
                             EditorViewAction::PasteAfter => {
                                 let text = ta.yank_text();
@@ -516,6 +521,89 @@ impl Editor<'_> {
                                             } else if r == 0 {
                                                 c = 0;
                                                 break;
+                                            }
+                                        }
+                                    }
+                                    ta.move_cursor(tui_textarea::CursorMove::Jump(r as u16, c as u16));
+                                }
+                            }
+                            EditorViewAction::WordEndForward => {
+                                let lines = ta.lines();
+                                let (mut r, mut c) = ta.cursor();
+                                if r < lines.len() {
+                                    let mut current_line: Vec<char> = lines[r].chars().collect();
+                                    if c < current_line.len() { c += 1; }
+                                    let mut in_word = c < current_line.len() && !current_line[c].is_whitespace();
+                                    
+                                    loop {
+                                        if c >= current_line.len() {
+                                            if in_word {
+                                                if c > 0 { c -= 1; }
+                                                break;
+                                            }
+                                            r += 1;
+                                            c = 0;
+                                            if r >= lines.len() {
+                                                r = lines.len() - 1;
+                                                c = lines[r].chars().count();
+                                                if c > 0 { c -= 1; }
+                                                break;
+                                            }
+                                            current_line = lines[r].chars().collect();
+                                            in_word = false;
+                                        } else {
+                                            let is_ws = current_line[c].is_whitespace();
+                                            if !in_word && !is_ws {
+                                                in_word = true;
+                                            } else if in_word && is_ws {
+                                                c -= 1;
+                                                break;
+                                            }
+                                            c += 1;
+                                        }
+                                    }
+                                    ta.move_cursor(tui_textarea::CursorMove::Jump(r as u16, c as u16));
+                                }
+                            }
+                            EditorViewAction::WordEndBack => {
+                                let lines = ta.lines();
+                                let (mut r, mut c) = ta.cursor();
+                                if r < lines.len() {
+                                    if c > 0 {
+                                        c -= 1;
+                                    } else if r > 0 {
+                                        r -= 1;
+                                        c = lines[r].chars().count();
+                                        if c > 0 { c -= 1; }
+                                    }
+                                    
+                                    let mut current_line: Vec<char> = lines[r].chars().collect();
+                                    let mut skipping_current = c < current_line.len() && !current_line[c].is_whitespace();
+                                    
+                                    loop {
+                                        if c == 0 && (current_line.is_empty() || r == 0) {
+                                            if r == 0 { c = 0; break; }
+                                            r -= 1;
+                                            current_line = lines[r].chars().collect();
+                                            c = current_line.len();
+                                            if c > 0 { c -= 1; }
+                                        } else {
+                                            let is_ws = current_line.get(c).map_or(true, |ch| ch.is_whitespace());
+                                            if skipping_current {
+                                                if is_ws { skipping_current = false; }
+                                            } else {
+                                                if !is_ws { break; }
+                                            }
+                                            if c > 0 {
+                                                c -= 1;
+                                            } else if r == 0 {
+                                                c = 0;
+                                                break;
+                                            } else {
+                                                r -= 1;
+                                                current_line = lines[r].chars().collect();
+                                                c = current_line.len();
+                                                if c > 0 { c -= 1; }
                                             }
                                         }
                                     }

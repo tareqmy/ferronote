@@ -31,6 +31,9 @@ pub struct Editor<'a> {
     pub pending_d: bool,
     /// Pending 'y' keypress for 'yy' normal mode vim shortcut.
     pub pending_y: bool,
+    /// Pending count for 'yNy' / 'dNd' normal mode vim shortcuts.
+    pub pending_y_count: usize,
+    pub pending_d_count: usize,
     /// Pending 'v' keypress for 'Ctrl+v' insert literal mode.
     pub pending_v: bool,
     /// Active search textarea input. If Some, search mode is active.
@@ -162,6 +165,8 @@ impl Editor<'_> {
             pending_g: false,
             pending_d: false,
             pending_y: false,
+            pending_y_count: 0,
+            pending_d_count: 0,
             pending_v: false,
             search_textarea: None,
             current_search_query: HashMap::new(),
@@ -177,6 +182,8 @@ impl Editor<'_> {
         self.pending_g = false;
         self.pending_d = false;
         self.pending_y = false;
+        self.pending_y_count = 0;
+        self.pending_d_count = 0;
         self.pending_v = false;
         if title.is_empty() {
             self.current_note = None;
@@ -233,10 +240,32 @@ impl Editor<'_> {
 
             if !self.is_editing {
                 let mut modified = false;
-                
+
+                if self.pending_y {
+                    if let KeyCode::Char(c) = key.code {
+                        if c.is_ascii_digit() {
+                            let digit = c.to_digit(10).unwrap_or(0) as usize;
+                            self.pending_y_count = self.pending_y_count.saturating_mul(10).saturating_add(digit);
+                            return;
+                        }
+                    }
+                }
+
+                if self.pending_d {
+                    if let KeyCode::Char(c) = key.code {
+                        if c.is_ascii_digit() {
+                            let digit = c.to_digit(10).unwrap_or(0) as usize;
+                            self.pending_d_count = self.pending_d_count.saturating_mul(10).saturating_add(digit);
+                            return;
+                        }
+                    }
+                }
+
                 if key.code == KeyCode::Char('g') {
                     self.pending_d = false;
+                    self.pending_d_count = 0;
                     self.pending_y = false;
+                    self.pending_y_count = 0;
                     if self.pending_g {
                         ta.move_cursor(tui_textarea::CursorMove::Top);
                         self.pending_g = false;
@@ -249,38 +278,51 @@ impl Editor<'_> {
 
                 if key.code == KeyCode::Char('d') {
                     if self.pending_d {
-                        ta.move_cursor(tui_textarea::CursorMove::Head);
-                        ta.delete_line_by_end();
-                        if ta.cursor().0 == ta.lines().len() - 1 && ta.lines().len() > 1 {
-                            ta.delete_char();
-                        } else {
-                            ta.delete_next_char();
+                        let count = if self.pending_d_count > 0 { self.pending_d_count } else { 1 };
+                        for _ in 0..count {
+                            ta.move_cursor(tui_textarea::CursorMove::Head);
+                            ta.delete_line_by_end();
+                            if ta.cursor().0 == ta.lines().len() - 1 && ta.lines().len() > 1 {
+                                ta.delete_char();
+                            } else {
+                                ta.delete_next_char();
+                            }
                         }
                         self.pending_d = false;
+                        self.pending_d_count = 0;
                         modified = true;
                     } else {
                         self.pending_d = true;
+                        self.pending_d_count = 0;
                     }
                 } else if key.code == KeyCode::Char('y') {
                     self.pending_d = false;
+                    self.pending_d_count = 0;
                     if self.pending_y {
+                        let count = if self.pending_y_count > 0 { self.pending_y_count } else { 1 };
                         let orig = ta.cursor();
                         ta.move_cursor(tui_textarea::CursorMove::Head);
                         ta.start_selection();
-                        ta.move_cursor(tui_textarea::CursorMove::Down);
-                        if ta.cursor() == (orig.0, 0) {
+                        for _ in 0..count {
+                            ta.move_cursor(tui_textarea::CursorMove::Down);
+                        }
+                        if ta.cursor().0 < orig.0 + count {
                             ta.move_cursor(tui_textarea::CursorMove::End);
                         }
                         ta.copy();
                         ta.cancel_selection();
                         ta.move_cursor(tui_textarea::CursorMove::Jump(orig.0 as u16, orig.1 as u16));
                         self.pending_y = false;
+                        self.pending_y_count = 0;
                     } else {
                         self.pending_y = true;
+                        self.pending_y_count = 0;
                     }
                 } else {
                     self.pending_d = false;
+                    self.pending_d_count = 0;
                     self.pending_y = false;
+                    self.pending_y_count = 0;
                     
                     if key.code == KeyCode::Char('p') {
                         let text = ta.yank_text();
@@ -895,5 +937,26 @@ mod tests {
         let old_len = editor.content().len();
         editor.handle_key(KeyEvent::new(KeyCode::Char('x'), KeyModifiers::NONE));
         assert_eq!(editor.content().len(), old_len - 1);
+    }
+
+    #[test]
+    fn test_editor_yank_multiple_lines_y_ny() {
+        let queue = crate::queue::Queue::new();
+        let mut editor = Editor::new(queue);
+        editor.set_content("note.md", "Line 1\nLine 2\nLine 3\nLine 4");
+
+        // Execute y2y to yank 2 lines starting from Line 1
+        editor.handle_key(KeyEvent::new(KeyCode::Char('y'), KeyModifiers::NONE));
+        editor.handle_key(KeyEvent::new(KeyCode::Char('2'), KeyModifiers::NONE));
+        editor.handle_key(KeyEvent::new(KeyCode::Char('y'), KeyModifiers::NONE));
+
+        // Move to bottom line (Line 4)
+        editor.handle_key(KeyEvent::new(KeyCode::Char('G'), KeyModifiers::NONE));
+
+        // Paste yanked text with 'p'
+        editor.handle_key(KeyEvent::new(KeyCode::Char('p'), KeyModifiers::NONE));
+
+        let content = editor.content();
+        assert!(content.contains("Line 1\nLine 2"));
     }
 }

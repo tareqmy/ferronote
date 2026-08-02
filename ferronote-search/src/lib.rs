@@ -25,12 +25,14 @@ pub struct SearchResult {
     pub is_create_prompt: bool,
     /// Last modification Unix timestamp.
     pub modified_at: i64,
+    /// Whether the note is pinned.
+    pub is_pinned: bool,
 }
 
 /// In-memory search index supporting fuzzy search, tag indexing, and backlink resolution.
 pub struct Index {
-    // filename -> (title, content, modified_at, tags)
-    notes: HashMap<String, (String, String, i64, HashSet<String>)>,
+    // filename -> (title, content, modified_at, tags, is_pinned)
+    notes: HashMap<String, (String, String, i64, HashSet<String>, bool)>,
 }
 
 impl std::fmt::Debug for Index {
@@ -56,6 +58,17 @@ impl Index {
 
     /// Adds or updates a note in the search index, extracting `#tag` annotations automatically.
     pub fn add_note(&mut self, filename: String, content: String, modified_at: i64) {
+        self.add_note_with_pin(filename, content, modified_at, false);
+    }
+
+    /// Adds or updates a note with an explicit `is_pinned` status.
+    pub fn add_note_with_pin(
+        &mut self,
+        filename: String,
+        content: String,
+        modified_at: i64,
+        is_pinned: bool,
+    ) {
         let title = filename
             .strip_suffix(".md")
             .unwrap_or(&filename)
@@ -67,7 +80,14 @@ impl Index {
             }
         }
         self.notes
-            .insert(filename, (title, content, modified_at, tags));
+            .insert(filename, (title, content, modified_at, tags, is_pinned));
+    }
+
+    /// Sets or updates the pinned status of a note.
+    pub fn set_pinned(&mut self, filename: &str, is_pinned: bool) {
+        if let Some(note) = self.notes.get_mut(filename) {
+            note.4 = is_pinned;
+        }
     }
 
     /// Removes a note from the search index by filename.
@@ -83,8 +103,9 @@ impl Index {
         content: String,
         modified_at: i64,
     ) {
+        let is_pinned = self.notes.get(old_filename).map_or(false, |n| n.4);
         self.remove_note(old_filename);
-        self.add_note(new_filename, content, modified_at);
+        self.add_note_with_pin(new_filename, content, modified_at, is_pinned);
     }
 
     /// Returns a list of notes containing wiki-style links (`[[note_title]]`) pointing to `note_title`.
@@ -95,7 +116,7 @@ impl Index {
 
         let mut backlinks = Vec::new();
 
-        for (filename, (title, content, modified_at, _)) in &self.notes {
+        for (filename, (title, content, modified_at, _, is_pinned)) in &self.notes {
             if title.eq_ignore_ascii_case(clean_title) {
                 continue;
             }
@@ -128,6 +149,7 @@ impl Index {
                     content_preview: Some(format!("Links to [[{clean_title}]]")),
                     is_create_prompt: false,
                     modified_at: *modified_at,
+                    is_pinned: *is_pinned,
                 });
             }
         }
@@ -147,11 +169,11 @@ impl Index {
         };
 
         if query.is_empty() {
-            // For empty query, return all notes sorted by modified date descending
+            // For empty query, return all notes sorted with pinned notes first, then sort_order
             let mut all_notes: Vec<_> = self
                 .notes
                 .iter()
-                .map(|(filename, (title, _, modified_at, _))| SearchResult {
+                .map(|(filename, (title, _, modified_at, _, is_pinned))| SearchResult {
                     filename: filename.clone(),
                     title: title.clone(),
                     score: 0,
@@ -159,23 +181,27 @@ impl Index {
                     content_preview: None,
                     is_create_prompt: false,
                     modified_at: *modified_at,
+                    is_pinned: *is_pinned,
                 })
                 .collect();
             all_notes.sort_by(|a, b| {
-                let cmp = match sort_order {
-                    "title_asc" => a.title.to_lowercase().cmp(&b.title.to_lowercase()),
-                    "title_desc" => b.title.to_lowercase().cmp(&a.title.to_lowercase()),
-                    "modified_asc" | "created_asc" => a.modified_at.cmp(&b.modified_at),
-                    _ => b.modified_at.cmp(&a.modified_at),
-                };
-                cmp.then_with(|| a.filename.cmp(&b.filename))
+                let pin_cmp = b.is_pinned.cmp(&a.is_pinned);
+                pin_cmp.then_with(|| {
+                    let cmp = match sort_order {
+                        "title_asc" => a.title.to_lowercase().cmp(&b.title.to_lowercase()),
+                        "title_desc" => b.title.to_lowercase().cmp(&a.title.to_lowercase()),
+                        "modified_asc" | "created_asc" => a.modified_at.cmp(&b.modified_at),
+                        _ => b.modified_at.cmp(&a.modified_at),
+                    };
+                    cmp.then_with(|| a.filename.cmp(&b.filename))
+                })
             });
             return all_notes;
         }
 
         let mut matches = Vec::new();
 
-        for (filename, (title, content, modified_at, tags)) in &self.notes {
+        for (filename, (title, content, modified_at, tags, is_pinned)) in &self.notes {
             if is_tag_search {
                 if !tags.contains(&tag_query) && !tag_query.is_empty() {
                     continue;
@@ -191,6 +217,7 @@ impl Index {
                     false,
                     vec![],
                     *modified_at,
+                    *is_pinned,
                 ));
                 continue;
             }
@@ -254,11 +281,13 @@ impl Index {
                 has_content_match,
                 all_content_indices,
                 *modified_at,
+                *is_pinned,
             ));
         }
 
         matches.sort_by(|a, b| {
-            b.3.cmp(&a.3)
+            b.8.cmp(&a.8)
+                .then_with(|| b.3.cmp(&a.3))
                 .then_with(|| {
                     let cmp = match sort_order {
                         "title_asc" => a.1.to_lowercase().cmp(&b.1.to_lowercase()),
@@ -283,6 +312,7 @@ impl Index {
                     has_content_match,
                     content_indices,
                     modified_at,
+                    is_pinned,
                 )| {
                     let mut content_preview = None;
                     if has_content_match && let Some(&first_idx) = content_indices.first() {
@@ -317,6 +347,7 @@ impl Index {
                         content_preview,
                         is_create_prompt: false,
                         modified_at,
+                        is_pinned,
                     }
                 },
             )
@@ -436,5 +467,20 @@ mod tests {
         index.remove_note("new.md");
         let results_removed = index.search("Ferronote", "modified_desc");
         assert_eq!(results_removed.len(), 0);
+    }
+
+    #[test]
+    fn test_pinned_notes_sort_first() {
+        let mut index = Index::new();
+        index.add_note_with_pin("old_unpinned.md".to_string(), "content".to_string(), 200, false);
+        index.add_note_with_pin("older_pinned.md".to_string(), "content".to_string(), 100, true);
+
+        let results = index.search("", "modified_desc");
+        assert_eq!(results.len(), 2);
+        // Pinned note should sort first despite having an older modified timestamp
+        assert_eq!(results[0].filename, "older_pinned.md");
+        assert!(results[0].is_pinned);
+        assert_eq!(results[1].filename, "old_unpinned.md");
+        assert!(!results[1].is_pinned);
     }
 }

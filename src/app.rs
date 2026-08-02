@@ -61,7 +61,8 @@ impl App<'_> {
         for filename in note_store.filenames() {
             if let Ok(content) = note_store.load_note(&filename) {
                 let modified_at = note_store.get_modified_at(&filename).unwrap_or(0);
-                index.add_note(filename, content, modified_at);
+                let is_pinned = note_store.is_pinned(&filename);
+                index.add_note_with_pin(filename, content, modified_at, is_pinned);
             }
         }
 
@@ -116,6 +117,7 @@ impl App<'_> {
                     content_preview: None,
                     is_create_prompt: true,
                     modified_at: chrono::Utc::now().timestamp(),
+                    is_pinned: false,
                 },
             );
         }
@@ -158,8 +160,9 @@ impl App<'_> {
     pub fn save_note(&mut self, filename: &str, content: &str) -> Result<()> {
         self.note_store.save_note(filename, content)?;
         let modified_at = self.note_store.get_modified_at(filename).unwrap_or(0);
+        let is_pinned = self.note_store.is_pinned(filename);
         self.index
-            .add_note(filename.to_string(), content.to_string(), modified_at);
+            .add_note_with_pin(filename.to_string(), content.to_string(), modified_at, is_pinned);
         self.update_search();
         Ok(())
     }
@@ -521,6 +524,7 @@ impl App<'_> {
             .contains(crossterm::event::KeyModifiers::CONTROL)
         {
             match key.code {
+                KeyCode::Char('k') => return Some(Action::TogglePinNote),
                 KeyCode::Char('v') if !is_editing => return Some(Action::ToggleAbout),
                 KeyCode::Char('p') => return Some(Action::ToggleSettings),
                 KeyCode::Char('q') => return Some(Action::Quit),
@@ -600,6 +604,9 @@ impl App<'_> {
                 use crate::components::Component;
                 if key.code == KeyCode::Enter {
                     return Some(Action::SubmitSearch);
+                }
+                if key.code == KeyCode::Char('p') || key.code == KeyCode::Char('P') {
+                    return Some(Action::TogglePinNote);
                 }
                 let _ = self.note_list.event(&crate::event::Event::Key(key));
             }
@@ -745,6 +752,19 @@ impl App<'_> {
             }
             Action::ToggleEditMode => {
                 self.editor.toggle_edit_mode();
+            }
+            Action::TogglePinNote => {
+                let note_to_pin = if self.focus == Focus::NoteList {
+                    self.note_list.selected_note().or_else(|| self.editor.current_note.clone())
+                } else {
+                    self.editor.current_note.clone().or_else(|| self.note_list.selected_note())
+                };
+                if let Some(filename) = note_to_pin {
+                    if let Ok(is_pinned) = self.note_store.toggle_pin(&filename) {
+                        self.index.set_pinned(&filename, is_pinned);
+                        self.update_search();
+                    }
+                }
             }
             Action::OpenExternalEditor => {
                 // Handled in `App::run`
@@ -2040,5 +2060,22 @@ mod tests {
         terminal.draw(|f| {
             app.draw(f);
         }).unwrap();
+    }
+
+    #[test]
+    fn test_app_toggle_pin_note() {
+        let (mut app, _temp_dir) = setup_test_app();
+        let filename = app.create_note("Test Pin Note").unwrap();
+        app.focus = Focus::Editor;
+
+        assert!(!app.note_store.is_pinned(&filename));
+
+        // Toggle pin on
+        app.update(Action::TogglePinNote);
+        assert!(app.note_store.is_pinned(&filename));
+
+        // Toggle pin off
+        app.update(Action::TogglePinNote);
+        assert!(!app.note_store.is_pinned(&filename));
     }
 }

@@ -221,16 +221,22 @@ impl NoteList {
                 let date_len = date_str.chars().count();
                 let show_date = !date_str.is_empty() && available_width > date_len + 1;
 
+                let pin_prefix_len = if i.is_pinned { 2 } else { 0 };
+
                 let max_title_len = if show_date {
-                    available_width - date_len - 1
+                    available_width.saturating_sub(date_len + 1 + pin_prefix_len)
                 } else {
-                    available_width
+                    available_width.saturating_sub(pin_prefix_len)
                 };
 
                 let title_chars: Vec<char> = i.title.chars().collect();
                 let is_title_curtailed = title_chars.len() > max_title_len;
 
                 let mut spans = Vec::new();
+
+                if i.is_pinned {
+                    spans.push(Span::styled("📌 ", Style::default().fg(theme.accent)));
+                }
 
                 if is_title_curtailed {
                     if max_title_len >= 3 {
@@ -375,6 +381,7 @@ mod tests {
                 content_preview: None,
                 is_create_prompt: false,
                 modified_at: 0,
+                is_pinned: false,
             })
             .collect()
     }
@@ -482,6 +489,7 @@ mod tests {
             content_preview: None,
             is_create_prompt: false,
             modified_at: 0,
+            is_pinned: false,
         }]);
 
         // Box width = 20. Available width = 20 - 4 = 16.
@@ -518,6 +526,7 @@ mod tests {
             content_preview: None,
             is_create_prompt: true,
             modified_at: 0,
+            is_pinned: false,
         }]);
 
         let backend2 = TestBackend::new(20, 5);

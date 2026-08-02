@@ -77,4 +77,6 @@ pub enum Action {
     OpenExternalEditor,
     /// Trigger the update process.
     UpdateApp,
+    /// Toggle pinned status of selected note.
+    TogglePinNote,
 }

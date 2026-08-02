@@ -7,6 +7,8 @@ use std::{collections::HashMap, path::PathBuf};
 pub struct NoteMetadata {
     pub created_at: DateTime<Utc>,
     pub modified_at: DateTime<Utc>,
+    #[serde(default)]
+    pub is_pinned: bool,
 }
 
 #[derive(Debug)]
@@ -118,6 +120,7 @@ Happy note taking!
                 NoteMetadata {
                     created_at: now,
                     modified_at: now,
+                    is_pinned: false,
                 },
             );
             self.save_metadata()?;
@@ -153,6 +156,7 @@ Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu 
                 NoteMetadata {
                     created_at: now,
                     modified_at: now,
+                    is_pinned: false,
                 },
             );
             self.save_metadata()?;
@@ -212,6 +216,7 @@ Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu 
                     NoteMetadata {
                         created_at: now,
                         modified_at: now,
+                        is_pinned: false,
                     },
                 );
                 modified = true;
@@ -302,6 +307,7 @@ Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu 
             NoteMetadata {
                 created_at: modified_at,
                 modified_at,
+                is_pinned: false,
             },
         );
         self.save_metadata()?;
@@ -375,6 +381,7 @@ Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu 
                             NoteMetadata {
                                 created_at: now,
                                 modified_at: now,
+                                is_pinned: false,
                             },
                         );
                         count += 1;
@@ -426,6 +433,7 @@ Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu 
             NoteMetadata {
                 created_at: now,
                 modified_at: now,
+                is_pinned: false,
             },
         );
         self.save_metadata()?;
@@ -511,6 +519,7 @@ Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu 
             NoteMetadata {
                 created_at: now,
                 modified_at: now,
+                is_pinned: false,
             },
         );
         self.save_metadata()?;
@@ -633,6 +642,36 @@ Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu 
         self.metadata
             .get(filename)
             .map(|m| m.modified_at.timestamp())
+    }
+
+    #[must_use]
+    pub fn is_pinned(&self, filename: &str) -> bool {
+        self.metadata.get(filename).map_or(false, |m| m.is_pinned)
+    }
+
+    /// # Errors
+    /// Returns an error if saving metadata fails.
+    pub fn toggle_pin(&mut self, filename: &str) -> Result<bool> {
+        let new_state = if let Some(meta) = self.metadata.get_mut(filename) {
+            meta.is_pinned = !meta.is_pinned;
+            meta.is_pinned
+        } else {
+            false
+        };
+        if self.metadata.contains_key(filename) {
+            self.save_metadata()?;
+        }
+        Ok(new_state)
+    }
+
+    /// # Errors
+    /// Returns an error if saving metadata fails.
+    pub fn set_pinned(&mut self, filename: &str, pinned: bool) -> Result<()> {
+        if let Some(meta) = self.metadata.get_mut(filename) {
+            meta.is_pinned = pinned;
+            self.save_metadata()?;
+        }
+        Ok(())
     }
 }
 
@@ -861,5 +900,23 @@ mod tests {
         let imported_count = new_store.import_zip(&zip_path).unwrap();
         assert_eq!(imported_count, 3); // Welcome note + Lorem Ipsum + Test Title
         assert!(new_store.filenames().contains(&"Test Title.md".to_string()));
+    }
+
+    #[test]
+    fn test_pin_toggle_and_persistence() {
+        let dir = setup_test_dir("pin_test");
+        let mut store = NoteStore::new(dir.clone()).unwrap();
+        let filename = store.create_note("Pinned Note").unwrap();
+
+        assert!(!store.is_pinned(&filename));
+
+        // Toggle pin on
+        let new_state = store.toggle_pin(&filename).unwrap();
+        assert!(new_state);
+        assert!(store.is_pinned(&filename));
+
+        // Reopen NoteStore from disk and verify persistence
+        let store2 = NoteStore::new(dir).unwrap();
+        assert!(store2.is_pinned(&filename));
     }
 }

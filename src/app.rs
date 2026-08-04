@@ -504,10 +504,13 @@ impl App<'_> {
 
         if self.show_delete_confirmation {
             match key.code {
-                KeyCode::Char('y') | KeyCode::Char('Y') | KeyCode::Enter => {
+                KeyCode::Char('y') | KeyCode::Char('Y') => {
                     return Some(Action::DeleteNote);
                 }
-                _ => return Some(Action::CancelDeleteNote),
+                KeyCode::Char('n') | KeyCode::Char('N') | KeyCode::Esc => {
+                    return Some(Action::CancelDeleteNote);
+                }
+                _ => return None,
             }
         }
 

@@ -60,6 +60,8 @@ impl EventHandler {
         tokio::spawn(async move {
             let mut reader = EventStream::new();
             let mut tick_interval = tokio::time::interval(tick_rate);
+            let mut last_key_event: Option<(KeyEvent, std::time::Instant)> = None;
+            let debounce_duration = std::time::Duration::from_millis(100);
 
             loop {
                 let tick_delay = tick_interval.tick();
@@ -74,8 +76,17 @@ impl EventHandler {
                     Some(Ok(evt)) = crossterm_event => {
                         match evt {
                             CrosstermEvent::Key(key) => {
-                                if sender.send(Event::Key(key)).is_err() {
-                                    break;
+                                // Only process key if it's different from the last key or enough time has passed
+                                let now = std::time::Instant::now();
+                                let should_process = last_key_event.map_or(true, |(last_key, last_time)| {
+                                    last_key != key || now.duration_since(last_time) >= debounce_duration
+                                });
+
+                                if should_process {
+                                    last_key_event = Some((key, now));
+                                    if sender.send(Event::Key(key)).is_err() {
+                                        break;
+                                    }
                                 }
                             },
                             CrosstermEvent::Mouse(mouse) => {

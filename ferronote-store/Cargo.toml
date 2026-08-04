@@ -1,6 +1,6 @@
 [package]
 name = "ferronote-store"
-version = "1.2.6"
+version = "1.2.7"
 edition = "2024"
 authors = ["Tareq M Y"]
 description = "Note storage backend for Ferronote"

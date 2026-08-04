@@ -232,7 +232,7 @@ impl ShortcutRegistry {
             ("Ctrl+S", "Force save current note"),
             ("Ctrl+Z", "Undo in editor"),
             ("Ctrl+Y", "Redo in editor"),
-            ("Ctrl+D", "Delete selected note (moves to trash)"),
+            ("Ctrl+D", "Delete selected note (prompts for y/n)"),
             ("Ctrl+K", "Toggle Pin / Bookmark note (or 'p' in Note List)"),
             ("Ctrl+B", "Toggle Notes List panel visibility"),
             ("Ctrl+O", "Open note in external editor"),

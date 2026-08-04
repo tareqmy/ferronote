@@ -82,7 +82,7 @@ You don't need a separate "New Note" button!
 - PgUp / PgDn: Scroll note list page by page.
 - Home / End: Jump to top or bottom of notes list.
 - Ctrl+S: Force save current note.
-- Ctrl+D: Soft delete selected note (moves file to trash).
+- Ctrl+D: Soft delete selected note (prompts for y/n, moves file to trash).
 - Ctrl+K: Toggle Pin / Bookmark on selected note (or 'p' in Note List).
 - Ctrl+B: Toggle Notes List panel visibility.
 - Ctrl+Z / Ctrl+Y: Undo / Redo inside the editor.

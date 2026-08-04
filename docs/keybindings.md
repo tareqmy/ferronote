@@ -15,7 +15,7 @@ Ferronote is built from the ground up for keyboard efficiency.
 | `PageUp` / `PageDown` | Page jump note list / settings items | List / Overlay |
 | `Home` / `End` | Jump to start/end of note list / settings items | List / Overlay |
 | `Ctrl+S` | Force save current note | Editor |
-| `Ctrl+D` | Delete active note (moves to trash) | Global |
+| `Ctrl+D` | Delete active note (prompts for y/n, moves to trash) | Global |
 | `Ctrl+R` | Rename active note | Global |
 | `Ctrl+N` | Create new note | Global |
 | `Ctrl+K` | Toggle Pin / Bookmark note (or 'p' in Note List) | Global / List |

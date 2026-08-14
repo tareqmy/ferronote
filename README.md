@@ -1,5 +1,8 @@
 <p align="center">
-  <img src="assets/logo.jpg" alt="Ferronote Logo" width="650" />
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/logo/ferronote-logo-dark.svg">
+    <img src="assets/logo/ferronote-logo-light.svg" alt="Ferronote Logo" width="650" />
+  </picture>
 </p>
 
 <p align="center">

@@ -20,7 +20,7 @@ Explore detailed documentation sections:
 - 📖 **[Philosophy & Features](docs/features.md)** — Modeless design, plain text storage, tags, wiki links, and custom themes.
 - 🚀 **[Installation & Quick Start](docs/installation.md)** — Install via Shell/PowerShell scripts, Homebrew, Cargo, or AUR.
 - 💻 **[CLI Commands & Options](docs/cli.md)** — Command-line flags, custom directory flags, vault import/export, and trash management.
-- ⌨️ **[Keybindings Reference](docs/keybindings.md)** — Full list of keyboard shortcuts, navigation, and panel focus controls.
+- ⌨️ **[Keybindings Reference](docs/keybindings.md)** — Full list of keyboard shortcuts, Vim mode controls, navigation, and panel focus.
 - 🏗️ **[Architecture & Structure](docs/architecture.md)** — The Elm Architecture (TEA) in Rust, dependencies, and source tree layout.
 - 🤝 **[Contributing Guide](CONTRIBUTING.md)** — Guidelines for opening issues and submitting pull requests.
 - 🗺️ **[Development Roadmap](ROADMAP.md)** — Project vision and upcoming features.
@@ -33,6 +33,7 @@ Explore detailed documentation sections:
 - **Keyboard-first** — Control every aspect of the app without leaving your keyboard.
 - **External Editor Support** — Press `Ctrl+O` to seamlessly edit any note in your preferred advanced terminal editor (configure explicitly via `Ctrl+P` Settings, or use `$VISUAL` / `$EDITOR` fallback).
 - **Plain Text** — Notes stored as standard Markdown files in your directory of choice.
+- **Vim Editing Mode** — The built-in editor's View mode speaks Vim: motions, operators (`dw`, `ciw`, `yy`), character search (`f`/`t`), visual selections (`v`/`V`), and more.
 - **Tag & Backlink Support** — Categorize with `#tag` annotations and link via `[[Note Title]]`.
 - **Custom Themes & Overlays** — Tailor visual aesthetics (`Ctrl+P`) and access help on demand.
 
@@ -83,6 +84,7 @@ fn --import ~/backup.zip
 | `Ctrl+O` | Open active note in external editor (configured in Settings, or `$VISUAL` / `$EDITOR`) |
 | `Ctrl+P` | Toggle Interactive Settings Overlay |
 | `Mouse Drag` | Drag panel divider to resize notes list and content (20%-40%) |
+| `i`, `v`, `Esc` | Editor: enter Insert mode, Visual mode, return to View mode (Vim-style) |
 | `Ctrl+Q` | Quit application |
 
 👉 *For complete shortcuts and overlay controls, view the [Keybindings Reference](docs/keybindings.md).*

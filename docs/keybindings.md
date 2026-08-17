@@ -31,7 +31,7 @@ Ferronote is built from the ground up for keyboard efficiency.
 
 ---
 
-## ⚡ Vim Keybindings (Experimental)
+## ⚡ Vim Keybindings
 
 These keybindings are active only when focused on the **Editor** in **View** mode. Press `i`, `a`, or `o` to enter **Insert** mode for normal typing.
 

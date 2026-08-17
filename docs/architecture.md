@@ -58,13 +58,25 @@ src/
 ├── event.rs             # Async crossterm event & file system watcher
 ├── action.rs            # Action enum representing state transitions
 ├── focus.rs             # Focus management enum (SearchBar, NoteList, Editor)
-├── search.rs            # Skim fuzzy search index, tag parser & backlinks
+├── shortcuts.rs         # Central keybinding registry & help overlay entries
+├── vim.rs               # Vim state machine: motions, operators, visual mode
 ├── theme.rs             # Theme palette manager (default, gruvbox, nord, dracula)
-├── note_store.rs        # Note CRUD, trash handling, atomic disk I/O, import/export
 ├── config.rs            # User settings loading, saving & default fallbacks
+├── queue.rs             # Action queue for component-to-app messaging
+├── environment.rs       # Runtime environment detection helpers
+├── bin/
+│   └── fnt.rs           # `fnt` convenience launcher binary
 └── components/
     ├── mod.rs           # Component trait & re-exports
     ├── search_bar.rs    # Unified search/create input bar
     ├── note_list.rs     # Filtered note title list with match highlights
-    └── editor.rs        # Markdown note body editor with wiki-link extraction
+    ├── editor.rs        # Markdown note body editor with wiki-link extraction
+    ├── help.rs          # Help overlay popup
+    └── popup_stack.rs   # Stacked overlay/popup manager
+
+ferronote-store/
+└── src/lib.rs           # Note CRUD, trash handling, atomic disk I/O, import/export
+
+ferronote-search/
+└── src/lib.rs           # Skim fuzzy search index, tag parser & backlinks
 ```

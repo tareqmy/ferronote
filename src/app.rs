@@ -1089,6 +1089,50 @@ impl App<'_> {
         let mut stats_span = None;
 
         if self.focus == Focus::Editor {
+            if self.editor.is_editing {
+                shortcut_groups.push(vec![
+                    Span::styled(" [Esc] ", key_style),
+                    Span::styled("View Mode", text_style),
+                    Span::styled(" │", sep_style),
+                ]);
+            } else if self.editor.vim.visual.is_some() {
+                shortcut_groups.push(vec![
+                    Span::styled(" [Esc] ", key_style),
+                    Span::styled("Cancel", text_style),
+                    Span::styled(" │", sep_style),
+                ]);
+                shortcut_groups.push(vec![
+                    Span::styled(" [d] ", key_style),
+                    Span::styled("Cut", text_style),
+                    Span::styled(" │", sep_style),
+                ]);
+                shortcut_groups.push(vec![
+                    Span::styled(" [y] ", key_style),
+                    Span::styled("Copy", text_style),
+                    Span::styled(" │", sep_style),
+                ]);
+                shortcut_groups.push(vec![
+                    Span::styled(" [c] ", key_style),
+                    Span::styled("Change", text_style),
+                    Span::styled(" │", sep_style),
+                ]);
+            } else {
+                shortcut_groups.push(vec![
+                    Span::styled(" [i] ", key_style),
+                    Span::styled("Insert", text_style),
+                    Span::styled(" │", sep_style),
+                ]);
+                shortcut_groups.push(vec![
+                    Span::styled(" [v] ", key_style),
+                    Span::styled("Visual", text_style),
+                    Span::styled(" │", sep_style),
+                ]);
+                shortcut_groups.push(vec![
+                    Span::styled(" [/] ", key_style),
+                    Span::styled("Find", text_style),
+                    Span::styled(" │", sep_style),
+                ]);
+            }
             shortcut_groups.push(vec![
                 Span::styled(" [Ctrl+Z] ", key_style),
                 Span::styled("Undo", text_style),

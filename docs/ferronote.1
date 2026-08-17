@@ -47,7 +47,8 @@ Open selected note / Create note / Follow [[Wiki-Link]].
 Force save current note.
 .TP
 \fBCtrl+D\fR
-Soft delete selected note (prompts for y/n).
+Soft delete selected note from the Search bar or Note List (prompts for y/n).
+In the editor's View mode, scrolls half a page down instead.
 .TP
 \fBCtrl+P\fR
 Toggle Interactive Settings Overlay.
@@ -63,6 +64,14 @@ Toggle Help Overlay.
 .TP
 \fBCtrl+Q\fR
 Quit application.
+.SH VIM MODE
+The built-in editor opens notes in a Vim-style View mode supporting motions
+(\fBh j k l w b e f t\fR ...), operators (\fBdd dw diw cw ciw cc yy yiw D C Y\fR),
+\fBr\fR (replace), \fBJ\fR (join), visual selections (\fBv\fR / \fBV\fR),
+in-editor regex search (\fB/\fR, \fBn\fR, \fBN\fR), and half/full page
+scrolling (\fBCtrl+D\fR / \fBCtrl+U\fR / \fBCtrl+F\fR).
+Press \fBi\fR, \fBa\fR, or \fBo\fR to enter Insert mode and \fBEsc\fR to
+return to View mode. See the online keybindings reference for the full table.
 .SH AUTHORS
 Tareq Mohammad Yousuf <tareq.y@gmail.com> (https://tareqmy.com)
 .SH LICENSE

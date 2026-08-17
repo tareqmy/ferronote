@@ -78,7 +78,7 @@ impl EventHandler {
                             CrosstermEvent::Key(key) => {
                                 // Only process key if it's different from the last key or enough time has passed
                                 let now = std::time::Instant::now();
-                                let should_process = last_key_event.map_or(true, |(last_key, last_time)| {
+                                let should_process = last_key_event.is_none_or(|(last_key, last_time)| {
                                     last_key != key || now.duration_since(last_time) >= debounce_duration
                                 });
 

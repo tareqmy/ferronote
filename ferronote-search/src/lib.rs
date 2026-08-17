@@ -1,4 +1,3 @@
-
 use regex::Regex;
 use std::collections::{HashMap, HashSet};
 use std::sync::OnceLock;
@@ -103,7 +102,7 @@ impl Index {
         content: String,
         modified_at: i64,
     ) {
-        let is_pinned = self.notes.get(old_filename).map_or(false, |n| n.4);
+        let is_pinned = self.notes.get(old_filename).is_some_and(|n| n.4);
         self.remove_note(old_filename);
         self.add_note_with_pin(new_filename, content, modified_at, is_pinned);
     }
@@ -173,16 +172,18 @@ impl Index {
             let mut all_notes: Vec<_> = self
                 .notes
                 .iter()
-                .map(|(filename, (title, _, modified_at, _, is_pinned))| SearchResult {
-                    filename: filename.clone(),
-                    title: title.clone(),
-                    score: 0,
-                    title_match_indices: Vec::new(),
-                    content_preview: None,
-                    is_create_prompt: false,
-                    modified_at: *modified_at,
-                    is_pinned: *is_pinned,
-                })
+                .map(
+                    |(filename, (title, _, modified_at, _, is_pinned))| SearchResult {
+                        filename: filename.clone(),
+                        title: title.clone(),
+                        score: 0,
+                        title_match_indices: Vec::new(),
+                        content_preview: None,
+                        is_create_prompt: false,
+                        modified_at: *modified_at,
+                        is_pinned: *is_pinned,
+                    },
+                )
                 .collect();
             all_notes.sort_by(|a, b| {
                 let pin_cmp = b.is_pinned.cmp(&a.is_pinned);
@@ -227,7 +228,7 @@ impl Index {
             let mut total_score = 0;
             let mut all_title_indices = Vec::new();
             let mut all_content_indices = Vec::new();
-            
+
             let title_lower = title.to_lowercase();
             let content_lower = content.to_lowercase();
 
@@ -286,17 +287,15 @@ impl Index {
         }
 
         matches.sort_by(|a, b| {
-            b.8.cmp(&a.8)
-                .then_with(|| b.3.cmp(&a.3))
-                .then_with(|| {
-                    let cmp = match sort_order {
-                        "title_asc" => a.1.to_lowercase().cmp(&b.1.to_lowercase()),
-                        "title_desc" => b.1.to_lowercase().cmp(&a.1.to_lowercase()),
-                        "modified_asc" | "created_asc" => a.7.cmp(&b.7),
-                        _ => b.7.cmp(&a.7),
-                    };
-                    cmp.then_with(|| a.0.cmp(b.0))
-                })
+            b.8.cmp(&a.8).then_with(|| b.3.cmp(&a.3)).then_with(|| {
+                let cmp = match sort_order {
+                    "title_asc" => a.1.to_lowercase().cmp(&b.1.to_lowercase()),
+                    "title_desc" => b.1.to_lowercase().cmp(&a.1.to_lowercase()),
+                    "modified_asc" | "created_asc" => a.7.cmp(&b.7),
+                    _ => b.7.cmp(&a.7),
+                };
+                cmp.then_with(|| a.0.cmp(b.0))
+            })
         });
 
         matches
@@ -472,8 +471,18 @@ mod tests {
     #[test]
     fn test_pinned_notes_sort_first() {
         let mut index = Index::new();
-        index.add_note_with_pin("old_unpinned.md".to_string(), "content".to_string(), 200, false);
-        index.add_note_with_pin("older_pinned.md".to_string(), "content".to_string(), 100, true);
+        index.add_note_with_pin(
+            "old_unpinned.md".to_string(),
+            "content".to_string(),
+            200,
+            false,
+        );
+        index.add_note_with_pin(
+            "older_pinned.md".to_string(),
+            "content".to_string(),
+            100,
+            true,
+        );
 
         let results = index.search("", "modified_desc");
         assert_eq!(results.len(), 2);

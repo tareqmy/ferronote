@@ -43,7 +43,10 @@ impl SearchBar<'_> {
 }
 
 impl crate::components::Component for SearchBar<'_> {
-    fn event(&mut self, ev: &crate::event::Event) -> color_eyre::Result<crate::components::EventState> {
+    fn event(
+        &mut self,
+        ev: &crate::event::Event,
+    ) -> color_eyre::Result<crate::components::EventState> {
         if let crate::event::Event::Key(key) = ev {
             self.handle_key(*key);
             // SearchBar consumes all keys when focused (usually)
@@ -54,7 +57,6 @@ impl crate::components::Component for SearchBar<'_> {
 }
 
 impl SearchBar<'_> {
-
     pub fn draw(
         &self,
         frame: &mut Frame,
@@ -142,8 +144,8 @@ mod tests {
 
     #[test]
     fn test_search_bar_draw() {
-        use ratatui::backend::TestBackend;
         use ratatui::Terminal;
+        use ratatui::backend::TestBackend;
         let backend = TestBackend::new(30, 5);
         let mut terminal = Terminal::new(backend).unwrap();
 
@@ -152,14 +154,18 @@ mod tests {
         search_bar.handle_key(KeyEvent::new(KeyCode::Char('n'), KeyModifiers::NONE));
         let theme = crate::theme::ThemePalette::from_name("default");
 
-        terminal.draw(|f| {
-            let area = f.area();
-            search_bar.draw(f, area, true, &theme);
-        }).unwrap();
+        terminal
+            .draw(|f| {
+                let area = f.area();
+                search_bar.draw(f, area, true, &theme);
+            })
+            .unwrap();
 
-        terminal.draw(|f| {
-            let area = f.area();
-            search_bar.draw(f, area, false, &theme);
-        }).unwrap();
+        terminal
+            .draw(|f| {
+                let area = f.area();
+                search_bar.draw(f, area, false, &theme);
+            })
+            .unwrap();
     }
 }

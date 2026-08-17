@@ -1,4 +1,4 @@
-use tui_textarea::{TextArea, CursorMove};
+use tui_textarea::TextArea;
 
 fn main() {
     let mut ta = TextArea::from(["Hello world!".to_string()]);
@@ -13,7 +13,7 @@ fn main() {
 
     println!("Cursor after: {:?}", ta.cursor());
     println!("Line after: {:?}", ta.lines()[0]);
-    
+
     // Test Ctrl+d behavior
     let (row, col) = ta.cursor();
     ta.move_cursor(tui_textarea::CursorMove::Head);

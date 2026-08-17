@@ -1,5 +1,5 @@
-use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use crate::action::Action;
+use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
 /// Encapsulates a keyboard combination (key code + modifier keys).
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -225,7 +225,10 @@ impl ShortcutRegistry {
             ("Esc", "Clear search bar / Close overlay"),
             ("Ctrl+N", "Start a new note"),
             ("Tab", "Cycle focus forwards"),
-            ("Enter", "Open selected note / Create / Wiki-link or Web URL"),
+            (
+                "Enter",
+                "Open selected note / Create / Wiki-link or Web URL",
+            ),
             ("Up / Down", "Navigate note list"),
             ("PgUp / PgDn", "Scroll note list page by page"),
             ("Home / End", "Jump to top / bottom of note list"),
@@ -245,8 +248,14 @@ impl ShortcutRegistry {
             ("h, j, k, l", "Move cursor (View mode)"),
             ("w, b, W, B", "Move word forward/backward (View mode)"),
             ("e, ge", "Move to end of word (View mode)"),
-            ("0, ^, $", "Move to beginning / first non-blank / end of line (View mode)"),
-            ("+, -", "Move to first non-blank of next / prev line (View mode)"),
+            (
+                "0, ^, $",
+                "Move to beginning / first non-blank / end of line (View mode)",
+            ),
+            (
+                "+, -",
+                "Move to first non-blank of next / prev line (View mode)",
+            ),
             ("gg, G", "Move to beginning/end of file (View mode)"),
             ("%", "Jump to matching brace/bracket (View mode)"),
             ("i, a, o", "Enter Insert mode"),
@@ -282,8 +291,14 @@ mod tests {
         let event_k = KeyEvent::new(KeyCode::Char('k'), KeyModifiers::CONTROL);
         let event_p = KeyEvent::new(KeyCode::Char('p'), KeyModifiers::CONTROL);
 
-        assert_eq!(registry.match_control_shortcut(&event_k, false), Some(Action::TogglePinNote));
-        assert_eq!(registry.match_control_shortcut(&event_p, false), Some(Action::ToggleSettings));
+        assert_eq!(
+            registry.match_control_shortcut(&event_k, false),
+            Some(Action::TogglePinNote)
+        );
+        assert_eq!(
+            registry.match_control_shortcut(&event_p, false),
+            Some(Action::ToggleSettings)
+        );
     }
 
     #[test]
@@ -293,9 +308,18 @@ mod tests {
         let event_w = KeyEvent::new(KeyCode::Char('w'), KeyModifiers::NONE);
         let event_redo = KeyEvent::new(KeyCode::Char('r'), KeyModifiers::CONTROL);
 
-        assert_eq!(registry.match_editor_view_shortcut(&event_j), Some(EditorViewAction::CursorDown));
-        assert_eq!(registry.match_editor_view_shortcut(&event_w), Some(EditorViewAction::WordForward));
-        assert_eq!(registry.match_editor_view_shortcut(&event_redo), Some(EditorViewAction::Redo));
+        assert_eq!(
+            registry.match_editor_view_shortcut(&event_j),
+            Some(EditorViewAction::CursorDown)
+        );
+        assert_eq!(
+            registry.match_editor_view_shortcut(&event_w),
+            Some(EditorViewAction::WordForward)
+        );
+        assert_eq!(
+            registry.match_editor_view_shortcut(&event_redo),
+            Some(EditorViewAction::Redo)
+        );
     }
 
     #[test]
@@ -304,8 +328,14 @@ mod tests {
         let event_p = KeyEvent::new(KeyCode::Char('p'), KeyModifiers::NONE);
         let event_up = KeyEvent::new(KeyCode::Up, KeyModifiers::NONE);
 
-        assert_eq!(registry.match_notelist_shortcut(&event_p), Some(NoteListAction::TogglePin));
-        assert_eq!(registry.match_notelist_shortcut(&event_up), Some(NoteListAction::NavUp));
+        assert_eq!(
+            registry.match_notelist_shortcut(&event_p),
+            Some(NoteListAction::TogglePin)
+        );
+        assert_eq!(
+            registry.match_notelist_shortcut(&event_up),
+            Some(NoteListAction::NavUp)
+        );
     }
 
     #[test]
@@ -314,8 +344,14 @@ mod tests {
         let event_k = KeyEvent::new(KeyCode::Char('k'), KeyModifiers::NONE);
         let event_l = KeyEvent::new(KeyCode::Char('l'), KeyModifiers::NONE);
 
-        assert_eq!(registry.match_settings_shortcut(&event_k), Some(SettingsAction::PrevSetting));
-        assert_eq!(registry.match_settings_shortcut(&event_l), Some(SettingsAction::OptionNext));
+        assert_eq!(
+            registry.match_settings_shortcut(&event_k),
+            Some(SettingsAction::PrevSetting)
+        );
+        assert_eq!(
+            registry.match_settings_shortcut(&event_l),
+            Some(SettingsAction::OptionNext)
+        );
     }
 
     #[test]

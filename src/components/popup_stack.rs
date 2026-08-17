@@ -1,4 +1,3 @@
-
 use crate::components::{Component, DrawableComponent, EventState};
 use crate::event::Event;
 use crate::queue::Queue;
@@ -113,8 +112,8 @@ mod tests {
 
     #[test]
     fn test_popup_stack_event_routing_and_draw() {
-        use ratatui::backend::TestBackend;
         use ratatui::Terminal;
+        use ratatui::backend::TestBackend;
         let backend = TestBackend::new(80, 24);
         let mut terminal = Terminal::new(backend).unwrap();
 
@@ -135,9 +134,11 @@ mod tests {
         assert_eq!(res_top, EventState::Consumed);
 
         // Draw stack
-        terminal.draw(|f| {
-            let area = f.area();
-            stack.draw(f, area).unwrap();
-        }).unwrap();
+        terminal
+            .draw(|f| {
+                let area = f.area();
+                stack.draw(f, area).unwrap();
+            })
+            .unwrap();
     }
 }

@@ -59,33 +59,43 @@ impl DrawableComponent for HelpPopup {
         let keybindings_data = registry.help_entries();
 
         let width = std::cmp::min(74, area.width.saturating_mul(80) / 100);
-        let height = std::cmp::min(keybindings_data.len() as u16 + 2, area.height.saturating_mul(80) / 100);
+        let height = std::cmp::min(
+            keybindings_data.len() as u16 + 2,
+            area.height.saturating_mul(80) / 100,
+        );
         let x = area.width.saturating_sub(width) / 2;
         let y = area.height.saturating_sub(height) / 2;
         let popup_area = ratatui::layout::Rect::new(x, y, width, height);
         frame.render_widget(Clear, popup_area);
 
         let help_block = Block::default()
-            .title(ratatui::text::Line::from(" Help / Keybindings ").alignment(ratatui::layout::Alignment::Center))
+            .title(
+                ratatui::text::Line::from(" Help / Keybindings ")
+                    .alignment(ratatui::layout::Alignment::Center),
+            )
             .borders(Borders::ALL)
             .style(Style::default().fg(Color::Cyan));
 
         let rows: Vec<Row> = keybindings_data
             .iter()
-            .map(|(k, d)| {
-                Row::new(vec!["", *k, *d]).style(Style::default().fg(Color::White))
-            })
+            .map(|(k, d)| Row::new(vec!["", *k, *d]).style(Style::default().fg(Color::White)))
             .collect();
 
         // Calculate max scroll
-        let max_scroll = rows.len().saturating_sub(popup_area.height.saturating_sub(2) as usize);
+        let max_scroll = rows
+            .len()
+            .saturating_sub(popup_area.height.saturating_sub(2) as usize);
         let actual_scroll = self.scroll_offset.min(max_scroll);
 
         let visible_rows = rows.into_iter().skip(actual_scroll);
 
         let table = Table::new(
             visible_rows,
-            [Constraint::Length(2), Constraint::Length(18), Constraint::Min(40)],
+            [
+                Constraint::Length(2),
+                Constraint::Length(18),
+                Constraint::Min(40),
+            ],
         )
         .block(help_block)
         .column_spacing(2);
@@ -127,8 +137,8 @@ mod tests {
 
     #[test]
     fn test_help_popup_draw() {
-        use ratatui::backend::TestBackend;
         use ratatui::Terminal;
+        use ratatui::backend::TestBackend;
         let backend = TestBackend::new(80, 24);
         let mut terminal = Terminal::new(backend).unwrap();
 
@@ -136,11 +146,11 @@ mod tests {
         let mut help = HelpPopup::new(queue);
         help.scroll_offset = 2;
 
-        terminal.draw(|f| {
-            let area = f.area();
-            help.draw(f, area).unwrap();
-        }).unwrap();
+        terminal
+            .draw(|f| {
+                let area = f.area();
+                help.draw(f, area).unwrap();
+            })
+            .unwrap();
     }
 }
-
-

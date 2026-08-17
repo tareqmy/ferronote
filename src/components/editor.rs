@@ -241,24 +241,28 @@ impl Editor<'_> {
             if !self.is_editing {
                 let mut modified = false;
 
-                if self.pending_y {
-                    if let KeyCode::Char(c) = key.code {
-                        if c.is_ascii_digit() {
-                            let digit = c.to_digit(10).unwrap_or(0) as usize;
-                            self.pending_y_count = self.pending_y_count.saturating_mul(10).saturating_add(digit);
-                            return;
-                        }
-                    }
+                if self.pending_y
+                    && let KeyCode::Char(c) = key.code
+                    && c.is_ascii_digit()
+                {
+                    let digit = c.to_digit(10).unwrap_or(0) as usize;
+                    self.pending_y_count = self
+                        .pending_y_count
+                        .saturating_mul(10)
+                        .saturating_add(digit);
+                    return;
                 }
 
-                if self.pending_d {
-                    if let KeyCode::Char(c) = key.code {
-                        if c.is_ascii_digit() {
-                            let digit = c.to_digit(10).unwrap_or(0) as usize;
-                            self.pending_d_count = self.pending_d_count.saturating_mul(10).saturating_add(digit);
-                            return;
-                        }
-                    }
+                if self.pending_d
+                    && let KeyCode::Char(c) = key.code
+                    && c.is_ascii_digit()
+                {
+                    let digit = c.to_digit(10).unwrap_or(0) as usize;
+                    self.pending_d_count = self
+                        .pending_d_count
+                        .saturating_mul(10)
+                        .saturating_add(digit);
+                    return;
                 }
 
                 if key.code == KeyCode::Char('g') {
@@ -274,7 +278,7 @@ impl Editor<'_> {
                     }
                     return;
                 }
-                
+
                 let mut override_action = None;
                 if self.pending_g && key.code == KeyCode::Char('e') {
                     override_action = Some(crate::shortcuts::EditorViewAction::WordEndBack);
@@ -283,7 +287,11 @@ impl Editor<'_> {
 
                 if key.code == KeyCode::Char('d') {
                     if self.pending_d {
-                        let count = if self.pending_d_count > 0 { self.pending_d_count } else { 1 };
+                        let count = if self.pending_d_count > 0 {
+                            self.pending_d_count
+                        } else {
+                            1
+                        };
                         for _ in 0..count {
                             ta.move_cursor(tui_textarea::CursorMove::Head);
                             ta.delete_line_by_end();
@@ -304,7 +312,11 @@ impl Editor<'_> {
                     self.pending_d = false;
                     self.pending_d_count = 0;
                     if self.pending_y {
-                        let count = if self.pending_y_count > 0 { self.pending_y_count } else { 1 };
+                        let count = if self.pending_y_count > 0 {
+                            self.pending_y_count
+                        } else {
+                            1
+                        };
                         let orig = ta.cursor();
                         ta.move_cursor(tui_textarea::CursorMove::Head);
                         ta.start_selection();
@@ -316,7 +328,10 @@ impl Editor<'_> {
                         }
                         ta.copy();
                         ta.cancel_selection();
-                        ta.move_cursor(tui_textarea::CursorMove::Jump(orig.0 as u16, orig.1 as u16));
+                        ta.move_cursor(tui_textarea::CursorMove::Jump(
+                            orig.0 as u16,
+                            orig.1 as u16,
+                        ));
                         self.pending_y = false;
                         self.pending_y_count = 0;
                     } else {
@@ -328,10 +343,12 @@ impl Editor<'_> {
                     self.pending_d_count = 0;
                     self.pending_y = false;
                     self.pending_y_count = 0;
-                    
+
                     use crate::shortcuts::EditorViewAction;
                     let registry = crate::shortcuts::ShortcutRegistry::new();
-                    if let Some(action) = override_action.or_else(|| registry.match_editor_view_shortcut(&key)) {
+                    if let Some(action) =
+                        override_action.or_else(|| registry.match_editor_view_shortcut(&key))
+                    {
                         match action {
                             EditorViewAction::PasteAfter => {
                                 let text = ta.yank_text();
@@ -457,7 +474,8 @@ impl Editor<'_> {
                                 let (mut r, mut c) = ta.cursor();
                                 if r < lines.len() {
                                     let mut current_line: Vec<char> = lines[r].chars().collect();
-                                    let mut in_word = c < current_line.len() && !current_line[c].is_whitespace();
+                                    let mut in_word =
+                                        c < current_line.len() && !current_line[c].is_whitespace();
                                     loop {
                                         if c >= current_line.len() {
                                             r += 1;
@@ -479,7 +497,9 @@ impl Editor<'_> {
                                             c += 1;
                                         }
                                     }
-                                    ta.move_cursor(tui_textarea::CursorMove::Jump(r as u16, c as u16));
+                                    ta.move_cursor(tui_textarea::CursorMove::Jump(
+                                        r as u16, c as u16,
+                                    ));
                                 }
                             }
                             EditorViewAction::WordBackWhitespace => {
@@ -491,14 +511,19 @@ impl Editor<'_> {
                                     } else if r > 0 {
                                         r -= 1;
                                         c = lines[r].chars().count();
-                                        if c > 0 { c -= 1; }
+                                        c = c.saturating_sub(1);
                                     }
-                                    
+
                                     let mut current_line: Vec<char> = lines[r].chars().collect();
-                                    let mut in_word = c < current_line.len() && !current_line[c].is_whitespace();
-                                    
+                                    let mut in_word =
+                                        c < current_line.len() && !current_line[c].is_whitespace();
+
                                     loop {
-                                        if c == 0 && (current_line.is_empty() || current_line[0].is_whitespace() || r == 0) {
+                                        if c == 0
+                                            && (current_line.is_empty()
+                                                || current_line[0].is_whitespace()
+                                                || r == 0)
+                                        {
                                             if r == 0 {
                                                 c = 0;
                                                 break;
@@ -506,7 +531,7 @@ impl Editor<'_> {
                                             r -= 1;
                                             current_line = lines[r].chars().collect();
                                             c = current_line.len();
-                                            if c > 0 { c -= 1; }
+                                            c = c.saturating_sub(1);
                                             in_word = false;
                                         } else {
                                             let is_ws = current_line[c].is_whitespace();
@@ -524,7 +549,9 @@ impl Editor<'_> {
                                             }
                                         }
                                     }
-                                    ta.move_cursor(tui_textarea::CursorMove::Jump(r as u16, c as u16));
+                                    ta.move_cursor(tui_textarea::CursorMove::Jump(
+                                        r as u16, c as u16,
+                                    ));
                                 }
                             }
                             EditorViewAction::WordEndForward => {
@@ -532,13 +559,16 @@ impl Editor<'_> {
                                 let (mut r, mut c) = ta.cursor();
                                 if r < lines.len() {
                                     let mut current_line: Vec<char> = lines[r].chars().collect();
-                                    if c < current_line.len() { c += 1; }
-                                    let mut in_word = c < current_line.len() && !current_line[c].is_whitespace();
-                                    
+                                    if c < current_line.len() {
+                                        c += 1;
+                                    }
+                                    let mut in_word =
+                                        c < current_line.len() && !current_line[c].is_whitespace();
+
                                     loop {
                                         if c >= current_line.len() {
                                             if in_word {
-                                                if c > 0 { c -= 1; }
+                                                c = c.saturating_sub(1);
                                                 break;
                                             }
                                             r += 1;
@@ -546,7 +576,7 @@ impl Editor<'_> {
                                             if r >= lines.len() {
                                                 r = lines.len() - 1;
                                                 c = lines[r].chars().count();
-                                                if c > 0 { c -= 1; }
+                                                c = c.saturating_sub(1);
                                                 break;
                                             }
                                             current_line = lines[r].chars().collect();
@@ -562,7 +592,9 @@ impl Editor<'_> {
                                             c += 1;
                                         }
                                     }
-                                    ta.move_cursor(tui_textarea::CursorMove::Jump(r as u16, c as u16));
+                                    ta.move_cursor(tui_textarea::CursorMove::Jump(
+                                        r as u16, c as u16,
+                                    ));
                                 }
                             }
                             EditorViewAction::WordEndBack => {
@@ -574,25 +606,35 @@ impl Editor<'_> {
                                     } else if r > 0 {
                                         r -= 1;
                                         c = lines[r].chars().count();
-                                        if c > 0 { c -= 1; }
+                                        c = c.saturating_sub(1);
                                     }
-                                    
+
                                     let mut current_line: Vec<char> = lines[r].chars().collect();
-                                    let mut skipping_current = c < current_line.len() && !current_line[c].is_whitespace();
-                                    
+                                    let mut skipping_current =
+                                        c < current_line.len() && !current_line[c].is_whitespace();
+
                                     loop {
                                         if c == 0 && (current_line.is_empty() || r == 0) {
-                                            if r == 0 { c = 0; break; }
+                                            if r == 0 {
+                                                c = 0;
+                                                break;
+                                            }
                                             r -= 1;
                                             current_line = lines[r].chars().collect();
                                             c = current_line.len();
-                                            if c > 0 { c -= 1; }
+                                            c = c.saturating_sub(1);
                                         } else {
-                                            let is_ws = current_line.get(c).map_or(true, |ch| ch.is_whitespace());
+                                            let is_ws = current_line
+                                                .get(c)
+                                                .is_none_or(|ch| ch.is_whitespace());
                                             if skipping_current {
-                                                if is_ws { skipping_current = false; }
+                                                if is_ws {
+                                                    skipping_current = false;
+                                                }
                                             } else {
-                                                if !is_ws { break; }
+                                                if !is_ws {
+                                                    break;
+                                                }
                                             }
                                             if c > 0 {
                                                 c -= 1;
@@ -603,11 +645,13 @@ impl Editor<'_> {
                                                 r -= 1;
                                                 current_line = lines[r].chars().collect();
                                                 c = current_line.len();
-                                                if c > 0 { c -= 1; }
+                                                c = c.saturating_sub(1);
                                             }
                                         }
                                     }
-                                    ta.move_cursor(tui_textarea::CursorMove::Jump(r as u16, c as u16));
+                                    ta.move_cursor(tui_textarea::CursorMove::Jump(
+                                        r as u16, c as u16,
+                                    ));
                                 }
                             }
                             EditorViewAction::LineHead => {
@@ -626,7 +670,10 @@ impl Editor<'_> {
                                         }
                                         new_col = i; // if all whitespace, go to end of whitespace
                                     }
-                                    ta.move_cursor(tui_textarea::CursorMove::Jump(r as u16, new_col as u16));
+                                    ta.move_cursor(tui_textarea::CursorMove::Jump(
+                                        r as u16,
+                                        new_col as u16,
+                                    ));
                                 }
                             }
                             EditorViewAction::NextLineFirstNonBlank => {
@@ -643,7 +690,10 @@ impl Editor<'_> {
                                         }
                                         new_col = i;
                                     }
-                                    ta.move_cursor(tui_textarea::CursorMove::Jump(r as u16, new_col as u16));
+                                    ta.move_cursor(tui_textarea::CursorMove::Jump(
+                                        r as u16,
+                                        new_col as u16,
+                                    ));
                                 }
                             }
                             EditorViewAction::PrevLineFirstNonBlank => {
@@ -660,7 +710,10 @@ impl Editor<'_> {
                                         }
                                         new_col = i;
                                     }
-                                    ta.move_cursor(tui_textarea::CursorMove::Jump(r as u16, new_col as u16));
+                                    ta.move_cursor(tui_textarea::CursorMove::Jump(
+                                        r as u16,
+                                        new_col as u16,
+                                    ));
                                 }
                             }
                             EditorViewAction::MatchBrace => {
@@ -685,7 +738,8 @@ impl Editor<'_> {
                                             let mut tc = c as isize;
                                             let mut found = false;
                                             'outer: while tr >= 0 && (tr as usize) < lines.len() {
-                                                let t_line: Vec<char> = lines[tr as usize].chars().collect();
+                                                let t_line: Vec<char> =
+                                                    lines[tr as usize].chars().collect();
                                                 while tc >= 0 && (tc as usize) < t_line.len() {
                                                     let t_ch = t_line[tc as usize];
                                                     if t_ch == open {
@@ -701,12 +755,19 @@ impl Editor<'_> {
                                                 }
                                                 tr += dir;
                                                 if tr >= 0 && (tr as usize) < lines.len() {
-                                                    let next_len = lines[tr as usize].chars().count();
-                                                    tc = if dir == 1 { 0 } else { (next_len as isize) - 1 };
+                                                    let next_len =
+                                                        lines[tr as usize].chars().count();
+                                                    tc = if dir == 1 {
+                                                        0
+                                                    } else {
+                                                        (next_len as isize) - 1
+                                                    };
                                                 }
                                             }
                                             if found {
-                                                ta.move_cursor(tui_textarea::CursorMove::Jump(tr as u16, tc as u16));
+                                                ta.move_cursor(tui_textarea::CursorMove::Jump(
+                                                    tr as u16, tc as u16,
+                                                ));
                                             }
                                         }
                                     }
@@ -725,15 +786,19 @@ impl Editor<'_> {
                             _ => {}
                         }
                     }
-            }
-                
+                }
+
                 if modified {
                     self.last_edit_time = Some(std::time::Instant::now());
                 }
                 return;
             }
 
-            if key.code == KeyCode::Esc || (!self.pending_v && key.code == KeyCode::Char('c') && key.modifiers.contains(KeyModifiers::CONTROL)) {
+            if key.code == KeyCode::Esc
+                || (!self.pending_v
+                    && key.code == KeyCode::Char('c')
+                    && key.modifiers.contains(KeyModifiers::CONTROL))
+            {
                 self.is_editing = false;
                 return;
             }
@@ -833,13 +898,13 @@ impl Editor<'_> {
         word_wrap: bool,
         theme: &crate::theme::ThemePalette,
     ) {
-        let mode_str = if self.is_editing { " [EDIT] " } else { " [VIEW] " };
+        let mode_str = if self.is_editing {
+            " [EDIT] "
+        } else {
+            " [VIEW] "
+        };
         let title = if let Some(ref note) = self.current_note {
-            format!(
-                " {}{} ",
-                note.strip_suffix(".md").unwrap_or(note),
-                mode_str
-            )
+            format!(" {}{} ", note.strip_suffix(".md").unwrap_or(note), mode_str)
         } else {
             " Editor ".to_string()
         };
@@ -879,12 +944,17 @@ impl Editor<'_> {
             if let Some(query) = self.current_search_query.get(note) {
                 let _ = ta_clone.set_search_pattern(query);
             }
-            ta_clone.set_search_style(ratatui::style::Style::default().bg(ratatui::style::Color::Yellow).fg(ratatui::style::Color::Black));
+            ta_clone.set_search_style(
+                ratatui::style::Style::default()
+                    .bg(ratatui::style::Color::Yellow)
+                    .fg(ratatui::style::Color::Black),
+            );
             if is_focused {
                 if self.is_editing {
                     ta_clone.set_cursor_style(Style::default().bg(Color::White).fg(Color::Black));
                 } else {
-                    ta_clone.set_cursor_style(Style::default().bg(Color::DarkGray).fg(Color::White));
+                    ta_clone
+                        .set_cursor_style(Style::default().bg(Color::DarkGray).fg(Color::White));
                 }
             } else {
                 ta_clone.set_cursor_style(Style::default().bg(Color::Reset).fg(Color::Reset));
@@ -989,17 +1059,17 @@ impl Editor<'_> {
                 if col >= chars.len() || chars[col].is_whitespace() {
                     return None;
                 }
-                
+
                 let mut start_idx = col;
                 let mut end_idx = col;
-                
+
                 while start_idx > 0 && !chars[start_idx - 1].is_whitespace() {
                     start_idx -= 1;
                 }
                 while end_idx < chars.len() && !chars[end_idx].is_whitespace() {
                     end_idx += 1;
                 }
-                
+
                 let word: String = chars[start_idx..end_idx].iter().collect();
                 if word.starts_with("http://") || word.starts_with("https://") {
                     // strip common trailing punctuation that might be caught
@@ -1013,10 +1083,13 @@ impl Editor<'_> {
 }
 
 impl crate::components::Component for Editor<'_> {
-    fn event(&mut self, ev: &crate::event::Event) -> color_eyre::Result<crate::components::EventState> {
+    fn event(
+        &mut self,
+        ev: &crate::event::Event,
+    ) -> color_eyre::Result<crate::components::EventState> {
         if let crate::event::Event::Key(key) = ev {
-            // Only consume events if the editor is in editing mode, 
-            // or if we want it to handle view mode scrolling. 
+            // Only consume events if the editor is in editing mode,
+            // or if we want it to handle view mode scrolling.
             // We just proxy to handle_key for now.
             self.handle_key(*key);
             return Ok(crate::components::EventState::Consumed);

@@ -650,7 +650,7 @@ Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu 
 
     #[must_use]
     pub fn is_pinned(&self, filename: &str) -> bool {
-        self.metadata.get(filename).map_or(false, |m| m.is_pinned)
+        self.metadata.get(filename).is_some_and(|m| m.is_pinned)
     }
 
     /// # Errors
@@ -765,7 +765,6 @@ mod tests {
         let lorem_content = store.load_note("Lorem Ipsum.md").unwrap();
         assert!(lorem_content.contains("# Lorem Ipsum"));
         assert!(lorem_content.contains("[[Welcome to Ferronote]]"));
-
     }
 
     #[test]

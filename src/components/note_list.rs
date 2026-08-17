@@ -1,5 +1,5 @@
-use ferronote_store::format_timestamp;
 use ferronote_search::SearchResult;
+use ferronote_store::format_timestamp;
 use ratatui::{
     Frame,
     layout::Rect,
@@ -183,7 +183,10 @@ impl NoteList {
             .borders(Borders::ALL)
             .border_style(Style::default().fg(border_color))
             .title(" Notes ")
-            .title_top(ratatui::text::Line::from(format!(" {} ", sort_title)).alignment(ratatui::layout::Alignment::Right));
+            .title_top(
+                ratatui::text::Line::from(format!(" {} ", sort_title))
+                    .alignment(ratatui::layout::Alignment::Right),
+            );
 
         let available_width = (area.width as usize).saturating_sub(4);
 
@@ -241,8 +244,7 @@ impl NoteList {
                 if is_title_curtailed {
                     if max_title_len >= 3 {
                         let visible_len = max_title_len - 3;
-                        for idx in 0..visible_len {
-                            let ch = title_chars[idx];
+                        for (idx, &ch) in title_chars.iter().enumerate().take(visible_len) {
                             let mut style = Style::default();
                             if i.title_match_indices.contains(&idx) {
                                 style = style.fg(theme.search_match).add_modifier(Modifier::BOLD);
@@ -286,7 +288,8 @@ impl NoteList {
                     let preview_chars: Vec<char> = preview.chars().collect();
                     let display_preview = if preview_chars.len() > available_width {
                         if available_width >= 3 {
-                            let prefix: String = preview_chars[..available_width - 3].iter().collect();
+                            let prefix: String =
+                                preview_chars[..available_width - 3].iter().collect();
                             format!("{prefix}...")
                         } else {
                             ".".repeat(available_width)
@@ -324,38 +327,47 @@ impl NoteList {
 }
 
 impl crate::components::Component for NoteList {
-    fn event(&mut self, ev: &crate::event::Event) -> color_eyre::Result<crate::components::EventState> {
+    fn event(
+        &mut self,
+        ev: &crate::event::Event,
+    ) -> color_eyre::Result<crate::components::EventState> {
         if let crate::event::Event::Key(key) = ev {
             use ratatui::crossterm::event::KeyCode;
             match key.code {
                 KeyCode::Down | KeyCode::Char('j') => {
                     self.next();
-                    self.queue.push(crate::action::Action::SelectNote(self.selected_note()));
+                    self.queue
+                        .push(crate::action::Action::SelectNote(self.selected_note()));
                     return Ok(crate::components::EventState::Consumed);
                 }
                 KeyCode::Up | KeyCode::Char('k') => {
                     self.previous();
-                    self.queue.push(crate::action::Action::SelectNote(self.selected_note()));
+                    self.queue
+                        .push(crate::action::Action::SelectNote(self.selected_note()));
                     return Ok(crate::components::EventState::Consumed);
                 }
                 KeyCode::PageDown => {
                     self.page_down(10);
-                    self.queue.push(crate::action::Action::SelectNote(self.selected_note()));
+                    self.queue
+                        .push(crate::action::Action::SelectNote(self.selected_note()));
                     return Ok(crate::components::EventState::Consumed);
                 }
                 KeyCode::PageUp => {
                     self.page_up(10);
-                    self.queue.push(crate::action::Action::SelectNote(self.selected_note()));
+                    self.queue
+                        .push(crate::action::Action::SelectNote(self.selected_note()));
                     return Ok(crate::components::EventState::Consumed);
                 }
                 KeyCode::Home => {
                     self.select_first();
-                    self.queue.push(crate::action::Action::SelectNote(self.selected_note()));
+                    self.queue
+                        .push(crate::action::Action::SelectNote(self.selected_note()));
                     return Ok(crate::components::EventState::Consumed);
                 }
                 KeyCode::End => {
                     self.select_last();
-                    self.queue.push(crate::action::Action::SelectNote(self.selected_note()));
+                    self.queue
+                        .push(crate::action::Action::SelectNote(self.selected_note()));
                     return Ok(crate::components::EventState::Consumed);
                 }
                 _ => {}
@@ -364,7 +376,6 @@ impl crate::components::Component for NoteList {
         Ok(crate::components::EventState::NotConsumed)
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -475,9 +486,9 @@ mod tests {
 
     #[test]
     fn test_note_list_title_curtailment() {
-        use ratatui::backend::TestBackend;
-        use ratatui::Terminal;
         use crate::theme::ThemePalette;
+        use ratatui::Terminal;
+        use ratatui::backend::TestBackend;
 
         let queue = crate::queue::Queue::new();
         let mut list = NoteList::new(queue);
@@ -512,8 +523,13 @@ mod tests {
             .unwrap();
 
         let buffer = terminal.backend().buffer();
-        let row_content: String = (1..19).map(|x| buffer[(x, 1)].symbol().to_string()).collect();
-        assert!(row_content.contains("..."), "Row content should contain '...': {row_content}");
+        let row_content: String = (1..19)
+            .map(|x| buffer[(x, 1)].symbol().to_string())
+            .collect();
+        assert!(
+            row_content.contains("..."),
+            "Row content should contain '...': {row_content}"
+        );
 
         // Test create prompt curtailment
         let queue2 = crate::queue::Queue::new();
@@ -545,7 +561,12 @@ mod tests {
             .unwrap();
 
         let buffer2 = terminal2.backend().buffer();
-        let prompt_row: String = (1..19).map(|x| buffer2[(x, 1)].symbol().to_string()).collect();
-        assert!(prompt_row.contains("..."), "Prompt row should contain '...': {prompt_row}");
+        let prompt_row: String = (1..19)
+            .map(|x| buffer2[(x, 1)].symbol().to_string())
+            .collect();
+        assert!(
+            prompt_row.contains("..."),
+            "Prompt row should contain '...': {prompt_row}"
+        );
     }
 }

@@ -1,12 +1,12 @@
 pub mod editor;
-pub mod note_list;
-pub mod search_bar;
 pub mod help;
+pub mod note_list;
 pub mod popup_stack;
+pub mod search_bar;
 
 use crate::event::Event;
 use color_eyre::Result;
-use ratatui::{layout::Rect, Frame};
+use ratatui::{Frame, layout::Rect};
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum EventState {

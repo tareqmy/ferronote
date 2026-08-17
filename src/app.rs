@@ -5,9 +5,7 @@ use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
     text::{Line, Span},
-    widgets::{
-        Block, Borders, Clear, Paragraph,
-    },
+    widgets::{Block, Borders, Clear, Paragraph},
 };
 
 use crate::{
@@ -18,8 +16,8 @@ use crate::{
     focus::Focus,
     tui::Tui,
 };
-use ferronote_store::{NoteStore, format_timestamp};
 use ferronote_search::Index;
+use ferronote_store::{NoteStore, format_timestamp};
 use std::time::Instant;
 
 #[derive(Debug)]
@@ -127,7 +125,11 @@ impl App<'_> {
         self.note_list.set_items(results);
 
         if let Some(ref current) = self.editor.current_note
-            && let Some(idx) = self.note_list.items.iter().position(|r| r.filename == *current)
+            && let Some(idx) = self
+                .note_list
+                .items
+                .iter()
+                .position(|r| r.filename == *current)
         {
             self.note_list.state.select(Some(idx));
         }
@@ -153,7 +155,8 @@ impl App<'_> {
         };
         let content = format!("# {title}\n\n");
         let modified_at = self.note_store.get_modified_at(&filename).unwrap_or(0);
-        self.index.add_note(filename.clone(), content.clone(), modified_at);
+        self.index
+            .add_note(filename.clone(), content.clone(), modified_at);
         self.editor.set_content(&filename, &content);
         self.update_search();
         Ok(filename)
@@ -163,8 +166,12 @@ impl App<'_> {
         self.note_store.save_note(filename, content)?;
         let modified_at = self.note_store.get_modified_at(filename).unwrap_or(0);
         let is_pinned = self.note_store.is_pinned(filename);
-        self.index
-            .add_note_with_pin(filename.to_string(), content.to_string(), modified_at, is_pinned);
+        self.index.add_note_with_pin(
+            filename.to_string(),
+            content.to_string(),
+            modified_at,
+            is_pinned,
+        );
         self.update_search();
         Ok(())
     }
@@ -249,7 +256,14 @@ impl App<'_> {
                 self.config.theme = options[next_idx].to_string();
             }
             5 => {
-                let options = ["modified_desc", "modified_asc", "title_asc", "title_desc", "created_desc", "created_asc"];
+                let options = [
+                    "modified_desc",
+                    "modified_asc",
+                    "title_asc",
+                    "title_desc",
+                    "created_desc",
+                    "created_asc",
+                ];
                 let current_idx = options
                     .iter()
                     .position(|&v| v == self.config.default_sort)
@@ -291,9 +305,15 @@ impl App<'_> {
             10 => {
                 self.config.mouse_capture = !self.config.mouse_capture;
                 if self.config.mouse_capture {
-                    let _ = crossterm::execute!(std::io::stdout(), crossterm::event::EnableMouseCapture);
+                    let _ = crossterm::execute!(
+                        std::io::stdout(),
+                        crossterm::event::EnableMouseCapture
+                    );
                 } else {
-                    let _ = crossterm::execute!(std::io::stdout(), crossterm::event::DisableMouseCapture);
+                    let _ = crossterm::execute!(
+                        std::io::stdout(),
+                        crossterm::event::DisableMouseCapture
+                    );
                 }
             }
             _ => {}
@@ -317,11 +337,11 @@ impl App<'_> {
             while let Some(action) = self.env.queue.pop() {
                 if action == Action::OpenExternalEditor {
                     self.update(Action::SaveNote);
-                    
+
                     if let Some(current) = self.editor.current_note.clone() {
                         // Suspend TUI
                         crate::tui::Tui::restore()?;
-                        
+
                         // Determine editor
                         let editor_cmd = if self.config.external_editor == "auto" {
                             std::env::var("VISUAL")
@@ -336,18 +356,18 @@ impl App<'_> {
                         } else {
                             self.config.external_editor.clone()
                         };
-                            
+
                         let path = self.note_store.get_note_path(&current);
-                        
+
                         // Spawn editor
                         let _ = std::process::Command::new(editor_cmd)
                             .arg(path)
                             .spawn()
                             .and_then(|mut child| child.wait());
-                            
+
                         // Restore TUI
                         tui = crate::tui::Tui::init(self.config.mouse_capture)?;
-                        
+
                         // Reload content
                         if let Ok(content) = self.note_store.load_note(&current) {
                             self.editor.set_content(&current, &content);
@@ -367,7 +387,9 @@ impl App<'_> {
             use crate::components::Component;
             match event {
                 Event::Key(_) | Event::Mouse(_) => {
-                    if let Ok(crate::components::EventState::Consumed) = self.popup_stack.event(&event) {
+                    if let Ok(crate::components::EventState::Consumed) =
+                        self.popup_stack.event(&event)
+                    {
                         return None;
                     }
                 }
@@ -415,14 +437,14 @@ impl App<'_> {
         if self.config.notes_list_position == "left" {
             let split_x = self.list_area.x + self.list_area.width;
             let on_x = x >= split_x.saturating_sub(1) && x <= split_x.saturating_add(1);
-            let on_y = y >= self.content_area.y
-                && y < self.content_area.y + self.content_area.height;
+            let on_y =
+                y >= self.content_area.y && y < self.content_area.y + self.content_area.height;
             on_x && on_y
         } else {
             let split_y = self.list_area.y + self.list_area.height;
             let on_y = y >= split_y.saturating_sub(1) && y <= split_y.saturating_add(1);
-            let on_x = x >= self.content_area.x
-                && x < self.content_area.x + self.content_area.width;
+            let on_x =
+                x >= self.content_area.x && x < self.content_area.x + self.content_area.width;
             on_x && on_y
         }
     }
@@ -514,8 +536,6 @@ impl App<'_> {
             }
         }
 
-
-
         if self.show_about {
             return Some(Action::ToggleAbout);
         }
@@ -537,7 +557,6 @@ impl App<'_> {
         }
 
         match key.code {
-
             KeyCode::Tab => {
                 self.focus = self.focus.next();
                 return Some(Action::SaveNote);
@@ -661,7 +680,8 @@ impl App<'_> {
                 self.settings_selected_index = self.settings_selected_index.saturating_sub(5);
             }
             Action::PageDownSetting => {
-                self.settings_selected_index = std::cmp::min(self.settings_selected_index.saturating_add(5), 13);
+                self.settings_selected_index =
+                    std::cmp::min(self.settings_selected_index.saturating_add(5), 13);
             }
             Action::FirstSetting => {
                 self.settings_selected_index = 0;
@@ -680,9 +700,18 @@ impl App<'_> {
                     s.push(c);
                     self.config.notes_dir = std::path::PathBuf::from(s);
                 } else if self.settings_selected_index == 13 {
-                    let mut s = self.config.config_dir.as_ref().map(|p| p.to_string_lossy().into_owned()).unwrap_or_default();
+                    let mut s = self
+                        .config
+                        .config_dir
+                        .as_ref()
+                        .map(|p| p.to_string_lossy().into_owned())
+                        .unwrap_or_default();
                     s.push(c);
-                    self.config.config_dir = if s.is_empty() { None } else { Some(std::path::PathBuf::from(s)) };
+                    self.config.config_dir = if s.is_empty() {
+                        None
+                    } else {
+                        Some(std::path::PathBuf::from(s))
+                    };
                 }
             }
             Action::SettingsBackspace => {
@@ -693,16 +722,28 @@ impl App<'_> {
                     s.pop();
                     self.config.notes_dir = std::path::PathBuf::from(s);
                 } else if self.settings_selected_index == 13 {
-                    let mut s = self.config.config_dir.as_ref().map(|p| p.to_string_lossy().into_owned()).unwrap_or_default();
+                    let mut s = self
+                        .config
+                        .config_dir
+                        .as_ref()
+                        .map(|p| p.to_string_lossy().into_owned())
+                        .unwrap_or_default();
                     s.pop();
-                    self.config.config_dir = if s.is_empty() { None } else { Some(std::path::PathBuf::from(s)) };
+                    self.config.config_dir = if s.is_empty() {
+                        None
+                    } else {
+                        Some(std::path::PathBuf::from(s))
+                    };
                 }
             }
             Action::ToggleHelp => {
                 if !self.popup_stack.is_empty() {
                     self.popup_stack.clear();
                 } else {
-                    self.popup_stack.push(crate::components::popup_stack::AnyPopup::Help(crate::components::help::HelpPopup::new(self.env.queue.clone())));
+                    self.popup_stack
+                        .push(crate::components::popup_stack::AnyPopup::Help(
+                            crate::components::help::HelpPopup::new(self.env.queue.clone()),
+                        ));
                 }
             }
             Action::ToggleAbout => {
@@ -748,15 +789,20 @@ impl App<'_> {
             }
             Action::TogglePinNote => {
                 let note_to_pin = if self.focus == Focus::NoteList {
-                    self.note_list.selected_note().or_else(|| self.editor.current_note.clone())
+                    self.note_list
+                        .selected_note()
+                        .or_else(|| self.editor.current_note.clone())
                 } else {
-                    self.editor.current_note.clone().or_else(|| self.note_list.selected_note())
+                    self.editor
+                        .current_note
+                        .clone()
+                        .or_else(|| self.note_list.selected_note())
                 };
-                if let Some(filename) = note_to_pin {
-                    if let Ok(is_pinned) = self.note_store.toggle_pin(&filename) {
-                        self.index.set_pinned(&filename, is_pinned);
-                        self.update_search();
-                    }
+                if let Some(filename) = note_to_pin
+                    && let Ok(is_pinned) = self.note_store.toggle_pin(&filename)
+                {
+                    self.index.set_pinned(&filename, is_pinned);
+                    self.update_search();
                 }
             }
             Action::OpenExternalEditor => {
@@ -816,10 +862,10 @@ impl App<'_> {
                 }
             }
             Action::PromptDeleteNote => {
-                if let Some(selected) = self.note_list.selected_note() {
-                    if !selected.is_empty() {
-                        self.show_delete_confirmation = true;
-                    }
+                if let Some(selected) = self.note_list.selected_note()
+                    && !selected.is_empty()
+                {
+                    self.show_delete_confirmation = true;
                 }
             }
             Action::CancelDeleteNote => {
@@ -839,22 +885,25 @@ impl App<'_> {
                 }
             }
             Action::PromptRenameNote => {
-                if let Some(selected) = self.note_list.selected_note() {
-                    if !selected.is_empty() {
-                        self.show_rename_prompt = true;
-                        let title = self
-                            .note_list
-                            .items
-                            .iter()
-                            .find(|i| i.filename == selected)
-                            .map(|i| i.title.clone())
-                            .unwrap_or_else(|| {
-                                selected.strip_suffix(".md").unwrap_or(&selected).to_string()
-                            });
-                        let mut textarea = tui_textarea::TextArea::default();
-                        textarea.insert_str(&title);
-                        self.rename_input = textarea;
-                    }
+                if let Some(selected) = self.note_list.selected_note()
+                    && !selected.is_empty()
+                {
+                    self.show_rename_prompt = true;
+                    let title = self
+                        .note_list
+                        .items
+                        .iter()
+                        .find(|i| i.filename == selected)
+                        .map(|i| i.title.clone())
+                        .unwrap_or_else(|| {
+                            selected
+                                .strip_suffix(".md")
+                                .unwrap_or(&selected)
+                                .to_string()
+                        });
+                    let mut textarea = tui_textarea::TextArea::default();
+                    textarea.insert_str(&title);
+                    self.rename_input = textarea;
                 }
             }
             Action::CancelRenameNote => {
@@ -862,11 +911,11 @@ impl App<'_> {
             }
             Action::SubmitRenameNote(new_title) => {
                 self.show_rename_prompt = false;
-                if let Some(old_filename) = self.note_list.selected_note() {
-                    if !new_title.is_empty() {
-                        let _ = self.rename_note(&old_filename, &new_title);
-                        self.update_search();
-                    }
+                if let Some(old_filename) = self.note_list.selected_note()
+                    && !new_title.is_empty()
+                {
+                    let _ = self.rename_note(&old_filename, &new_title);
+                    self.update_search();
                 }
             }
             Action::FileChanged(path) => {
@@ -977,11 +1026,11 @@ impl App<'_> {
                     && y >= self.editor_area.y
                     && y < self.editor_area.y + self.editor_area.height;
 
-                if in_list || (!in_list && !in_editor && self.focus == Focus::NoteList) {
+                if in_list || (!in_editor && self.focus == Focus::NoteList) {
                     self.note_list.previous();
                     self.note_list.previous();
                     self.note_list.previous();
-                } else if in_editor || (!in_list && !in_editor && self.focus == Focus::Editor) {
+                } else if in_editor || self.focus == Focus::Editor {
                     for _ in 0..3 {
                         self.editor.handle_key(crossterm::event::KeyEvent::new(
                             KeyCode::Up,
@@ -1000,11 +1049,11 @@ impl App<'_> {
                     && y >= self.editor_area.y
                     && y < self.editor_area.y + self.editor_area.height;
 
-                if in_list || (!in_list && !in_editor && self.focus == Focus::NoteList) {
+                if in_list || (!in_editor && self.focus == Focus::NoteList) {
                     self.note_list.next();
                     self.note_list.next();
                     self.note_list.next();
-                } else if in_editor || (!in_list && !in_editor && self.focus == Focus::Editor) {
+                } else if in_editor || self.focus == Focus::Editor {
                     for _ in 0..3 {
                         self.editor.handle_key(crossterm::event::KeyEvent::new(
                             KeyCode::Down,
@@ -1021,20 +1070,18 @@ impl App<'_> {
     pub fn draw(&mut self, frame: &mut Frame) {
         let theme = crate::theme::ThemePalette::from_name(&self.config.theme);
 
-// Render dynamic status bar (no background color, uses terminal default)
+        // Render dynamic status bar (no background color, uses terminal default)
         let key_style = Style::default()
             .fg(theme.accent)
             .add_modifier(Modifier::BOLD);
         let text_style = Style::default().fg(Color::Reset);
         let sep_style = Style::default().fg(theme.border_inactive);
 
-        let mut shortcut_groups = vec![
-            vec![
-                Span::styled(" [Tab/Esc] ", key_style),
-                Span::styled("Switch Focus", text_style),
-                Span::styled(" │", sep_style),
-            ],
-        ];
+        let mut shortcut_groups = vec![vec![
+            Span::styled(" [Tab/Esc] ", key_style),
+            Span::styled("Switch Focus", text_style),
+            Span::styled(" │", sep_style),
+        ]];
 
         let mut stats_span = None;
 
@@ -1135,7 +1182,10 @@ impl App<'_> {
         }
 
         let available_width = frame.area().width as usize;
-        let stats_width = stats_span.as_ref().map(|s| s.content.chars().count()).unwrap_or(0);
+        let stats_width = stats_span
+            .as_ref()
+            .map(|s| s.content.chars().count())
+            .unwrap_or(0);
         let more_span_width = 16; // Length of " [Ctrl+E] More │"
 
         let mut primary_spans = Vec::new();
@@ -1145,8 +1195,10 @@ impl App<'_> {
 
         for group in shortcut_groups.clone() {
             let group_width: usize = group.iter().map(|s| s.content.chars().count()).sum();
-            
-            if !overflow && current_width + group_width + stats_width + more_span_width <= available_width {
+
+            if !overflow
+                && current_width + group_width + stats_width + more_span_width <= available_width
+            {
                 primary_spans.extend(group);
                 current_width += group_width;
             } else {
@@ -1166,10 +1218,12 @@ impl App<'_> {
                 final_spans.push(Span::styled(" [Ctrl+E] ", key_style));
                 final_spans.push(Span::styled("Back", text_style));
                 final_spans.push(Span::styled(" │", sep_style));
-                
+
                 let total_len: usize = final_spans.iter().map(|s| s.content.chars().count()).sum();
                 let total_with_stats = total_len + stats_width;
-                status_height = ((total_with_stats as u16 + frame.area().width - 1) / frame.area().width).max(1);
+                status_height = (total_with_stats as u16)
+                    .div_ceil(frame.area().width)
+                    .max(1);
             } else {
                 final_spans.extend(primary_spans);
                 final_spans.push(Span::styled(" [Ctrl+E] ", key_style));
@@ -1182,10 +1236,10 @@ impl App<'_> {
             }
         }
 
-        if let Some(last) = final_spans.last() {
-            if last.content == " │" {
-                final_spans.pop();
-            }
+        if let Some(last) = final_spans.last()
+            && last.content == " │"
+        {
+            final_spans.pop();
         }
 
         if stats_span.is_some() && !final_spans.is_empty() {
@@ -1201,9 +1255,9 @@ impl App<'_> {
         let main_layout = Layout::default()
             .direction(Direction::Vertical)
             .constraints([
-                Constraint::Length(1), // Header bar (App Title & Version)
-                Constraint::Length(3), // Search bar
-                Constraint::Min(1),    // Main content
+                Constraint::Length(1),             // Header bar (App Title & Version)
+                Constraint::Length(3),             // Search bar
+                Constraint::Min(1),                // Main content
                 Constraint::Length(status_height), // Status bar
             ])
             .split(frame.area());
@@ -1269,10 +1323,7 @@ impl App<'_> {
         } else {
             Layout::default()
                 .direction(direction)
-                .constraints([
-                    Constraint::Length(0),
-                    Constraint::Percentage(100),
-                ])
+                .constraints([Constraint::Length(0), Constraint::Percentage(100)])
                 .split(main_layout[2])
         };
 
@@ -1306,25 +1357,34 @@ impl App<'_> {
             &theme,
         );
 
-        let status_bar = Paragraph::new(status_text)
-            .wrap(ratatui::widgets::Wrap { trim: false });
+        let status_bar = Paragraph::new(status_text).wrap(ratatui::widgets::Wrap { trim: false });
         frame.render_widget(status_bar, main_layout[3]);
 
         // Render Delete Confirmation Overlay
         if self.show_delete_confirmation {
             let mut selected_note = self.note_list.selected_note().unwrap_or_default();
             if selected_note.chars().count() > 20 {
-                selected_note = format!("{}...", selected_note.chars().take(17).collect::<String>());
+                selected_note =
+                    format!("{}...", selected_note.chars().take(17).collect::<String>());
             }
-            
+
             let confirm_lines = vec![
                 Line::from(vec![
-                    Span::styled(" Are you sure you want to delete ", Style::default().fg(Color::White)),
-                    Span::styled(format!("'{}'", selected_note), Style::default().fg(Color::Red).add_modifier(Modifier::BOLD)),
+                    Span::styled(
+                        " Are you sure you want to delete ",
+                        Style::default().fg(Color::White),
+                    ),
+                    Span::styled(
+                        format!("'{}'", selected_note),
+                        Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
+                    ),
                     Span::styled("? ", Style::default().fg(Color::White)),
                 ]),
                 Line::from(""),
-                Line::from(Span::styled(" [Y]es / [N]o ", Style::default().fg(Color::DarkGray))),
+                Line::from(Span::styled(
+                    " [Y]es / [N]o ",
+                    Style::default().fg(Color::DarkGray),
+                )),
             ];
 
             let confirm_block = Paragraph::new(confirm_lines)
@@ -1516,7 +1576,9 @@ impl App<'_> {
                     "External Editor",
                     if self.show_settings && self.settings_selected_index == 11 {
                         format!("{}█", self.config.external_editor)
-                    } else if self.config.external_editor.is_empty() || self.config.external_editor == "auto" {
+                    } else if self.config.external_editor.is_empty()
+                        || self.config.external_editor == "auto"
+                    {
                         "Auto ($VISUAL/$EDITOR)".to_string()
                     } else {
                         self.config.external_editor.clone()
@@ -1533,9 +1595,20 @@ impl App<'_> {
                 (
                     "Settings Directory",
                     if self.show_settings && self.settings_selected_index == 13 {
-                        format!("{}█", self.config.config_dir.as_ref().map(|p| p.to_string_lossy().into_owned()).unwrap_or_default())
+                        format!(
+                            "{}█",
+                            self.config
+                                .config_dir
+                                .as_ref()
+                                .map(|p| p.to_string_lossy().into_owned())
+                                .unwrap_or_default()
+                        )
                     } else {
-                        self.config.config_dir.as_ref().map(|p| p.to_string_lossy().into_owned()).unwrap_or_else(|| "Default (~/.ferronote)".to_string())
+                        self.config
+                            .config_dir
+                            .as_ref()
+                            .map(|p| p.to_string_lossy().into_owned())
+                            .unwrap_or_else(|| "Default (~/.ferronote)".to_string())
                     },
                 ),
             ];
@@ -1546,7 +1619,8 @@ impl App<'_> {
                     Style::default()
                         .fg(Color::Yellow)
                         .add_modifier(Modifier::BOLD),
-                )).alignment(ratatui::layout::Alignment::Center),
+                ))
+                .alignment(ratatui::layout::Alignment::Center),
                 Line::from(""),
             ];
 
@@ -1583,10 +1657,13 @@ impl App<'_> {
             }
 
             lines.push(Line::from(""));
-            lines.push(Line::from(Span::styled(
-                "[Up/Down] Select   [Left/Right/Enter] Modify   [Esc/Ctrl+P] Close",
-                Style::default().fg(Color::DarkGray),
-            )).alignment(ratatui::layout::Alignment::Center));
+            lines.push(
+                Line::from(Span::styled(
+                    "[Up/Down] Select   [Left/Right/Enter] Modify   [Esc/Ctrl+P] Close",
+                    Style::default().fg(Color::DarkGray),
+                ))
+                .alignment(ratatui::layout::Alignment::Center),
+            );
 
             let settings_block = Paragraph::new(lines).block(
                 Block::default()
@@ -1882,8 +1959,6 @@ mod tests {
         assert!(!app.editor.is_editing);
     }
 
-
-
     #[test]
     fn test_app_auto_save_on_tick() {
         let (mut app, _temp_dir) = setup_test_app();
@@ -1912,7 +1987,6 @@ mod tests {
         assert!(disk_content.contains("Appended edit."));
     }
 
-
     #[test]
     fn test_app_keyboard_shortcuts() {
         let (mut app, _temp_dir) = setup_test_app();
@@ -1927,7 +2001,6 @@ mod tests {
         assert_eq!(action, Some(Action::SaveNote));
         assert_eq!(app.search_bar.query(), "");
         assert_eq!(app.focus, Focus::SearchBar);
-
 
         // Test Tab -> Cycle focus forward
         let action = app.handle_key(KeyEvent::new(KeyCode::Tab, KeyModifiers::NONE));
@@ -2033,7 +2106,11 @@ mod tests {
         }
 
         assert!(!app.show_rename_prompt);
-        assert!(app.note_store.filenames().contains(&"Renamed Note.md".to_string()));
+        assert!(
+            app.note_store
+                .filenames()
+                .contains(&"Renamed Note.md".to_string())
+        );
     }
 
     #[test]
@@ -2046,7 +2123,8 @@ mod tests {
         assert!(app.show_delete_confirmation);
 
         // Confirm delete with 'y'
-        if let Some(action) = app.handle_key(KeyEvent::new(KeyCode::Char('y'), KeyModifiers::NONE)) {
+        if let Some(action) = app.handle_key(KeyEvent::new(KeyCode::Char('y'), KeyModifiers::NONE))
+        {
             app.update(action);
         }
         assert!(!app.show_delete_confirmation);
@@ -2054,8 +2132,8 @@ mod tests {
 
     #[test]
     fn test_app_draw() {
-        use ratatui::backend::TestBackend;
         use ratatui::Terminal;
+        use ratatui::backend::TestBackend;
         let backend = TestBackend::new(100, 30);
         let mut terminal = Terminal::new(backend).unwrap();
 
@@ -2063,9 +2141,11 @@ mod tests {
         app.show_about = true;
         app.show_settings = true;
 
-        terminal.draw(|f| {
-            app.draw(f);
-        }).unwrap();
+        terminal
+            .draw(|f| {
+                app.draw(f);
+            })
+            .unwrap();
     }
 
     #[test]

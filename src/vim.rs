@@ -26,6 +26,8 @@ pub enum Pending {
     G,
     /// Operator pressed (`d`/`y`), awaiting count digits or a motion.
     Op { op: Operator, count: usize },
+    /// `r` pressed, awaiting the replacement character.
+    Replace,
     /// `Ctrl+V` pressed in Edit mode; the next key is inserted literally.
     Literal,
 }
@@ -72,6 +74,15 @@ impl ViewOutcome {
 /// Interprets a key event in View mode, mutating the textarea and vim state.
 pub fn handle_view_key(state: &mut VimState, ta: &mut TextArea, key: &KeyEvent) -> ViewOutcome {
     let mut out = ViewOutcome::none();
+
+    // `r` + any character replaces the character under the cursor.
+    if state.pending == Pending::Replace {
+        state.pending = Pending::None;
+        if let KeyCode::Char(c) = key.code {
+            out.modified = replace_char(ta, c);
+        }
+        return out;
+    }
 
     // Count digits while an operator is pending (`d3d`, `y10y`).
     if let Pending::Op { op, count } = state.pending
@@ -236,6 +247,12 @@ pub fn handle_view_key(state: &mut VimState, ta: &mut TextArea, key: &KeyEvent) 
             ta.move_cursor(CursorMove::Up);
             first_non_blank(ta);
         }
+        EditorViewAction::ReplaceChar => {
+            state.pending = Pending::Replace;
+        }
+        EditorViewAction::JoinLines => {
+            out.modified = join_lines(ta);
+        }
         EditorViewAction::MatchBrace => match_brace(ta),
         EditorViewAction::LineEnd => ta.move_cursor(CursorMove::End),
         EditorViewAction::FileTop => ta.move_cursor(CursorMove::Top),
@@ -247,6 +264,44 @@ pub fn handle_view_key(state: &mut VimState, ta: &mut TextArea, key: &KeyEvent) 
     }
 
     out
+}
+
+/// Replaces the character under the cursor without moving it (`r`).
+pub fn replace_char(ta: &mut TextArea, ch: char) -> bool {
+    let (row, col) = ta.cursor();
+    if col < ta.lines()[row].chars().count() {
+        ta.delete_next_char();
+        ta.insert_char(ch);
+        ta.move_cursor(CursorMove::Jump(row as u16, col as u16));
+        true
+    } else {
+        false
+    }
+}
+
+/// Joins the line below onto the current line with a single space (`J`).
+pub fn join_lines(ta: &mut TextArea) -> bool {
+    let (row, _) = ta.cursor();
+    if row + 1 >= ta.lines().len() {
+        return false;
+    }
+    ta.move_cursor(CursorMove::End);
+    let junction_col = ta.cursor().1;
+    ta.delete_next_char();
+    // Collapse leading whitespace of the joined segment into a single space.
+    let line: Vec<char> = ta.lines()[row].chars().collect();
+    let mut ws = 0;
+    while junction_col + ws < line.len() && line[junction_col + ws].is_whitespace() {
+        ws += 1;
+    }
+    for _ in 0..ws {
+        ta.delete_next_char();
+    }
+    if junction_col > 0 && junction_col < ta.lines()[row].chars().count() {
+        ta.insert_char(' ');
+        ta.move_cursor(CursorMove::Jump(row as u16, junction_col as u16));
+    }
+    true
 }
 
 /// Deletes `count` whole lines starting at the cursor line (`dd` / `dNd`).
@@ -613,6 +668,48 @@ mod tests {
         press(&mut state, &mut t, 'g');
         press(&mut state, &mut t, 'g');
         assert_eq!(t.cursor(), (0, 0));
+    }
+
+    #[test]
+    fn test_r_replaces_char_under_cursor() {
+        let mut state = VimState::default();
+        let mut t = ta("hallo");
+        t.move_cursor(CursorMove::Jump(0, 1));
+        press(&mut state, &mut t, 'r');
+        assert_eq!(state.pending, Pending::Replace);
+        let out = press(&mut state, &mut t, 'e');
+        assert!(out.modified);
+        assert_eq!(t.lines(), ["hello"]);
+        assert_eq!(t.cursor(), (0, 1));
+    }
+
+    #[test]
+    fn test_r_on_empty_line_does_nothing() {
+        let mut state = VimState::default();
+        let mut t = ta("");
+        press(&mut state, &mut t, 'r');
+        let out = press(&mut state, &mut t, 'x');
+        assert!(!out.modified);
+        assert_eq!(t.lines(), [""]);
+    }
+
+    #[test]
+    fn test_j_joins_lines_with_single_space() {
+        let mut state = VimState::default();
+        let mut t = ta("foo\n   bar\nbaz");
+        let out = press(&mut state, &mut t, 'J');
+        assert!(out.modified);
+        assert_eq!(t.lines(), ["foo bar", "baz"]);
+        assert_eq!(t.cursor(), (0, 3));
+    }
+
+    #[test]
+    fn test_j_on_last_line_does_nothing() {
+        let mut state = VimState::default();
+        let mut t = ta("only");
+        let out = press(&mut state, &mut t, 'J');
+        assert!(!out.modified);
+        assert_eq!(t.lines(), ["only"]);
     }
 
     #[test]

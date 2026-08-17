@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.8] - 2026-08-17
+
+### Fixed
+- Input: Replace the identical-keystroke debounce with key-press event filtering, so held keys auto-repeat at full speed and fast double letters (e.g. "ll") are no longer dropped.
+- CI: Run the lint/test workflow on `master` (it previously targeted `main` and never ran).
+
+### Changed
+- New logo and brand assets.
+- Code cleanup: resolve all clippy lints and rustfmt drift across the workspace.
+
 ## [1.2.7] - 2026-08-04
 
 ### Fixed

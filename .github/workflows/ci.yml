@@ -17,9 +17,8 @@ jobs:
       - uses: actions/checkout@v7
 
       - name: Install Rust Toolchain
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          components: rustfmt, clippy
+        # Installs the version pinned in rust-toolchain.toml (incl. components)
+        run: rustup toolchain install
 
       - name: Rust Cache
         uses: swatinem/rust-cache@v2
@@ -48,7 +47,8 @@ jobs:
       - uses: actions/checkout@v7
 
       - name: Install Rust Toolchain
-        uses: dtolnay/rust-toolchain@stable
+        # Installs the version pinned in rust-toolchain.toml (incl. components)
+        run: rustup toolchain install
 
       - name: Rust Cache
         uses: swatinem/rust-cache@v2

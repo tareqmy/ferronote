@@ -493,8 +493,9 @@ impl App<'_> {
                     KeyCode::Char(c) => return Some(Action::SettingsTypeChar(c)),
                     _ => return None,
                 }
-            } else if let Some(action) = self.shortcuts.match_settings_shortcut(&key) {
+            } else {
                 use crate::shortcuts::SettingsAction;
+                let action = self.shortcuts.match_settings_shortcut(&key)?;
                 match action {
                     SettingsAction::PrevSetting => return Some(Action::PrevSetting),
                     SettingsAction::NextSetting => return Some(Action::NextSetting),
@@ -505,8 +506,6 @@ impl App<'_> {
                     SettingsAction::OptionPrev => return Some(Action::ChangeSettingOption(false)),
                     SettingsAction::OptionNext => return Some(Action::ChangeSettingOption(true)),
                 }
-            } else {
-                return None;
             }
         }
 

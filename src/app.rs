@@ -1866,9 +1866,14 @@ mod tests {
         // Must be in View Mode by default
         assert!(!app.editor.is_editing);
 
-        // Pressing 'e' enters Edit Mode
+        // Pressing 'e' is a Vim motion (end of word) and must stay in View Mode
         app.editor
             .handle_key(KeyEvent::new(KeyCode::Char('e'), KeyModifiers::NONE));
+        assert!(!app.editor.is_editing);
+
+        // Pressing 'i' enters Edit Mode
+        app.editor
+            .handle_key(KeyEvent::new(KeyCode::Char('i'), KeyModifiers::NONE));
         assert!(app.editor.is_editing);
 
         // Pressing Esc exits Edit Mode back to View Mode

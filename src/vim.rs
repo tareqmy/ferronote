@@ -5,16 +5,17 @@
 //! forwards View-mode key events here and applies the returned [`ViewOutcome`]
 //! side effects (entering Insert mode, opening the search prompt, etc.).
 
-use crossterm::event::{KeyCode, KeyEvent};
+use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use tui_textarea::{CursorMove, TextArea};
 
 use crate::shortcuts::EditorViewAction;
 
-/// Operator awaiting a motion or doubled key (`dd`, `yy`).
+/// Operator awaiting a motion or doubled key (`dd`, `yy`, `cc`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Operator {
     Delete,
     Yank,
+    Change,
 }
 
 /// An in-line character search kind (`f`/`t`/`F`/`T`).
@@ -33,8 +34,13 @@ pub enum Pending {
     None,
     /// `g` pressed, awaiting `g` (go to top) or `e` (word end backward).
     G,
-    /// Operator pressed (`d`/`y`), awaiting count digits or a motion.
-    Op { op: Operator, count: usize },
+    /// Operator pressed (`d`/`y`/`c`), awaiting count digits, a motion, or an
+    /// `i` text-object prefix (`diw`, `ciw`, `yiw`).
+    Op {
+        op: Operator,
+        count: usize,
+        inner: bool,
+    },
     /// `r` pressed, awaiting the replacement character.
     Replace,
     /// `f`/`t`/`F`/`T` pressed, awaiting the target character.
@@ -108,7 +114,7 @@ pub fn handle_view_key(state: &mut VimState, ta: &mut TextArea, key: &KeyEvent) 
     }
 
     // Count digits while an operator is pending (`d3d`, `y10y`).
-    if let Pending::Op { op, count } = state.pending
+    if let Pending::Op { op, count, inner } = state.pending
         && let KeyCode::Char(c) = key.code
         && c.is_ascii_digit()
     {
@@ -116,6 +122,7 @@ pub fn handle_view_key(state: &mut VimState, ta: &mut TextArea, key: &KeyEvent) 
         state.pending = Pending::Op {
             op,
             count: count.saturating_mul(10).saturating_add(digit),
+            inner,
         };
         return out;
     }
@@ -139,39 +146,92 @@ pub fn handle_view_key(state: &mut VimState, ta: &mut TextArea, key: &KeyEvent) 
         state.pending = Pending::None;
     }
 
-    if key.code == KeyCode::Char('d') {
-        if let Pending::Op {
-            op: Operator::Delete,
-            count,
-        } = prev_pending
-        {
-            delete_lines(ta, if count > 0 { count } else { 1 });
-            state.pending = Pending::None;
-            out.modified = true;
-        } else {
-            state.pending = Pending::Op {
-                op: Operator::Delete,
-                count: 0,
-            };
+    // Operator keys: doubled key acts on whole lines (`dd`, `yy`, `cc`),
+    // otherwise the operator starts pending and awaits a motion.
+    let this_op = if key.modifiers.contains(KeyModifiers::CONTROL) {
+        None
+    } else {
+        match key.code {
+            KeyCode::Char('d') => Some(Operator::Delete),
+            KeyCode::Char('y') => Some(Operator::Yank),
+            KeyCode::Char('c') => Some(Operator::Change),
+            _ => None,
+        }
+    };
+    if let Some(op) = this_op {
+        match prev_pending {
+            Pending::Op {
+                op: pending_op,
+                count,
+                inner: false,
+            } if pending_op == op => {
+                let count = if count > 0 { count } else { 1 };
+                match op {
+                    Operator::Delete => {
+                        delete_lines(ta, count);
+                        out.modified = true;
+                    }
+                    Operator::Yank => yank_lines(ta, count),
+                    Operator::Change => {
+                        ta.move_cursor(CursorMove::Head);
+                        ta.delete_line_by_end();
+                        out.modified = true;
+                        out.effect = SideEffect::EnterInsert;
+                    }
+                }
+                state.pending = Pending::None;
+            }
+            _ => {
+                state.pending = Pending::Op {
+                    op,
+                    count: 0,
+                    inner: false,
+                };
+            }
         }
         return out;
     }
 
-    if key.code == KeyCode::Char('y') {
-        if let Pending::Op {
-            op: Operator::Yank,
-            count,
-        } = prev_pending
-        {
-            yank_lines(ta, if count > 0 { count } else { 1 });
-            state.pending = Pending::None;
-        } else {
-            state.pending = Pending::Op {
-                op: Operator::Yank,
-                count: 0,
-            };
+    // Operator pending: interpret text objects and motions (`dw`, `diw`, `d$`).
+    if let Pending::Op {
+        op,
+        count: _,
+        inner,
+    } = prev_pending
+    {
+        state.pending = Pending::None;
+        match key.code {
+            KeyCode::Char('i') if !inner => {
+                state.pending = Pending::Op {
+                    op,
+                    count: 0,
+                    inner: true,
+                };
+                return out;
+            }
+            KeyCode::Char('w') => {
+                out.modified = apply_word_op(ta, op, inner);
+                if op == Operator::Change {
+                    out.effect = SideEffect::EnterInsert;
+                }
+                return out;
+            }
+            KeyCode::Char('$') | KeyCode::End if !inner => {
+                match op {
+                    Operator::Delete => {
+                        out.modified = ta.delete_line_by_end();
+                    }
+                    Operator::Change => {
+                        ta.delete_line_by_end();
+                        out.modified = true;
+                        out.effect = SideEffect::EnterInsert;
+                    }
+                    Operator::Yank => yank_to_line_end(ta),
+                }
+                return out;
+            }
+            _ => {} // unknown motion cancels the operator; key handled normally
         }
-        return out;
     }
 
     state.pending = Pending::None;
@@ -314,6 +374,15 @@ pub fn handle_view_key(state: &mut VimState, ta: &mut TextArea, key: &KeyEvent) 
         EditorViewAction::JoinLines => {
             out.modified = join_lines(ta);
         }
+        EditorViewAction::DeleteToEnd => {
+            out.modified = ta.delete_line_by_end();
+        }
+        EditorViewAction::ChangeToEnd => {
+            ta.delete_line_by_end();
+            out.modified = true;
+            out.effect = SideEffect::EnterInsert;
+        }
+        EditorViewAction::YankLine => yank_lines(ta, 1),
         EditorViewAction::MatchBrace => match_brace(ta),
         EditorViewAction::LineEnd => ta.move_cursor(CursorMove::End),
         EditorViewAction::FileTop => ta.move_cursor(CursorMove::Top),
@@ -398,6 +467,106 @@ pub fn join_lines(ta: &mut TextArea) -> bool {
         ta.move_cursor(CursorMove::Jump(row as u16, junction_col as u16));
     }
     true
+}
+
+/// Bounds `[start, end)` of the whitespace-delimited word (or whitespace run)
+/// under the cursor, for the `iw` text object.
+#[must_use]
+pub fn inner_word_bounds(line: &[char], col: usize) -> Option<(usize, usize)> {
+    if col >= line.len() {
+        return None;
+    }
+    let target_ws = line[col].is_whitespace();
+    let mut start = col;
+    while start > 0 && line[start - 1].is_whitespace() == target_ws {
+        start -= 1;
+    }
+    let mut end = col + 1;
+    while end < line.len() && line[end].is_whitespace() == target_ws {
+        end += 1;
+    }
+    Some((start, end))
+}
+
+/// End column of a `w` motion span starting at `col`. For change operators the
+/// span stops at the end of the current word (like `ce`); for delete/yank it
+/// also consumes trailing whitespace (like `dw`).
+#[must_use]
+fn word_op_end(line: &[char], col: usize, change: bool) -> usize {
+    let len = line.len();
+    if col >= len {
+        return len;
+    }
+    let mut end = col;
+    if line[col].is_whitespace() {
+        while end < len && line[end].is_whitespace() {
+            end += 1;
+        }
+        return end;
+    }
+    while end < len && !line[end].is_whitespace() {
+        end += 1;
+    }
+    if change {
+        return end;
+    }
+    while end < len && line[end].is_whitespace() {
+        end += 1;
+    }
+    end
+}
+
+/// Deletes (and yanks) the span `[start, end)` on `row`.
+fn cut_span(ta: &mut TextArea, row: usize, start: usize, end: usize) -> bool {
+    if start >= end {
+        return false;
+    }
+    ta.move_cursor(CursorMove::Jump(row as u16, start as u16));
+    ta.start_selection();
+    ta.move_cursor(CursorMove::Jump(row as u16, end as u16));
+    ta.cut()
+}
+
+/// Yanks the span `[start, end)` on `row`, leaving the cursor at `start`.
+fn yank_span(ta: &mut TextArea, row: usize, start: usize, end: usize) {
+    if start >= end {
+        return;
+    }
+    ta.move_cursor(CursorMove::Jump(row as u16, start as u16));
+    ta.start_selection();
+    ta.move_cursor(CursorMove::Jump(row as u16, end as u16));
+    ta.copy();
+    ta.cancel_selection();
+    ta.move_cursor(CursorMove::Jump(row as u16, start as u16));
+}
+
+/// Yanks from the cursor to the end of the line (`y$`).
+fn yank_to_line_end(ta: &mut TextArea) {
+    let (row, col) = ta.cursor();
+    let len = ta.lines()[row].chars().count();
+    yank_span(ta, row, col, len);
+}
+
+/// Applies an operator to a word span at the cursor (`dw`, `diw`, `cw`, ...).
+/// Returns whether the buffer was modified.
+pub fn apply_word_op(ta: &mut TextArea, op: Operator, inner: bool) -> bool {
+    let (row, col) = ta.cursor();
+    let line: Vec<char> = ta.lines()[row].chars().collect();
+    let (start, end) = if inner {
+        match inner_word_bounds(&line, col) {
+            Some(bounds) => bounds,
+            None => return false,
+        }
+    } else {
+        (col, word_op_end(&line, col, op == Operator::Change))
+    };
+    match op {
+        Operator::Yank => {
+            yank_span(ta, row, start, end);
+            false
+        }
+        Operator::Delete | Operator::Change => cut_span(ta, row, start, end),
+    }
 }
 
 /// Deletes `count` whole lines starting at the cursor line (`dd` / `dNd`).
@@ -854,6 +1023,123 @@ mod tests {
         press(&mut state, &mut t, 'f');
         press(&mut state, &mut t, 'z');
         assert_eq!(t.cursor(), (0, 0));
+    }
+
+    #[test]
+    fn test_dw_deletes_word_and_trailing_space() {
+        let mut state = VimState::default();
+        let mut t = ta("one two three");
+        press(&mut state, &mut t, 'd');
+        let out = press(&mut state, &mut t, 'w');
+        assert!(out.modified);
+        assert_eq!(t.lines(), ["two three"]);
+    }
+
+    #[test]
+    fn test_diw_deletes_word_under_cursor() {
+        let mut state = VimState::default();
+        let mut t = ta("one two three");
+        t.move_cursor(CursorMove::Jump(0, 5)); // inside "two"
+        press(&mut state, &mut t, 'd');
+        press(&mut state, &mut t, 'i');
+        let out = press(&mut state, &mut t, 'w');
+        assert!(out.modified);
+        assert_eq!(t.lines(), ["one  three"]);
+    }
+
+    #[test]
+    fn test_cw_changes_to_word_end_and_enters_insert() {
+        let mut state = VimState::default();
+        let mut t = ta("one two");
+        press(&mut state, &mut t, 'c');
+        let out = press(&mut state, &mut t, 'w');
+        assert!(out.modified);
+        assert_eq!(out.effect, SideEffect::EnterInsert);
+        // cw stops at word end: the separating space survives
+        assert_eq!(t.lines(), [" two"]);
+    }
+
+    #[test]
+    fn test_cc_clears_line_and_enters_insert() {
+        let mut state = VimState::default();
+        let mut t = ta("one two\nnext");
+        t.move_cursor(CursorMove::Jump(0, 4));
+        press(&mut state, &mut t, 'c');
+        let out = press(&mut state, &mut t, 'c');
+        assert!(out.modified);
+        assert_eq!(out.effect, SideEffect::EnterInsert);
+        assert_eq!(t.lines(), ["", "next"]);
+    }
+
+    #[test]
+    fn test_d_dollar_and_shift_d_delete_to_end() {
+        let mut state = VimState::default();
+        let mut t = ta("one two three");
+        t.move_cursor(CursorMove::Jump(0, 4));
+        press(&mut state, &mut t, 'd');
+        press(&mut state, &mut t, '$');
+        assert_eq!(t.lines(), ["one "]);
+
+        let mut t2 = ta("one two three");
+        t2.move_cursor(CursorMove::Jump(0, 4));
+        let out = press(&mut state, &mut t2, 'D');
+        assert!(out.modified);
+        assert_eq!(t2.lines(), ["one "]);
+    }
+
+    #[test]
+    fn test_shift_c_changes_to_end() {
+        let mut state = VimState::default();
+        let mut t = ta("one two");
+        t.move_cursor(CursorMove::Jump(0, 4));
+        let out = press(&mut state, &mut t, 'C');
+        assert!(out.modified);
+        assert_eq!(out.effect, SideEffect::EnterInsert);
+        assert_eq!(t.lines(), ["one "]);
+    }
+
+    #[test]
+    fn test_yw_yanks_without_modifying() {
+        let mut state = VimState::default();
+        let mut t = ta("one two");
+        press(&mut state, &mut t, 'y');
+        let out = press(&mut state, &mut t, 'w');
+        assert!(!out.modified);
+        assert_eq!(t.lines(), ["one two"]);
+        assert_eq!(t.yank_text(), "one ");
+        assert_eq!(t.cursor(), (0, 0));
+    }
+
+    #[test]
+    fn test_yiw_yanks_inner_word() {
+        let mut state = VimState::default();
+        let mut t = ta("one two");
+        t.move_cursor(CursorMove::Jump(0, 5));
+        press(&mut state, &mut t, 'y');
+        press(&mut state, &mut t, 'i');
+        press(&mut state, &mut t, 'w');
+        assert_eq!(t.yank_text(), "two");
+    }
+
+    #[test]
+    fn test_shift_y_yanks_whole_line() {
+        let mut state = VimState::default();
+        let mut t = ta("alpha\nbeta");
+        press(&mut state, &mut t, 'Y');
+        press(&mut state, &mut t, 'p');
+        assert_eq!(t.lines(), ["alpha", "alpha", "beta"]);
+    }
+
+    #[test]
+    fn test_operator_cancelled_by_unknown_motion() {
+        let mut state = VimState::default();
+        let mut t = ta("one two");
+        press(&mut state, &mut t, 'd');
+        // 'l' is not an operator motion: cancels the operator, moves cursor
+        press(&mut state, &mut t, 'l');
+        assert_eq!(state.pending, Pending::None);
+        assert_eq!(t.lines(), ["one two"]);
+        assert_eq!(t.cursor(), (0, 1));
     }
 
     #[test]

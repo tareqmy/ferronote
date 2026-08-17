@@ -224,7 +224,8 @@ impl NoteList {
                 let date_len = date_str.chars().count();
                 let show_date = !date_str.is_empty() && available_width > date_len + 1;
 
-                let pin_prefix_len = if i.is_pinned { 2 } else { 0 };
+                // "📌 " renders as 3 terminal cells: 2 for the emoji + 1 space.
+                let pin_prefix_len = if i.is_pinned { 3 } else { 0 };
 
                 let max_title_len = if show_date {
                     available_width.saturating_sub(date_len + 1 + pin_prefix_len)
@@ -274,7 +275,8 @@ impl NoteList {
                         title_chars.len()
                     };
 
-                    let padding = available_width.saturating_sub(rendered_title_len + date_len);
+                    let padding = available_width
+                        .saturating_sub(pin_prefix_len + rendered_title_len + date_len);
 
                     if padding > 0 {
                         spans.push(Span::raw(" ".repeat(padding)));
@@ -482,6 +484,78 @@ mod tests {
         list.state.select(Some(2));
         list.set_items(make_mock_results(2));
         assert_eq!(list.state.selected(), Some(1));
+    }
+
+    #[test]
+    fn test_pinned_note_date_stays_inside_border() {
+        use crate::theme::ThemePalette;
+        use ratatui::Terminal;
+        use ratatui::backend::TestBackend;
+
+        let queue = crate::queue::Queue::new();
+        let mut list = NoteList::new(queue);
+        let make = |title: &str, pinned: bool| SearchResult {
+            filename: format!("{title}.md"),
+            title: title.to_string(),
+            score: 0,
+            title_match_indices: Vec::new(),
+            content_preview: None,
+            is_create_prompt: false,
+            modified_at: 1_700_000_000,
+            is_pinned: pinned,
+        };
+        list.set_items(vec![make("Pinned", true), make("Plain", false)]);
+
+        let width: u16 = 40;
+        let backend = TestBackend::new(width, 6);
+        let mut terminal = Terminal::new(backend).unwrap();
+        let theme = ThemePalette::from_name("dark");
+        terminal
+            .draw(|f| {
+                list.draw(
+                    f,
+                    Rect::new(0, 0, width, 6),
+                    true,
+                    true, // show_modified_time
+                    "modified_desc",
+                    &theme,
+                );
+            })
+            .unwrap();
+
+        let buffer = terminal.backend().buffer();
+        let date = ferronote_store::format_timestamp(1_700_000_000);
+        let row = |y: u16| -> String {
+            (1..width - 1)
+                .map(|x| buffer[(x, y)].symbol().to_string())
+                .collect()
+        };
+
+        // The full timestamp must be visible on both rows: the pin prefix
+        // must not push the date into (or past) the right border.
+        let pinned_row = row(1);
+        let plain_row = row(2);
+        assert!(
+            pinned_row.contains(&date),
+            "pinned row clips the date: {pinned_row:?}"
+        );
+        assert!(
+            plain_row.contains(&date),
+            "plain row clips the date: {plain_row:?}"
+        );
+
+        // Both rows must keep the right border glyph intact.
+        assert_eq!(buffer[(width - 1, 1)].symbol(), "│");
+        assert_eq!(buffer[(width - 1, 2)].symbol(), "│");
+
+        // And the timestamps must right-align to the same column.
+        let last_content_col = |y: u16| {
+            (1..width - 1)
+                .rev()
+                .find(|&x| !buffer[(x, y)].symbol().trim().is_empty())
+                .unwrap()
+        };
+        assert_eq!(last_content_col(1), last_content_col(2));
     }
 
     #[test]

@@ -25,17 +25,8 @@ pub struct Editor<'a> {
     pub original_content: HashMap<String, String>,
     /// Whether the editor is in active Edit mode (true) or View mode (false).
     pub is_editing: bool,
-    /// Pending 'g' keypress for 'gg' normal mode vim shortcut.
-    pub pending_g: bool,
-    /// Pending 'd' keypress for 'dd' normal mode vim shortcut.
-    pub pending_d: bool,
-    /// Pending 'y' keypress for 'yy' normal mode vim shortcut.
-    pub pending_y: bool,
-    /// Pending count for 'yNy' / 'dNd' normal mode vim shortcuts.
-    pub pending_y_count: usize,
-    pub pending_d_count: usize,
-    /// Pending 'v' keypress for 'Ctrl+v' insert literal mode.
-    pub pending_v: bool,
+    /// Vim interpreter state (pending operators, counts, prefixes).
+    pub vim: crate::vim::VimState,
     /// Active search textarea input. If Some, search mode is active.
     pub search_textarea: Option<TextArea<'a>>,
     pub current_search_query: HashMap<String, String>,
@@ -162,12 +153,7 @@ impl Editor<'_> {
             last_edit_time: None,
             original_content: HashMap::new(),
             is_editing: false,
-            pending_g: false,
-            pending_d: false,
-            pending_y: false,
-            pending_y_count: 0,
-            pending_d_count: 0,
-            pending_v: false,
+            vim: crate::vim::VimState::default(),
             search_textarea: None,
             current_search_query: HashMap::new(),
             queue,
@@ -179,12 +165,7 @@ impl Editor<'_> {
     }
 
     pub fn set_content(&mut self, title: &str, content: &str) {
-        self.pending_g = false;
-        self.pending_d = false;
-        self.pending_y = false;
-        self.pending_y_count = 0;
-        self.pending_d_count = 0;
-        self.pending_v = false;
+        self.vim.reset();
         if title.is_empty() {
             self.current_note = None;
             self.is_editing = false;
@@ -239,563 +220,36 @@ impl Editor<'_> {
             }
 
             if !self.is_editing {
-                let mut modified = false;
-
-                if self.pending_y
-                    && let KeyCode::Char(c) = key.code
-                    && c.is_ascii_digit()
-                {
-                    let digit = c.to_digit(10).unwrap_or(0) as usize;
-                    self.pending_y_count = self
-                        .pending_y_count
-                        .saturating_mul(10)
-                        .saturating_add(digit);
-                    return;
-                }
-
-                if self.pending_d
-                    && let KeyCode::Char(c) = key.code
-                    && c.is_ascii_digit()
-                {
-                    let digit = c.to_digit(10).unwrap_or(0) as usize;
-                    self.pending_d_count = self
-                        .pending_d_count
-                        .saturating_mul(10)
-                        .saturating_add(digit);
-                    return;
-                }
-
-                if key.code == KeyCode::Char('g') {
-                    self.pending_d = false;
-                    self.pending_d_count = 0;
-                    self.pending_y = false;
-                    self.pending_y_count = 0;
-                    if self.pending_g {
-                        ta.move_cursor(tui_textarea::CursorMove::Top);
-                        self.pending_g = false;
-                    } else {
-                        self.pending_g = true;
+                let outcome = crate::vim::handle_view_key(&mut self.vim, ta, &key);
+                match outcome.effect {
+                    crate::vim::SideEffect::EnterInsert => {
+                        self.is_editing = true;
                     }
-                    return;
-                }
-
-                let mut override_action = None;
-                if self.pending_g && key.code == KeyCode::Char('e') {
-                    override_action = Some(crate::shortcuts::EditorViewAction::WordEndBack);
-                }
-                self.pending_g = false;
-
-                if key.code == KeyCode::Char('d') {
-                    if self.pending_d {
-                        let count = if self.pending_d_count > 0 {
-                            self.pending_d_count
-                        } else {
-                            1
-                        };
-                        for _ in 0..count {
-                            ta.move_cursor(tui_textarea::CursorMove::Head);
-                            ta.delete_line_by_end();
-                            if ta.cursor().0 == ta.lines().len() - 1 && ta.lines().len() > 1 {
-                                ta.delete_char();
-                            } else {
-                                ta.delete_next_char();
-                            }
-                        }
-                        self.pending_d = false;
-                        self.pending_d_count = 0;
-                        modified = true;
-                    } else {
-                        self.pending_d = true;
-                        self.pending_d_count = 0;
+                    crate::vim::SideEffect::OpenSearchPrompt => {
+                        let mut sta = TextArea::default();
+                        sta.set_block(
+                            Block::default()
+                                .borders(Borders::ALL)
+                                .title("Search (Enter to search, Esc to cancel)"),
+                        );
+                        sta.set_cursor_line_style(Style::default());
+                        self.search_textarea = Some(sta);
                     }
-                } else if key.code == KeyCode::Char('y') {
-                    self.pending_d = false;
-                    self.pending_d_count = 0;
-                    if self.pending_y {
-                        let count = if self.pending_y_count > 0 {
-                            self.pending_y_count
-                        } else {
-                            1
-                        };
-                        let orig = ta.cursor();
-                        ta.move_cursor(tui_textarea::CursorMove::Head);
-                        ta.start_selection();
-                        for _ in 0..count {
-                            ta.move_cursor(tui_textarea::CursorMove::Down);
-                        }
-                        if ta.cursor().0 < orig.0 + count {
-                            ta.move_cursor(tui_textarea::CursorMove::End);
-                        }
-                        ta.copy();
-                        ta.cancel_selection();
-                        ta.move_cursor(tui_textarea::CursorMove::Jump(
-                            orig.0 as u16,
-                            orig.1 as u16,
-                        ));
-                        self.pending_y = false;
-                        self.pending_y_count = 0;
-                    } else {
-                        self.pending_y = true;
-                        self.pending_y_count = 0;
+                    crate::vim::SideEffect::ClearSearch => {
+                        let _ = ta.set_search_pattern("");
+                        self.current_search_query.remove(note);
                     }
-                } else {
-                    self.pending_d = false;
-                    self.pending_d_count = 0;
-                    self.pending_y = false;
-                    self.pending_y_count = 0;
-
-                    use crate::shortcuts::EditorViewAction;
-                    let registry = crate::shortcuts::ShortcutRegistry::new();
-                    if let Some(action) =
-                        override_action.or_else(|| registry.match_editor_view_shortcut(&key))
-                    {
-                        match action {
-                            EditorViewAction::PasteAfter => {
-                                let text = ta.yank_text();
-                                let is_line_yank = text.ends_with('\n');
-                                if is_line_yank {
-                                    let old_row = ta.cursor().0;
-                                    ta.move_cursor(tui_textarea::CursorMove::Down);
-                                    if ta.cursor().0 == old_row {
-                                        ta.move_cursor(tui_textarea::CursorMove::End);
-                                        ta.insert_newline();
-                                        ta.paste();
-                                        ta.delete_char();
-                                    } else {
-                                        ta.move_cursor(tui_textarea::CursorMove::Head);
-                                        ta.paste();
-                                    }
-                                } else {
-                                    ta.move_cursor(tui_textarea::CursorMove::Forward);
-                                    ta.paste();
-                                    ta.move_cursor(tui_textarea::CursorMove::Back);
-                                }
-                                modified = true;
-                            }
-                            EditorViewAction::PasteBefore => {
-                                let text = ta.yank_text();
-                                let is_line_yank = text.ends_with('\n');
-                                if is_line_yank {
-                                    ta.move_cursor(tui_textarea::CursorMove::Head);
-                                    ta.paste();
-                                } else {
-                                    ta.paste();
-                                }
-                                modified = true;
-                            }
-                            EditorViewAction::Undo => {
-                                ta.undo();
-                                modified = true;
-                            }
-                            EditorViewAction::Redo => {
-                                ta.redo();
-                                modified = true;
-                            }
-                            EditorViewAction::DeleteChar => {
-                                let (row, col) = ta.cursor();
-                                if col < ta.lines()[row].len() {
-                                    ta.delete_next_char();
-                                    modified = true;
-                                }
-                            }
-                            EditorViewAction::SearchPrompt => {
-                                let mut sta = TextArea::default();
-                                sta.set_block(
-                                    Block::default()
-                                        .borders(Borders::ALL)
-                                        .title("Search (Enter to search, Esc to cancel)"),
-                                );
-                                sta.set_cursor_line_style(Style::default());
-                                self.search_textarea = Some(sta);
-                                return;
-                            }
-                            EditorViewAction::SearchNext => {
-                                ta.search_forward(false);
-                            }
-                            EditorViewAction::SearchPrev => {
-                                ta.search_back(false);
-                            }
-                            EditorViewAction::EnterInsert => {
-                                self.is_editing = true;
-                            }
-                            EditorViewAction::EnterInsertAppend => {
-                                ta.move_cursor(tui_textarea::CursorMove::Forward);
-                                self.is_editing = true;
-                            }
-                            EditorViewAction::EnterInsertHead => {
-                                ta.move_cursor(tui_textarea::CursorMove::Head);
-                                self.is_editing = true;
-                            }
-                            EditorViewAction::EnterInsertEnd => {
-                                ta.move_cursor(tui_textarea::CursorMove::End);
-                                self.is_editing = true;
-                            }
-                            EditorViewAction::EnterInsertOpenBelow => {
-                                ta.move_cursor(tui_textarea::CursorMove::End);
-                                ta.insert_newline();
-                                self.is_editing = true;
-                            }
-                            EditorViewAction::EnterInsertOpenAbove => {
-                                ta.move_cursor(tui_textarea::CursorMove::Head);
-                                ta.insert_newline();
-                                ta.move_cursor(tui_textarea::CursorMove::Up);
-                                self.is_editing = true;
-                            }
-                            EditorViewAction::PageDown => {
-                                for _ in 0..10 {
-                                    ta.move_cursor(tui_textarea::CursorMove::Down);
-                                }
-                            }
-                            EditorViewAction::PageUp => {
-                                for _ in 0..10 {
-                                    ta.move_cursor(tui_textarea::CursorMove::Up);
-                                }
-                            }
-                            EditorViewAction::CursorUp => {
-                                ta.move_cursor(tui_textarea::CursorMove::Up);
-                            }
-                            EditorViewAction::CursorDown => {
-                                ta.move_cursor(tui_textarea::CursorMove::Down);
-                            }
-                            EditorViewAction::CursorLeft => {
-                                ta.move_cursor(tui_textarea::CursorMove::Back);
-                            }
-                            EditorViewAction::CursorRight => {
-                                ta.move_cursor(tui_textarea::CursorMove::Forward);
-                            }
-                            EditorViewAction::WordForward => {
-                                ta.move_cursor(tui_textarea::CursorMove::WordForward);
-                            }
-                            EditorViewAction::WordBack => {
-                                ta.move_cursor(tui_textarea::CursorMove::WordBack);
-                            }
-                            EditorViewAction::WordForwardWhitespace => {
-                                let lines = ta.lines();
-                                let (mut r, mut c) = ta.cursor();
-                                if r < lines.len() {
-                                    let mut current_line: Vec<char> = lines[r].chars().collect();
-                                    let mut in_word =
-                                        c < current_line.len() && !current_line[c].is_whitespace();
-                                    loop {
-                                        if c >= current_line.len() {
-                                            r += 1;
-                                            c = 0;
-                                            if r >= lines.len() {
-                                                r = lines.len() - 1;
-                                                c = lines[r].chars().count();
-                                                break;
-                                            }
-                                            current_line = lines[r].chars().collect();
-                                            in_word = false;
-                                        } else {
-                                            let is_ws = current_line[c].is_whitespace();
-                                            if in_word && is_ws {
-                                                in_word = false;
-                                            } else if !in_word && !is_ws {
-                                                break;
-                                            }
-                                            c += 1;
-                                        }
-                                    }
-                                    ta.move_cursor(tui_textarea::CursorMove::Jump(
-                                        r as u16, c as u16,
-                                    ));
-                                }
-                            }
-                            EditorViewAction::WordBackWhitespace => {
-                                let lines = ta.lines();
-                                let (mut r, mut c) = ta.cursor();
-                                if r < lines.len() {
-                                    if c > 0 {
-                                        c -= 1;
-                                    } else if r > 0 {
-                                        r -= 1;
-                                        c = lines[r].chars().count();
-                                        c = c.saturating_sub(1);
-                                    }
-
-                                    let mut current_line: Vec<char> = lines[r].chars().collect();
-                                    let mut in_word =
-                                        c < current_line.len() && !current_line[c].is_whitespace();
-
-                                    loop {
-                                        if c == 0
-                                            && (current_line.is_empty()
-                                                || current_line[0].is_whitespace()
-                                                || r == 0)
-                                        {
-                                            if r == 0 {
-                                                c = 0;
-                                                break;
-                                            }
-                                            r -= 1;
-                                            current_line = lines[r].chars().collect();
-                                            c = current_line.len();
-                                            c = c.saturating_sub(1);
-                                            in_word = false;
-                                        } else {
-                                            let is_ws = current_line[c].is_whitespace();
-                                            if !in_word && !is_ws {
-                                                in_word = true;
-                                            } else if in_word && is_ws {
-                                                c += 1;
-                                                break;
-                                            }
-                                            if c > 0 {
-                                                c -= 1;
-                                            } else if r == 0 {
-                                                c = 0;
-                                                break;
-                                            }
-                                        }
-                                    }
-                                    ta.move_cursor(tui_textarea::CursorMove::Jump(
-                                        r as u16, c as u16,
-                                    ));
-                                }
-                            }
-                            EditorViewAction::WordEndForward => {
-                                let lines = ta.lines();
-                                let (mut r, mut c) = ta.cursor();
-                                if r < lines.len() {
-                                    let mut current_line: Vec<char> = lines[r].chars().collect();
-                                    if c < current_line.len() {
-                                        c += 1;
-                                    }
-                                    let mut in_word =
-                                        c < current_line.len() && !current_line[c].is_whitespace();
-
-                                    loop {
-                                        if c >= current_line.len() {
-                                            if in_word {
-                                                c = c.saturating_sub(1);
-                                                break;
-                                            }
-                                            r += 1;
-                                            c = 0;
-                                            if r >= lines.len() {
-                                                r = lines.len() - 1;
-                                                c = lines[r].chars().count();
-                                                c = c.saturating_sub(1);
-                                                break;
-                                            }
-                                            current_line = lines[r].chars().collect();
-                                            in_word = false;
-                                        } else {
-                                            let is_ws = current_line[c].is_whitespace();
-                                            if !in_word && !is_ws {
-                                                in_word = true;
-                                            } else if in_word && is_ws {
-                                                c -= 1;
-                                                break;
-                                            }
-                                            c += 1;
-                                        }
-                                    }
-                                    ta.move_cursor(tui_textarea::CursorMove::Jump(
-                                        r as u16, c as u16,
-                                    ));
-                                }
-                            }
-                            EditorViewAction::WordEndBack => {
-                                let lines = ta.lines();
-                                let (mut r, mut c) = ta.cursor();
-                                if r < lines.len() {
-                                    if c > 0 {
-                                        c -= 1;
-                                    } else if r > 0 {
-                                        r -= 1;
-                                        c = lines[r].chars().count();
-                                        c = c.saturating_sub(1);
-                                    }
-
-                                    let mut current_line: Vec<char> = lines[r].chars().collect();
-                                    let mut skipping_current =
-                                        c < current_line.len() && !current_line[c].is_whitespace();
-
-                                    loop {
-                                        if c == 0 && (current_line.is_empty() || r == 0) {
-                                            if r == 0 {
-                                                c = 0;
-                                                break;
-                                            }
-                                            r -= 1;
-                                            current_line = lines[r].chars().collect();
-                                            c = current_line.len();
-                                            c = c.saturating_sub(1);
-                                        } else {
-                                            let is_ws = current_line
-                                                .get(c)
-                                                .is_none_or(|ch| ch.is_whitespace());
-                                            if skipping_current {
-                                                if is_ws {
-                                                    skipping_current = false;
-                                                }
-                                            } else {
-                                                if !is_ws {
-                                                    break;
-                                                }
-                                            }
-                                            if c > 0 {
-                                                c -= 1;
-                                            } else if r == 0 {
-                                                c = 0;
-                                                break;
-                                            } else {
-                                                r -= 1;
-                                                current_line = lines[r].chars().collect();
-                                                c = current_line.len();
-                                                c = c.saturating_sub(1);
-                                            }
-                                        }
-                                    }
-                                    ta.move_cursor(tui_textarea::CursorMove::Jump(
-                                        r as u16, c as u16,
-                                    ));
-                                }
-                            }
-                            EditorViewAction::LineHead => {
-                                ta.move_cursor(tui_textarea::CursorMove::Head);
-                            }
-                            EditorViewAction::LineFirstNonBlank => {
-                                let lines = ta.lines();
-                                let (r, _) = ta.cursor();
-                                if r < lines.len() {
-                                    let current_line = &lines[r];
-                                    let mut new_col = 0;
-                                    for (i, ch) in current_line.chars().enumerate() {
-                                        if !ch.is_whitespace() {
-                                            new_col = i;
-                                            break;
-                                        }
-                                        new_col = i; // if all whitespace, go to end of whitespace
-                                    }
-                                    ta.move_cursor(tui_textarea::CursorMove::Jump(
-                                        r as u16,
-                                        new_col as u16,
-                                    ));
-                                }
-                            }
-                            EditorViewAction::NextLineFirstNonBlank => {
-                                ta.move_cursor(tui_textarea::CursorMove::Down);
-                                let lines = ta.lines();
-                                let (r, _) = ta.cursor();
-                                if r < lines.len() {
-                                    let current_line = &lines[r];
-                                    let mut new_col = 0;
-                                    for (i, ch) in current_line.chars().enumerate() {
-                                        if !ch.is_whitespace() {
-                                            new_col = i;
-                                            break;
-                                        }
-                                        new_col = i;
-                                    }
-                                    ta.move_cursor(tui_textarea::CursorMove::Jump(
-                                        r as u16,
-                                        new_col as u16,
-                                    ));
-                                }
-                            }
-                            EditorViewAction::PrevLineFirstNonBlank => {
-                                ta.move_cursor(tui_textarea::CursorMove::Up);
-                                let lines = ta.lines();
-                                let (r, _) = ta.cursor();
-                                if r < lines.len() {
-                                    let current_line = &lines[r];
-                                    let mut new_col = 0;
-                                    for (i, ch) in current_line.chars().enumerate() {
-                                        if !ch.is_whitespace() {
-                                            new_col = i;
-                                            break;
-                                        }
-                                        new_col = i;
-                                    }
-                                    ta.move_cursor(tui_textarea::CursorMove::Jump(
-                                        r as u16,
-                                        new_col as u16,
-                                    ));
-                                }
-                            }
-                            EditorViewAction::MatchBrace => {
-                                let lines = ta.lines();
-                                let (r, c) = ta.cursor();
-                                if r < lines.len() {
-                                    let current_line: Vec<char> = lines[r].chars().collect();
-                                    if c < current_line.len() {
-                                        let ch = current_line[c];
-                                        let (open, close, dir) = match ch {
-                                            '(' => ('(', ')', 1),
-                                            '{' => ('{', '}', 1),
-                                            '[' => ('[', ']', 1),
-                                            ')' => ('(', ')', -1),
-                                            '}' => ('{', '}', -1),
-                                            ']' => ('[', ']', -1),
-                                            _ => ('\0', '\0', 0),
-                                        };
-                                        if dir != 0 {
-                                            let mut nest = 0;
-                                            let mut tr = r as isize;
-                                            let mut tc = c as isize;
-                                            let mut found = false;
-                                            'outer: while tr >= 0 && (tr as usize) < lines.len() {
-                                                let t_line: Vec<char> =
-                                                    lines[tr as usize].chars().collect();
-                                                while tc >= 0 && (tc as usize) < t_line.len() {
-                                                    let t_ch = t_line[tc as usize];
-                                                    if t_ch == open {
-                                                        nest += dir;
-                                                    } else if t_ch == close {
-                                                        nest -= dir;
-                                                    }
-                                                    if nest == 0 {
-                                                        found = true;
-                                                        break 'outer;
-                                                    }
-                                                    tc += dir;
-                                                }
-                                                tr += dir;
-                                                if tr >= 0 && (tr as usize) < lines.len() {
-                                                    let next_len =
-                                                        lines[tr as usize].chars().count();
-                                                    tc = if dir == 1 {
-                                                        0
-                                                    } else {
-                                                        (next_len as isize) - 1
-                                                    };
-                                                }
-                                            }
-                                            if found {
-                                                ta.move_cursor(tui_textarea::CursorMove::Jump(
-                                                    tr as u16, tc as u16,
-                                                ));
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                            EditorViewAction::LineEnd => {
-                                ta.move_cursor(tui_textarea::CursorMove::End);
-                            }
-                            EditorViewAction::FileBottom => {
-                                ta.move_cursor(tui_textarea::CursorMove::Bottom);
-                            }
-                            EditorViewAction::ClearSearch => {
-                                let _ = ta.set_search_pattern("");
-                                self.current_search_query.remove(note);
-                            }
-                            _ => {}
-                        }
-                    }
+                    crate::vim::SideEffect::None => {}
                 }
-
-                if modified {
+                if outcome.modified {
                     self.last_edit_time = Some(std::time::Instant::now());
                 }
                 return;
             }
 
+            let literal_pending = self.vim.pending == crate::vim::Pending::Literal;
             if key.code == KeyCode::Esc
-                || (!self.pending_v
+                || (!literal_pending
                     && key.code == KeyCode::Char('c')
                     && key.modifiers.contains(KeyModifiers::CONTROL))
             {
@@ -803,8 +257,8 @@ impl Editor<'_> {
                 return;
             }
 
-            let modified = if self.pending_v {
-                self.pending_v = false;
+            let modified = if literal_pending {
+                self.vim.pending = crate::vim::Pending::None;
                 if let KeyCode::Char(c) = key.code {
                     ta.insert_char(c);
                     true
@@ -820,7 +274,7 @@ impl Editor<'_> {
             } else if key.modifiers.contains(KeyModifiers::CONTROL)
                 && key.code == KeyCode::Char('v')
             {
-                self.pending_v = true;
+                self.vim.pending = crate::vim::Pending::Literal;
                 false
             } else if key.modifiers.contains(KeyModifiers::CONTROL)
                 && key.code == KeyCode::Char('z')

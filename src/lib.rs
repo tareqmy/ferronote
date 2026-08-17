@@ -14,3 +14,4 @@ pub mod queue;
 pub mod shortcuts;
 pub mod theme;
 pub mod tui;
+pub mod vim;

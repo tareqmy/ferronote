@@ -166,6 +166,11 @@ impl Editor<'_> {
 
     pub fn set_content(&mut self, title: &str, content: &str) {
         self.vim.reset();
+        if let Some(ref note) = self.current_note
+            && let Some(ta) = self.textareas.get_mut(note)
+        {
+            ta.cancel_selection();
+        }
         if title.is_empty() {
             self.current_note = None;
             self.is_editing = false;
@@ -355,7 +360,11 @@ impl Editor<'_> {
         let mode_str = if self.is_editing {
             " [EDIT] "
         } else {
-            " [VIEW] "
+            match self.vim.visual.map(|v| v.kind) {
+                Some(crate::vim::VisualKind::Char) => " [VISUAL] ",
+                Some(crate::vim::VisualKind::Line) => " [V-LINE] ",
+                None => " [VIEW] ",
+            }
         };
         let title = if let Some(ref note) = self.current_note {
             format!(" {}{} ", note.strip_suffix(".md").unwrap_or(note), mode_str)
@@ -388,11 +397,25 @@ impl Editor<'_> {
                 let (w_row, w_col) =
                     map_cursor_to_wrapped(ta.lines(), orig_row, orig_col, max_width);
                 let mut wrapped_ta = TextArea::new(wrapped_lines);
+                // Rebuild the visual selection in wrapped coordinates, since
+                // the wrapped textarea is constructed fresh each frame.
+                if let Some(visual) = self.vim.visual {
+                    let (a_row, a_col) = visual.anchor;
+                    let (wa_row, wa_col) =
+                        map_cursor_to_wrapped(ta.lines(), a_row, a_col, max_width);
+                    wrapped_ta.move_cursor(tui_textarea::CursorMove::Jump(wa_row, wa_col));
+                    wrapped_ta.start_selection();
+                }
                 wrapped_ta.move_cursor(tui_textarea::CursorMove::Jump(w_row, w_col));
                 wrapped_ta
             } else {
                 ta.clone()
             };
+            ta_clone.set_selection_style(
+                Style::default()
+                    .bg(theme.selection_bg)
+                    .fg(theme.selection_fg),
+            );
 
             ta_clone.set_block(block);
             if let Some(query) = self.current_search_query.get(note) {

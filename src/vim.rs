@@ -49,18 +49,38 @@ pub enum Pending {
     Literal,
 }
 
+/// Visual selection kind.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum VisualKind {
+    /// `v`: character-wise selection.
+    Char,
+    /// `V`: line-wise selection.
+    Line,
+}
+
+/// An active visual selection anchored where visual mode was entered.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Visual {
+    pub kind: VisualKind,
+    /// (row, col) where visual mode was entered.
+    pub anchor: (usize, usize),
+}
+
 /// Vim interpreter state persisted on the editor across key events.
 #[derive(Debug, Clone, Default)]
 pub struct VimState {
     pub pending: Pending,
     /// Last `f`/`t`/`F`/`T` search, repeated by `;` and reversed by `,`.
     pub last_find: Option<(CharSearch, char)>,
+    /// Active visual selection, if any.
+    pub visual: Option<Visual>,
 }
 
 impl VimState {
     /// Clears all pending multi-key state (e.g. when switching notes).
     pub fn reset(&mut self) {
         self.pending = Pending::None;
+        self.visual = None;
     }
 }
 
@@ -144,6 +164,78 @@ pub fn handle_view_key(state: &mut VimState, ta: &mut TextArea, key: &KeyEvent) 
     let prev_pending = state.pending;
     if state.pending == Pending::G {
         state.pending = Pending::None;
+    }
+
+    // Visual mode: operators act on the selection; other keys fall through
+    // as motions that extend it.
+    if let Some(visual) = state.visual {
+        let plain = !key.modifiers.contains(KeyModifiers::CONTROL);
+        match key.code {
+            KeyCode::Esc => {
+                ta.cancel_selection();
+                state.visual = None;
+                return out;
+            }
+            KeyCode::Char('v') if plain => {
+                if visual.kind == VisualKind::Char {
+                    ta.cancel_selection();
+                    state.visual = None;
+                } else {
+                    state.visual = Some(Visual {
+                        kind: VisualKind::Char,
+                        ..visual
+                    });
+                }
+                return out;
+            }
+            KeyCode::Char('V') if plain => {
+                if visual.kind == VisualKind::Line {
+                    ta.cancel_selection();
+                    state.visual = None;
+                } else {
+                    state.visual = Some(Visual {
+                        kind: VisualKind::Line,
+                        ..visual
+                    });
+                }
+                return out;
+            }
+            KeyCode::Char('d' | 'x') if plain => {
+                out.modified = visual_operate(ta, &visual, Operator::Delete);
+                state.visual = None;
+                return out;
+            }
+            KeyCode::Char('y') if plain => {
+                visual_operate(ta, &visual, Operator::Yank);
+                state.visual = None;
+                return out;
+            }
+            KeyCode::Char('c') if plain => {
+                out.modified = visual_operate(ta, &visual, Operator::Change);
+                out.effect = SideEffect::EnterInsert;
+                state.visual = None;
+                return out;
+            }
+            _ => {} // motions fall through and extend the selection
+        }
+    }
+
+    // Enter visual mode.
+    if state.visual.is_none() && !key.modifiers.contains(KeyModifiers::CONTROL) {
+        let kind = match key.code {
+            KeyCode::Char('v') => Some(VisualKind::Char),
+            KeyCode::Char('V') => Some(VisualKind::Line),
+            _ => None,
+        };
+        if let Some(kind) = kind {
+            state.pending = Pending::None;
+            state.visual = Some(Visual {
+                kind,
+                anchor: ta.cursor(),
+            });
+            ta.start_selection();
+            return out;
+        }
     }
 
     // Operator keys: doubled key acts on whole lines (`dd`, `yy`, `cc`),
@@ -408,7 +500,73 @@ pub fn handle_view_key(state: &mut VimState, ta: &mut TextArea, key: &KeyEvent) 
         EditorViewAction::Yank | EditorViewAction::Delete => {}
     }
 
+    // Entering Insert mode always leaves visual mode behind.
+    if out.effect == SideEffect::EnterInsert && state.visual.is_some() {
+        ta.cancel_selection();
+        state.visual = None;
+    }
+
     out
+}
+
+/// Applies an operator to the active visual selection. Returns whether the
+/// buffer was modified.
+fn visual_operate(ta: &mut TextArea, visual: &Visual, op: Operator) -> bool {
+    match visual.kind {
+        VisualKind::Char => {
+            let cur = ta.cursor();
+            let (start, mut end) = if cur < visual.anchor {
+                (cur, visual.anchor)
+            } else {
+                (visual.anchor, cur)
+            };
+            // Vim visual selections include the character under the cursor.
+            let end_len = ta.lines()[end.0].chars().count();
+            end.1 = (end.1 + 1).min(end_len);
+            ta.cancel_selection();
+            ta.move_cursor(CursorMove::Jump(start.0 as u16, start.1 as u16));
+            ta.start_selection();
+            ta.move_cursor(CursorMove::Jump(end.0 as u16, end.1 as u16));
+            match op {
+                Operator::Yank => {
+                    ta.copy();
+                    ta.cancel_selection();
+                    ta.move_cursor(CursorMove::Jump(start.0 as u16, start.1 as u16));
+                    false
+                }
+                Operator::Delete | Operator::Change => ta.cut(),
+            }
+        }
+        VisualKind::Line => {
+            let cur_row = ta.cursor().0;
+            let top = visual.anchor.0.min(cur_row);
+            let bottom = visual.anchor.0.max(cur_row);
+            let count = bottom - top + 1;
+            ta.cancel_selection();
+            ta.move_cursor(CursorMove::Jump(top as u16, 0));
+            match op {
+                Operator::Yank => {
+                    yank_lines(ta, count);
+                    false
+                }
+                Operator::Delete => {
+                    delete_lines(ta, count);
+                    true
+                }
+                Operator::Change => {
+                    delete_lines(ta, count);
+                    // Open a fresh empty line where the block was, unless the
+                    // buffer is already down to a single empty line.
+                    if !(ta.lines().len() == 1 && ta.lines()[0].is_empty()) {
+                        ta.move_cursor(CursorMove::Head);
+                        ta.insert_newline();
+                        ta.move_cursor(CursorMove::Up);
+                    }
+                    true
+                }
+            }
+        }
+    }
 }
 
 /// Searches for `target` in the current line and moves the cursor to (or
@@ -1173,6 +1331,111 @@ mod tests {
         handle_view_key(&mut state, &mut t, &ctrl('r'));
         assert_eq!(t.cursor().0, 20); // redo: no-op, and must not start an operator
         assert_eq!(state.pending, Pending::None);
+    }
+
+    #[test]
+    fn test_visual_char_delete_is_inclusive() {
+        let mut state = VimState::default();
+        let mut t = ta("hello world");
+        press(&mut state, &mut t, 'v');
+        assert!(state.visual.is_some());
+        // extend over "hell" (cursor ends on the 4th char)
+        for _ in 0..3 {
+            press(&mut state, &mut t, 'l');
+        }
+        let out = press(&mut state, &mut t, 'd');
+        assert!(out.modified);
+        assert_eq!(t.lines(), ["o world"]);
+        assert_eq!(state.visual, None);
+    }
+
+    #[test]
+    fn test_visual_char_backward_selection() {
+        let mut state = VimState::default();
+        let mut t = ta("hello");
+        t.move_cursor(CursorMove::Jump(0, 4));
+        press(&mut state, &mut t, 'v');
+        press(&mut state, &mut t, 'h');
+        press(&mut state, &mut t, 'h'); // cursor at col 2, anchor at 4
+        let out = press(&mut state, &mut t, 'd');
+        assert!(out.modified);
+        assert_eq!(t.lines(), ["he"]);
+    }
+
+    #[test]
+    fn test_visual_char_yank_keeps_content() {
+        let mut state = VimState::default();
+        let mut t = ta("hello");
+        press(&mut state, &mut t, 'v');
+        press(&mut state, &mut t, 'l');
+        press(&mut state, &mut t, 'y');
+        assert_eq!(t.lines(), ["hello"]);
+        assert_eq!(t.yank_text(), "he");
+        assert_eq!(t.cursor(), (0, 0));
+        assert_eq!(state.visual, None);
+    }
+
+    #[test]
+    fn test_visual_line_delete() {
+        let mut state = VimState::default();
+        let mut t = ta("one\ntwo\nthree\nfour");
+        t.move_cursor(CursorMove::Jump(1, 1));
+        press(&mut state, &mut t, 'V');
+        press(&mut state, &mut t, 'j'); // select rows 1..=2
+        let out = press(&mut state, &mut t, 'd');
+        assert!(out.modified);
+        assert_eq!(t.lines(), ["one", "four"]);
+    }
+
+    #[test]
+    fn test_visual_line_change_opens_empty_line() {
+        let mut state = VimState::default();
+        let mut t = ta("one\ntwo\nthree");
+        press(&mut state, &mut t, 'V');
+        press(&mut state, &mut t, 'j');
+        let out = press(&mut state, &mut t, 'c');
+        assert!(out.modified);
+        assert_eq!(out.effect, SideEffect::EnterInsert);
+        assert_eq!(t.lines(), ["", "three"]);
+        assert_eq!(t.cursor(), (0, 0));
+    }
+
+    #[test]
+    fn test_visual_esc_cancels() {
+        let mut state = VimState::default();
+        let mut t = ta("hello");
+        press(&mut state, &mut t, 'v');
+        press(&mut state, &mut t, 'l');
+        let out = handle_view_key(
+            &mut state,
+            &mut t,
+            &KeyEvent::new(KeyCode::Esc, KeyModifiers::NONE),
+        );
+        assert_eq!(state.visual, None);
+        assert_eq!(out.effect, SideEffect::None); // Esc consumed, not ClearSearch
+        assert_eq!(t.lines(), ["hello"]);
+    }
+
+    #[test]
+    fn test_visual_v_toggles_and_switches_kind() {
+        let mut state = VimState::default();
+        let mut t = ta("hello");
+        press(&mut state, &mut t, 'v');
+        assert_eq!(state.visual.map(|v| v.kind), Some(VisualKind::Char));
+        press(&mut state, &mut t, 'V');
+        assert_eq!(state.visual.map(|v| v.kind), Some(VisualKind::Line));
+        press(&mut state, &mut t, 'V');
+        assert_eq!(state.visual, None);
+    }
+
+    #[test]
+    fn test_visual_insert_key_exits_visual() {
+        let mut state = VimState::default();
+        let mut t = ta("hello");
+        press(&mut state, &mut t, 'v');
+        let out = press(&mut state, &mut t, 'i');
+        assert_eq!(out.effect, SideEffect::EnterInsert);
+        assert_eq!(state.visual, None);
     }
 
     #[test]

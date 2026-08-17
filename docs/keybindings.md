@@ -15,8 +15,8 @@ Ferronote is built from the ground up for keyboard efficiency.
 | `PageUp` / `PageDown` | Page jump note list / settings items | List / Overlay |
 | `Home` / `End` | Jump to start/end of note list / settings items | List / Overlay |
 | `Ctrl+S` | Force save current note | Editor |
-| `Ctrl+D` | Delete active note (prompts for y/n, moves to trash) | Global |
-| `Ctrl+R` | Rename active note | Global |
+| `Ctrl+D` | Delete active note (prompts for y/n, moves to trash) | Search / List |
+| `Ctrl+R` | Rename active note | Search / List / Insert |
 | `Ctrl+N` | Create new note | Global |
 | `Ctrl+K` | Toggle Pin / Bookmark note (or 'p' in Note List) | Global / List |
 | `Ctrl+O` | Open active note in external editor (configured in Settings, or `$VISUAL` / `$EDITOR`) | Global |
@@ -44,16 +44,26 @@ These keybindings are active only when focused on the **Editor** in **View** mod
 | `+`, `-` | Move to first non-blank of next/prev line | View mode |
 | `gg`, `G` | Move to beginning, end of file | View mode |
 | `%` | Jump to matching brace/bracket | View mode |
+| `f`, `F`, `t`, `T` | Find / till character in line (forward / backward) | View mode |
+| `;`, `,` | Repeat / reverse last character find | View mode |
 | `dd`, `dNd` | Delete current line / N lines | View mode |
 | `yy`, `yNy` | Yank (copy) current line / N lines | View mode |
+| `cc` | Change (clear) current line and enter Insert mode | View mode |
+| `dw`, `diw`, `d$`, `D` | Delete to next word / inner word / end of line | View mode |
+| `cw`, `ciw`, `C` | Change word / inner word / to end of line | View mode |
+| `yw`, `yiw`, `y$`, `Y` | Yank word / inner word / to end of line / line | View mode |
+| `r` | Replace character under cursor | View mode |
+| `J` | Join line below onto current line | View mode |
 | `p`, `P` | Paste after, before cursor | View mode |
 | `u`, `Ctrl+R` | Undo, Redo | View mode |
+| `Ctrl+D`, `Ctrl+U` | Scroll half page down / up | View mode |
+| `Ctrl+F` | Scroll full page down (also `PageDown` / `PageUp`) | View mode |
 | `/` | Search locally in file (regex supported) | View mode |
 | `n`, `N` | Next match, previous match | View mode |
 | `x` | Delete character under cursor | View mode |
 | `i`, `a`, `o` | Enter Insert mode | View mode |
-| `v`, `V` | Enter Visual mode (char / line) | View mode |
-| `Esc` | Exit back to View mode / Clear local search | Insert / View mode |
+| `v`, `V` | Enter Visual mode (char / line); `d`/`x`, `y`, `c` act on selection | View mode |
+| `Esc` | Exit back to View mode / Cancel Visual mode / Clear local search | Insert / View mode |
 
 ---
 

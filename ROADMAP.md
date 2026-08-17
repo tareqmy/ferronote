@@ -217,7 +217,7 @@
 - [ ] 🌐 **Web clipper** — Companion CLI to save URLs as notes
 - [ ] 📱 **Companion mobile app** — Read-only viewer synced via filesystem
 - [ ] 🤖 **AI integration** — Optional LLM-powered summarization, tagging, linking
-- [ ] ⚡ **Vim keybindings** — Modal editing mode for vim users
+- [x] ⚡ **Vim keybindings** — Modal editing mode for vim users (complete except screen positioning, noted below)
   - [x] **View (Normal) Mode Shortcuts:**
     - [x] `h`, `j`, `k`, `l` - Move cursor left, down, up, right
     - [x] `w`, `b` - Move forward/backward by word
@@ -244,22 +244,22 @@
     - [x] `Ctrl+t` - Indent current line
     - [x] `Ctrl+d` - De-indent current line
     - [x] `Ctrl+v` - Insert character literally
-  - [ ] **Advanced View (Normal) Mode Shortcuts:**
-    - [ ] `cw`, `ciw`, `cc`, `C` - Change word, inner word, line, to end of line
-    - [ ] `dw`, `diw`, `D` - Delete word, inner word, to end of line
-    - [ ] `yw`, `yiw`, `Y` - Yank word, inner word, to end of line
-    - [ ] `r` - Replace single character
-    - [ ] `J` - Join line below to current
+  - [x] **Advanced View (Normal) Mode Shortcuts:**
+    - [x] `cw`, `ciw`, `cc`, `C` - Change word, inner word, line, to end of line
+    - [x] `dw`, `diw`, `D` - Delete word, inner word, to end of line
+    - [x] `yw`, `yiw`, `Y` - Yank word, inner word, to end of line
+    - [x] `r` - Replace single character
+    - [x] `J` - Join line below to current
     - [x] `^` - Move to first non-blank character of line
-    - [ ] `f`, `t`, `F`, `T`, `;`, `,` - In-line character search
+    - [x] `f`, `t`, `F`, `T`, `;`, `,` - In-line character search
     - [x] `e`, `ge` - Move to end of word (forward/backward)
     - [x] `W`, `B` - Move forward/backward by whitespace-separated word
     - [x] `+`, `-` - Move to first non-blank character of next/previous line
     - [x] `%` - Jump to matching brace, bracket, or parenthesis
-    - [ ] `Ctrl+d`, `Ctrl+u`, `Ctrl+f`, `Ctrl+b` - Page scrolling
-    - [ ] `H`, `M`, `L`, `zz` - Screen positioning
-  - [ ] **Visual Mode:**
-    - [ ] `v`, `V` - Start character-wise / line-wise visual selection
+    - [x] `Ctrl+d`, `Ctrl+u`, `Ctrl+f` - Page scrolling (`Ctrl+b` stays Toggle Notes List; use `PgUp`)
+    - [ ] `H`, `M`, `L`, `zz` - Screen positioning (needs viewport tracking; the renderer rebuilds the textarea per frame under word wrap)
+  - [x] **Visual Mode:**
+    - [x] `v`, `V` - Start character-wise / line-wise visual selection
 - [ ] 📊 **Daily notes / Journal mode** — Auto-create daily notes template
 - [ ] 📋 **Paste as new note** — Paste clipboard contents directly as a new note (inspired by NV)
 - [x] ✏️ **Rename from UI** — Shortcut to easily rename the currently selected note (inspired by NV)

@@ -73,6 +73,9 @@ pub enum EditorViewAction {
     DeleteToEnd,
     ChangeToEnd,
     YankLine,
+    HalfPageUp,
+    HalfPageDown,
+    FullPageDown,
     PasteAfter,
     PasteBefore,
     Undo,
@@ -122,8 +125,18 @@ impl ShortcutRegistry {
     }
 
     /// Evaluates Control modifier key combinations.
+    ///
+    /// `in_editor_view` is true when the editor pane is focused in View mode:
+    /// there `Ctrl+D` (half page down) and `Ctrl+R` (redo) belong to the Vim
+    /// layer, so delete-note and rename are not matched. Delete/rename remain
+    /// available from the Search and Note List panes, per the original design.
     #[must_use]
-    pub fn match_control_shortcut(&self, event: &KeyEvent, is_editing: bool) -> Option<Action> {
+    pub fn match_control_shortcut(
+        &self,
+        event: &KeyEvent,
+        is_editing: bool,
+        in_editor_view: bool,
+    ) -> Option<Action> {
         if !event.modifiers.contains(KeyModifiers::CONTROL) {
             return None;
         }
@@ -133,8 +146,8 @@ impl ShortcutRegistry {
             KeyCode::Char('v') if !is_editing => Some(Action::ToggleAbout),
             KeyCode::Char('p') => Some(Action::ToggleSettings),
             KeyCode::Char('q') => Some(Action::Quit),
-            KeyCode::Char('r') => Some(Action::PromptRenameNote),
-            KeyCode::Char('d') if !is_editing => Some(Action::PromptDeleteNote),
+            KeyCode::Char('r') if !in_editor_view => Some(Action::PromptRenameNote),
+            KeyCode::Char('d') if !is_editing && !in_editor_view => Some(Action::PromptDeleteNote),
             KeyCode::Char('b') => Some(Action::ToggleNotesList),
             KeyCode::Char('e') => Some(Action::ToggleMoreShortcuts),
             KeyCode::Char('s') => Some(Action::SaveNote),
@@ -151,6 +164,9 @@ impl ShortcutRegistry {
         if event.modifiers.contains(KeyModifiers::CONTROL) {
             return match event.code {
                 KeyCode::Char('r') => Some(EditorViewAction::Redo),
+                KeyCode::Char('d') => Some(EditorViewAction::HalfPageDown),
+                KeyCode::Char('u') => Some(EditorViewAction::HalfPageUp),
+                KeyCode::Char('f') => Some(EditorViewAction::FullPageDown),
                 _ => None,
             };
         }
@@ -314,13 +330,30 @@ mod tests {
         let event_p = KeyEvent::new(KeyCode::Char('p'), KeyModifiers::CONTROL);
 
         assert_eq!(
-            registry.match_control_shortcut(&event_k, false),
+            registry.match_control_shortcut(&event_k, false, false),
             Some(Action::TogglePinNote)
         );
         assert_eq!(
-            registry.match_control_shortcut(&event_p, false),
+            registry.match_control_shortcut(&event_p, false, false),
             Some(Action::ToggleSettings)
         );
+
+        // Ctrl+D deletes a note from search/list, but belongs to the Vim
+        // layer (half page down) when the editor is focused in View mode.
+        let event_d = KeyEvent::new(KeyCode::Char('d'), KeyModifiers::CONTROL);
+        assert_eq!(
+            registry.match_control_shortcut(&event_d, false, false),
+            Some(Action::PromptDeleteNote)
+        );
+        assert_eq!(registry.match_control_shortcut(&event_d, false, true), None);
+
+        // Same for Ctrl+R: rename vs. redo.
+        let event_r = KeyEvent::new(KeyCode::Char('r'), KeyModifiers::CONTROL);
+        assert_eq!(
+            registry.match_control_shortcut(&event_r, false, false),
+            Some(Action::PromptRenameNote)
+        );
+        assert_eq!(registry.match_control_shortcut(&event_r, false, true), None);
     }
 
     #[test]

@@ -540,8 +540,12 @@ impl App<'_> {
         }
 
         let is_editing = self.focus == Focus::Editor && self.editor.is_editing;
+        let in_editor_view = self.focus == Focus::Editor && !self.editor.is_editing;
 
-        if let Some(action) = self.shortcuts.match_control_shortcut(&key, is_editing) {
+        if let Some(action) =
+            self.shortcuts
+                .match_control_shortcut(&key, is_editing, in_editor_view)
+        {
             if key.code == KeyCode::Char('n') {
                 self.search_bar.clear();
                 self.update_search();

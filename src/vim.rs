@@ -310,6 +310,21 @@ pub fn handle_view_key(state: &mut VimState, ta: &mut TextArea, key: &KeyEvent) 
                 ta.move_cursor(CursorMove::Up);
             }
         }
+        EditorViewAction::FullPageDown => {
+            for _ in 0..20 {
+                ta.move_cursor(CursorMove::Down);
+            }
+        }
+        EditorViewAction::HalfPageDown => {
+            for _ in 0..10 {
+                ta.move_cursor(CursorMove::Down);
+            }
+        }
+        EditorViewAction::HalfPageUp => {
+            for _ in 0..10 {
+                ta.move_cursor(CursorMove::Up);
+            }
+        }
         EditorViewAction::CursorUp => ta.move_cursor(CursorMove::Up),
         EditorViewAction::CursorDown => ta.move_cursor(CursorMove::Down),
         EditorViewAction::CursorLeft => ta.move_cursor(CursorMove::Back),
@@ -1140,6 +1155,24 @@ mod tests {
         assert_eq!(state.pending, Pending::None);
         assert_eq!(t.lines(), ["one two"]);
         assert_eq!(t.cursor(), (0, 1));
+    }
+
+    #[test]
+    fn test_ctrl_scrolling_keys() {
+        let content = (0..40).map(|i| format!("line {i}")).collect::<Vec<_>>();
+        let mut state = VimState::default();
+        let mut t = TextArea::new(content);
+
+        let ctrl = |c| KeyEvent::new(KeyCode::Char(c), KeyModifiers::CONTROL);
+        handle_view_key(&mut state, &mut t, &ctrl('d'));
+        assert_eq!(t.cursor().0, 10); // half page down
+        handle_view_key(&mut state, &mut t, &ctrl('f'));
+        assert_eq!(t.cursor().0, 30); // full page down
+        handle_view_key(&mut state, &mut t, &ctrl('u'));
+        assert_eq!(t.cursor().0, 20); // half page up
+        handle_view_key(&mut state, &mut t, &ctrl('r'));
+        assert_eq!(t.cursor().0, 20); // redo: no-op, and must not start an operator
+        assert_eq!(state.pending, Pending::None);
     }
 
     #[test]

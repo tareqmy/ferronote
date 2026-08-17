@@ -17,6 +17,15 @@ pub enum Operator {
     Yank,
 }
 
+/// An in-line character search kind (`f`/`t`/`F`/`T`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct CharSearch {
+    /// `f`/`t` search forward; `F`/`T` search backward.
+    pub forward: bool,
+    /// `t`/`T` stop one character short of the target.
+    pub till: bool,
+}
+
 /// Pending multi-key input.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum Pending {
@@ -28,6 +37,8 @@ pub enum Pending {
     Op { op: Operator, count: usize },
     /// `r` pressed, awaiting the replacement character.
     Replace,
+    /// `f`/`t`/`F`/`T` pressed, awaiting the target character.
+    Find(CharSearch),
     /// `Ctrl+V` pressed in Edit mode; the next key is inserted literally.
     Literal,
 }
@@ -36,6 +47,8 @@ pub enum Pending {
 #[derive(Debug, Clone, Default)]
 pub struct VimState {
     pub pending: Pending,
+    /// Last `f`/`t`/`F`/`T` search, repeated by `;` and reversed by `,`.
+    pub last_find: Option<(CharSearch, char)>,
 }
 
 impl VimState {
@@ -80,6 +93,16 @@ pub fn handle_view_key(state: &mut VimState, ta: &mut TextArea, key: &KeyEvent) 
         state.pending = Pending::None;
         if let KeyCode::Char(c) = key.code {
             out.modified = replace_char(ta, c);
+        }
+        return out;
+    }
+
+    // `f`/`t`/`F`/`T` + any character searches for it in the current line.
+    if let Pending::Find(search) = state.pending {
+        state.pending = Pending::None;
+        if let KeyCode::Char(target) = key.code {
+            char_search(ta, search, target, false);
+            state.last_find = Some((search, target));
         }
         return out;
     }
@@ -250,6 +273,44 @@ pub fn handle_view_key(state: &mut VimState, ta: &mut TextArea, key: &KeyEvent) 
         EditorViewAction::ReplaceChar => {
             state.pending = Pending::Replace;
         }
+        EditorViewAction::FindCharForward => {
+            state.pending = Pending::Find(CharSearch {
+                forward: true,
+                till: false,
+            });
+        }
+        EditorViewAction::FindCharBackward => {
+            state.pending = Pending::Find(CharSearch {
+                forward: false,
+                till: false,
+            });
+        }
+        EditorViewAction::TillCharForward => {
+            state.pending = Pending::Find(CharSearch {
+                forward: true,
+                till: true,
+            });
+        }
+        EditorViewAction::TillCharBackward => {
+            state.pending = Pending::Find(CharSearch {
+                forward: false,
+                till: true,
+            });
+        }
+        EditorViewAction::RepeatFind => {
+            if let Some((search, target)) = state.last_find {
+                char_search(ta, search, target, true);
+            }
+        }
+        EditorViewAction::RepeatFindReverse => {
+            if let Some((search, target)) = state.last_find {
+                let reversed = CharSearch {
+                    forward: !search.forward,
+                    till: search.till,
+                };
+                char_search(ta, reversed, target, true);
+            }
+        }
         EditorViewAction::JoinLines => {
             out.modified = join_lines(ta);
         }
@@ -264,6 +325,41 @@ pub fn handle_view_key(state: &mut VimState, ta: &mut TextArea, key: &KeyEvent) 
     }
 
     out
+}
+
+/// Searches for `target` in the current line and moves the cursor to (or
+/// just before, for till-searches) its position. `repeat` skips the adjacent
+/// position so `;` on a till-search can advance past the current match.
+pub fn char_search(ta: &mut TextArea, search: CharSearch, target: char, repeat: bool) -> bool {
+    let (row, col) = ta.cursor();
+    let line: Vec<char> = ta.lines()[row].chars().collect();
+    if search.forward {
+        let mut start = col + 1;
+        if search.till && repeat {
+            start += 1;
+        }
+        for (i, &ch) in line.iter().enumerate().skip(start) {
+            if ch == target {
+                let dest = if search.till { i - 1 } else { i };
+                ta.move_cursor(CursorMove::Jump(row as u16, dest as u16));
+                return true;
+            }
+        }
+        false
+    } else {
+        let mut end = col;
+        if search.till && repeat {
+            end = end.saturating_sub(1);
+        }
+        for i in (0..end).rev() {
+            if line[i] == target {
+                let dest = if search.till { i + 1 } else { i };
+                ta.move_cursor(CursorMove::Jump(row as u16, dest as u16));
+                return true;
+            }
+        }
+        false
+    }
 }
 
 /// Replaces the character under the cursor without moving it (`r`).
@@ -710,6 +806,54 @@ mod tests {
         let out = press(&mut state, &mut t, 'J');
         assert!(!out.modified);
         assert_eq!(t.lines(), ["only"]);
+    }
+
+    #[test]
+    fn test_f_moves_to_char() {
+        let mut state = VimState::default();
+        let mut t = ta("one two three");
+        press(&mut state, &mut t, 'f');
+        press(&mut state, &mut t, 't');
+        assert_eq!(t.cursor(), (0, 4));
+        // `;` repeats the search
+        press(&mut state, &mut t, ';');
+        assert_eq!(t.cursor(), (0, 8));
+        // `,` reverses it
+        press(&mut state, &mut t, ',');
+        assert_eq!(t.cursor(), (0, 4));
+    }
+
+    #[test]
+    fn test_t_stops_before_char() {
+        let mut state = VimState::default();
+        let mut t = ta("one two three");
+        press(&mut state, &mut t, 't');
+        press(&mut state, &mut t, 'w');
+        assert_eq!(t.cursor(), (0, 4)); // stops on 't', just before 'w' at 5
+        // repeat skips past the adjacent match position
+        press(&mut state, &mut t, ';');
+        assert_eq!(t.cursor(), (0, 4)); // only one 'w'; cursor stays
+    }
+
+    #[test]
+    fn test_big_f_searches_backward() {
+        let mut state = VimState::default();
+        let mut t = ta("one two three");
+        t.move_cursor(CursorMove::End);
+        press(&mut state, &mut t, 'F');
+        press(&mut state, &mut t, 'e');
+        assert_eq!(t.cursor(), (0, 12));
+        press(&mut state, &mut t, ';');
+        assert_eq!(t.cursor(), (0, 11));
+    }
+
+    #[test]
+    fn test_f_no_match_stays_put() {
+        let mut state = VimState::default();
+        let mut t = ta("abc");
+        press(&mut state, &mut t, 'f');
+        press(&mut state, &mut t, 'z');
+        assert_eq!(t.cursor(), (0, 0));
     }
 
     #[test]

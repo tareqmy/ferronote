@@ -46,9 +46,11 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y musl-tools
 
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: ${{ matrix.target }}
+        # Installs the version pinned in rust-toolchain.toml, then adds the
+        # cross-compilation target to that same toolchain.
+        run: |
+          rustup toolchain install
+          rustup target add ${{ matrix.target }}
 
       - name: Build release binary
         run: cargo build --release --target ${{ matrix.target }}
@@ -103,7 +105,7 @@ jobs:
           fi
       - name: Install Rust toolchain
         if: steps.check-token.outputs.skip == 'false'
-        uses: dtolnay/rust-toolchain@stable
+        run: rustup toolchain install
       - name: Cargo Publish
         if: steps.check-token.outputs.skip == 'false'
         run: |

@@ -1,20 +1,18 @@
 [advisories]
-vulnerability = "deny"
-unmaintained = "warn"
-unsound = "warn"
-notice = "warn"
+unmaintained = "workspace"
+yanked = "deny"
 
 [licenses]
-unlicensed = "deny"
 allow = [
     "MIT",
     "Apache-2.0",
     "BSD-3-Clause",
     "BSD-2-Clause",
     "CC0-1.0",
+    "CDLA-Permissive-2.0",
     "ISC",
-    "OpenSSL",
-    "Unicode-DFS-2016",
+    "MPL-2.0",
+    "Unicode-3.0",
     "Zlib",
 ]
 confidence-threshold = 0.8

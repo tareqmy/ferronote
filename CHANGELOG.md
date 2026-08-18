@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.9] - 2026-08-18
+
+### Added
+- Vim: full operator grammar — `dw`, `diw`, `d$`, `D`, `cw`, `ciw`, `cc`, `C`, `yw`, `yiw`, `y$`, `Y` — with counts on line operations.
+- Vim: in-line character search `f`/`t`/`F`/`T` with `;` repeat and `,` reverse.
+- Vim: `r` (replace character) and `J` (join lines).
+- Vim: Visual mode — `v` (character-wise) and `V` (line-wise) selections with `d`/`x`, `y`, `c` acting on the selection; works under word wrap.
+- Vim: `Ctrl+D`/`Ctrl+U` half-page and `Ctrl+F` full-page scrolling in View mode.
+- UI: mode-aware status bar hints when the editor is focused (View / Visual / Insert).
+
+### Changed
+- Keys: `Ctrl+D` (delete note) and `Ctrl+R` (rename) now apply from the Search bar and Note List; in the editor's View mode those keys scroll and redo, per the Vim layer.
+- UI: pinned notes are marked with an ASCII `[P]` prefix instead of the pin emoji, which has inconsistent width across terminals.
+- Internal: Vim key handling extracted into a dedicated state machine module (`src/vim.rs`).
+- CI: Rust toolchain pinned to 1.97.0 via `rust-toolchain.toml` so lint results match across CI and local builds.
+
+### Fixed
+- UI: pinned notes' modified timestamp no longer overflows the note list border.
+- Lint: `question_mark` warning from clippy 1.97 in settings shortcut matching.
+
 ## [1.2.8] - 2026-08-17
 
 ### Fixed

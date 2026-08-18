@@ -8,6 +8,10 @@ use ratatui::{
     widgets::{Block, Borders, List, ListItem, ListState},
 };
 
+/// Prefix shown before pinned note titles. ASCII, so its `len()` equals its
+/// rendered cell width in every terminal.
+const PIN_PREFIX: &str = "[P] ";
+
 /// Sidebar component rendering a filterable list of note titles with match highlights.
 #[derive(Debug, Default)]
 pub struct NoteList {
@@ -224,8 +228,7 @@ impl NoteList {
                 let date_len = date_str.chars().count();
                 let show_date = !date_str.is_empty() && available_width > date_len + 1;
 
-                // "📌 " renders as 3 terminal cells: 2 for the emoji + 1 space.
-                let pin_prefix_len = if i.is_pinned { 3 } else { 0 };
+                let pin_prefix_len = if i.is_pinned { PIN_PREFIX.len() } else { 0 };
 
                 let max_title_len = if show_date {
                     available_width.saturating_sub(date_len + 1 + pin_prefix_len)
@@ -239,7 +242,7 @@ impl NoteList {
                 let mut spans = Vec::new();
 
                 if i.is_pinned {
-                    spans.push(Span::styled("📌 ", Style::default().fg(theme.accent)));
+                    spans.push(Span::styled(PIN_PREFIX, Style::default().fg(theme.accent)));
                 }
 
                 if is_title_curtailed {

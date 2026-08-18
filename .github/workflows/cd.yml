@@ -109,9 +109,11 @@ jobs:
       - name: Cargo Publish
         if: steps.check-token.outputs.skip == 'false'
         run: |
+          # Each publish tolerates an already-published version so a re-run of
+          # a partially failed release (e.g. after moving the tag) stays green.
           cargo publish -p ferronote-search --token "${{ secrets.CARGO_REGISTRY_TOKEN }}" || echo "ferronote-search already published"
           cargo publish -p ferronote-store --token "${{ secrets.CARGO_REGISTRY_TOKEN }}" || echo "ferronote-store already published"
-          cargo publish -p ferronote --token "${{ secrets.CARGO_REGISTRY_TOKEN }}"
+          cargo publish -p ferronote --token "${{ secrets.CARGO_REGISTRY_TOKEN }}" || echo "ferronote already published"
 
   publish-homebrew:
     name: Publish to Homebrew Tap

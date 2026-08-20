@@ -530,6 +530,7 @@ fn visual_operate(ta: &mut TextArea, visual: &Visual, op: Operator) -> bool {
             match op {
                 Operator::Yank => {
                     ta.copy();
+                    crate::clipboard::copy_to_system(&ta.yank_text());
                     ta.cancel_selection();
                     ta.move_cursor(CursorMove::Jump(start.0 as u16, start.1 as u16));
                     false
@@ -709,6 +710,7 @@ fn yank_span(ta: &mut TextArea, row: usize, start: usize, end: usize) {
     ta.start_selection();
     ta.move_cursor(CursorMove::Jump(row as u16, end as u16));
     ta.copy();
+    crate::clipboard::copy_to_system(&ta.yank_text());
     ta.cancel_selection();
     ta.move_cursor(CursorMove::Jump(row as u16, start as u16));
 }
@@ -767,12 +769,17 @@ pub fn yank_lines(ta: &mut TextArea, count: usize) {
         ta.move_cursor(CursorMove::End);
     }
     ta.copy();
+    crate::clipboard::copy_to_system(&ta.yank_text());
     ta.cancel_selection();
     ta.move_cursor(CursorMove::Jump(orig.0 as u16, orig.1 as u16));
 }
 
 /// Pastes yanked text after the cursor (`p`), line-wise if the yank ends with a newline.
+/// Text copied in another application since the last yank takes priority.
 pub fn paste_after(ta: &mut TextArea) {
+    if let Some(text) = crate::clipboard::external_text() {
+        ta.set_yank_text(text);
+    }
     let text = ta.yank_text();
     let is_line_yank = text.ends_with('\n');
     if is_line_yank {
@@ -795,7 +802,11 @@ pub fn paste_after(ta: &mut TextArea) {
 }
 
 /// Pastes yanked text before the cursor (`P`), line-wise if the yank ends with a newline.
+/// Text copied in another application since the last yank takes priority.
 pub fn paste_before(ta: &mut TextArea) {
+    if let Some(text) = crate::clipboard::external_text() {
+        ta.set_yank_text(text);
+    }
     let text = ta.yank_text();
     let is_line_yank = text.ends_with('\n');
     if is_line_yank {

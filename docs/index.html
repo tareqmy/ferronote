@@ -5,6 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Ferronote — Notes at the Speed of Thought</title>
   <meta name="description" content="A blazing-fast terminal note-taking app inspired by Notational Velocity built in Rust.">
+  <link rel="icon" href="assets/logo/favicon.ico" sizes="any">
+  <link rel="icon" href="assets/logo/ferronote-icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="assets/logo/ferronote-icon-256.png">
+  <meta name="theme-color" content="#0f1419">
+  <meta property="og:title" content="Ferronote — Notes at the Speed of Thought">
+  <meta property="og:description" content="A blazing-fast terminal note-taking app inspired by Notational Velocity built in Rust.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://tareqmy.github.io/ferronote/">
+  <meta property="og:image" content="https://tareqmy.github.io/ferronote/assets/logo/ferronote-icon-512.png">
+  <meta name="twitter:card" content="summary">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
@@ -13,8 +23,9 @@
       --bg-dark: #0f1419;
       --bg-card: #151d28;
       --bg-code: #1c2533;
-      --accent: #5e81ac;
-      --accent-bright: #88c0d0;
+      --accent: #e24e1b;        /* brand rust-orange */
+      --accent-bright: #ff6b3d; /* lighter orange for hovers */
+      --cream: #f2ece4;         /* brand cream */
       --text-main: #e5e9f0;
       --text-muted: #4c566a;
       --text-sub: #d8dee9;
@@ -53,13 +64,13 @@
     }
 
     .brand {
-      font-weight: 800;
-      font-size: 1.4rem;
-      color: var(--accent-bright);
-      text-decoration: none;
       display: flex;
       align-items: center;
-      gap: 0.5rem;
+    }
+
+    .brand img {
+      height: 32px;
+      display: block;
     }
 
     .nav-links a {
@@ -86,12 +97,18 @@
       padding: 5rem 1rem 3rem 1rem;
     }
 
+    .hero-icon {
+      width: 96px;
+      height: 96px;
+      margin-bottom: 1.5rem;
+    }
+
     .hero h1 {
       font-size: 3.5rem;
       font-weight: 800;
       letter-spacing: -0.03em;
       margin-bottom: 1rem;
-      background: linear-gradient(135deg, #88c0d0 0%, #b48ead 100%);
+      background: linear-gradient(135deg, var(--cream) 30%, var(--accent) 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
@@ -244,11 +261,11 @@
 
   <header>
     <div class="nav-container">
-      <a href="#" class="brand">⚡ Ferronote</a>
+      <a href="#" class="brand"><img src="assets/logo/ferronote-logo-dark.svg" alt="Ferronote"></a>
       <div class="nav-links">
         <a href="#features">Features</a>
         <a href="#install">Install</a>
-        <a href="#keybindings">Keybindings</a>
+        <a href="https://github.com/tareqmy/ferronote/blob/master/docs/keybindings.md" target="_blank">Keybindings</a>
         <a href="https://github.com/tareqmy/ferronote" target="_blank">GitHub</a>
       </div>
     </div>
@@ -256,6 +273,7 @@
 
   <main class="container">
     <section class="hero">
+      <img class="hero-icon" src="assets/logo/ferronote-icon.svg" alt="">
       <h1>Notes at the speed of thought</h1>
       <p>A blazing-fast terminal note-taking app inspired by Notational Velocity. Modeless, keyboard-first, plain Markdown notes.</p>
       <div class="cta-buttons">

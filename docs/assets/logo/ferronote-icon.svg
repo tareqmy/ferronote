@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- ghost chevron (motion trail) -->
+  <path d="M13 19 L26 32 L13 45" fill="none" stroke="#E24E1B" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" opacity=".38"/>
+  <!-- main prompt chevron -->
+  <path d="M27 14 L45 32 L27 50" fill="none" stroke="#E24E1B" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- underscore cursor -->
+  <rect x="41" y="45" width="17" height="9" rx="2.5" fill="#F2ECE4"/>
+</svg>

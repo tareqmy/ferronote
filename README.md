@@ -13,13 +13,10 @@ Ferronote is a Rust TUI application that brings the elegance and speed of Notati
 
 ---
 
-## 📚 Documentation Index
-
-Explore detailed documentation sections:
+## 📚 Documentation
 
 - 🌐 **[Project Website](https://tareqmy.github.io/ferronote/)** — Landing page with features, install instructions, and keybindings at a glance.
-
-- 📖 **[Philosophy & Features](docs/features.md)** — Modeless design, plain text storage, tags, wiki links, and custom themes.
+- 📖 **[Philosophy & Features](docs/features.md)** — Modeless design, plain text storage, tags, wiki links, Vim editing, and custom themes.
 - 🚀 **[Installation & Quick Start](docs/installation.md)** — Install via Shell/PowerShell scripts, Homebrew, Cargo, or AUR.
 - 💻 **[CLI Commands & Options](docs/cli.md)** — Command-line flags, custom directory flags, vault import/export, and trash management.
 - ⌨️ **[Keybindings Reference](docs/keybindings.md)** — Full list of keyboard shortcuts, Vim mode controls, navigation, and panel focus.
@@ -29,71 +26,4 @@ Explore detailed documentation sections:
 
 ---
 
-## ✨ Key Features At A Glance
-
-- **Modeless** — Search and note creation combined into a single bar.
-- **Keyboard-first** — Control every aspect of the app without leaving your keyboard.
-- **External Editor Support** — Press `Ctrl+O` to seamlessly edit any note in your preferred advanced terminal editor (configure explicitly via `Ctrl+P` Settings, or use `$VISUAL` / `$EDITOR` fallback).
-- **Plain Text** — Notes stored as standard Markdown files in your directory of choice.
-- **Vim Editing Mode** — The built-in editor's View mode speaks Vim: motions, operators (`dw`, `ciw`, `yy`), character search (`f`/`t`), visual selections (`v`/`V`), and more.
-- **System Clipboard Integration** — Yanks land on the OS clipboard for pasting into other apps, and `p`/`P` paste text copied elsewhere.
-- **Tag & Backlink Support** — Categorize with `#tag` annotations and link via `[[Note Title]]`.
-- **Custom Themes & Overlays** — Tailor visual aesthetics (`Ctrl+P`) and access help on demand.
-
-👉 *Read more in the [Features Documentation](docs/features.md).*
-
----
-
-## ⚡ Quick Install
-
-```bash
-# Linux / macOS (Shell)
-curl -fsSL https://raw.githubusercontent.com/tareqmy/ferronote/master/scripts/install.sh | sh
-
-# macOS / Linux (Homebrew)
-brew install tareqmy/tap/ferronote
-```
-
-👉 *For Windows, Cargo, AUR, and uninstallation instructions, see the [Installation Guide](docs/installation.md).*
-
----
-
-## 💻 Quick CLI Reference
-
-```bash
-# Launch interactive TUI (using shortcut fn or fnt)
-fn
-
-# Launch with custom notes directory
-fn --dir ~/notes
-
-# Import backup vault (.zip) or Markdown file
-fn --import ~/backup.zip
-```
-
-👉 *For full CLI flags and usage examples, see the [CLI Documentation](docs/cli.md).*
-
----
-
-## ⌨️ Essential Keybindings
-
-| Key | Action |
-| :--- | :--- |
-| `/` or `Ctrl+L` | Focus search bar |
-| `Esc` | Clear global search bar |
-| `Tab` / `Shift+Tab` | Cycle focus (Search → Note List → Editor) |
-| `Enter` | Open selected note / Create new note / Follow wiki-link |
-| `Ctrl+K` | Toggle Pin / Bookmark on selected note (or 'p' in Note List) |
-| `Ctrl+O` | Open active note in external editor (configured in Settings, or `$VISUAL` / `$EDITOR`) |
-| `Ctrl+P` | Toggle Interactive Settings Overlay |
-| `Mouse Drag` | Drag panel divider to resize notes list and content (20%-40%) |
-| `i`, `v`, `Esc` | Editor: enter Insert mode, Visual mode, return to View mode (Vim-style) |
-| `Ctrl+Q` | Quit application |
-
-👉 *For complete shortcuts and overlay controls, view the [Keybindings Reference](docs/keybindings.md).*
-
----
-
-## 📄 License
-
-[MIT](LICENSE)
+Released under the [MIT License](LICENSE).

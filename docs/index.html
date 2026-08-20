@@ -342,10 +342,10 @@
       <div class="code-block">irm https://raw.githubusercontent.com/tareqmy/ferronote/master/install.ps1 | iex</div>
 
       <p style="margin-bottom: 0.5rem; font-weight: 600;">Uninstall (Linux / macOS)</p>
-      <div class="code-block">curl -fsSL https://raw.githubusercontent.com/tareqmy/ferronote/master/install.sh | UNINSTALL=true sh</div>
+      <div class="code-block">curl -fsSL https://raw.githubusercontent.com/tareqmy/ferronote/master/scripts/uninstall.sh | sh</div>
 
       <p style="margin-bottom: 0.5rem; font-weight: 600;">Uninstall (Windows PowerShell)</p>
-      <div class="code-block">$env:UNINSTALL='true'; irm https://raw.githubusercontent.com/tareqmy/ferronote/master/install.ps1 | iex</div>
+      <div class="code-block">irm https://raw.githubusercontent.com/tareqmy/ferronote/master/scripts/uninstall.ps1 | iex</div>
 
       <p style="margin-bottom: 0.5rem; font-weight: 600;">Via Cargo (crates.io)</p>
       <div class="code-block">cargo install ferronote</div>
@@ -355,9 +355,6 @@
 
       <p style="margin-bottom: 0.5rem; font-weight: 600;">Via Homebrew (macOS / Linux)</p>
       <div class="code-block">brew install tareqmy/tap/ferronote</div>
-
-      <p style="margin-bottom: 0.5rem; font-weight: 600;">Via Arch Linux (AUR)</p>
-      <div class="code-block">yay -S ferronote</div>
 
       <p style="margin-bottom: 0.5rem; font-weight: 600;">Via Nix Flake</p>
       <div class="code-block">nix run github:tareqmy/ferronote</div>

@@ -1,6 +1,6 @@
 # 🚀 Installation & Quick Start
 
-Ferronote can be installed via instant installation scripts, Homebrew, Cargo, or AUR.
+Ferronote can be installed via instant installation scripts, Homebrew, Cargo, or Nix.
 
 ---
 
@@ -49,9 +49,9 @@ cargo install ferronote
 cargo install --git https://github.com/tareqmy/ferronote
 ```
 
-### Arch Linux (AUR)
+### Nix Flake
 ```bash
-yay -S ferronote
+nix run github:tareqmy/ferronote
 ```
 
 ---

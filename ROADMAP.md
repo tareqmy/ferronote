@@ -188,7 +188,7 @@
 - [x] **Packaging**
   - [x] `cargo install ferronote` (publish to crates.io)
   - [x] Homebrew formula
-  - [x] AUR package
+  - [ ] AUR package (PKGBUILD exists in `packaging/aur/`, not yet published to AUR)
   - [x] Nix flake
   - [x] Pre-built binaries (GitHub Releases via `cargo-dist`)
 - [x] **CI/CD**

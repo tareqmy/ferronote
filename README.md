@@ -17,7 +17,7 @@ Ferronote is a Rust TUI application that brings the elegance and speed of Notati
 
 - 🌐 **[Project Website](https://tareqmy.github.io/ferronote/)** — Landing page with features, install instructions, and keybindings at a glance.
 - 📖 **[Philosophy & Features](docs/features.md)** — Modeless design, plain text storage, tags, wiki links, Vim editing, and custom themes.
-- 🚀 **[Installation & Quick Start](docs/installation.md)** — Install via Shell/PowerShell scripts, Homebrew, Cargo, or AUR.
+- 🚀 **[Installation & Quick Start](docs/installation.md)** — Install via Shell/PowerShell scripts, Homebrew, Cargo, or Nix.
 - 💻 **[CLI Commands & Options](docs/cli.md)** — Command-line flags, custom directory flags, vault import/export, and trash management.
 - ⌨️ **[Keybindings Reference](docs/keybindings.md)** — Full list of keyboard shortcuts, Vim mode controls, navigation, and panel focus.
 - 🏗️ **[Architecture & Structure](docs/architecture.md)** — The Elm Architecture (TEA) in Rust, dependencies, and source tree layout.

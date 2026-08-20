@@ -101,8 +101,8 @@ You don't need a separate "New Note" button!
 - gg, G: Move to beginning, end of file (View mode).
 - %: Jump to matching brace/bracket (View mode).
 - dd, dNd: Delete current line, or N lines (View mode).
-- yy, yNy: Yank (copy) current line, or N lines (View mode).
-- p, P: Paste after, before cursor (View mode).
+- yy, yNy: Yank (copy) current line, or N lines — also copied to your system clipboard (View mode).
+- p, P: Paste after, before cursor — text copied in other apps pastes too (View mode).
 - u, Ctrl+r: Undo, Redo (View mode).
 - /, n, N: Search forward (regex), next match, previous match (View mode).
 - x: Delete character under cursor (View mode).

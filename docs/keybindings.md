@@ -47,14 +47,14 @@ These keybindings are active only when focused on the **Editor** in **View** mod
 | `f`, `F`, `t`, `T` | Find / till character in line (forward / backward) | View mode |
 | `;`, `,` | Repeat / reverse last character find | View mode |
 | `dd`, `dNd` | Delete current line / N lines | View mode |
-| `yy`, `yNy` | Yank (copy) current line / N lines | View mode |
+| `yy`, `yNy` | Yank (copy) current line / N lines — also to the system clipboard | View mode |
 | `cc` | Change (clear) current line and enter Insert mode | View mode |
 | `dw`, `diw`, `d$`, `D` | Delete to next word / inner word / end of line | View mode |
 | `cw`, `ciw`, `C` | Change word / inner word / to end of line | View mode |
-| `yw`, `yiw`, `y$`, `Y` | Yank word / inner word / to end of line / line | View mode |
+| `yw`, `yiw`, `y$`, `Y` | Yank word / inner word / to end of line / line — also to the system clipboard | View mode |
 | `r` | Replace character under cursor | View mode |
 | `J` | Join line below onto current line | View mode |
-| `p`, `P` | Paste after, before cursor | View mode |
+| `p`, `P` | Paste after, before cursor — prefers text copied in other apps since the last yank | View mode |
 | `u`, `Ctrl+R` | Undo, Redo | View mode |
 | `Ctrl+D`, `Ctrl+U` | Scroll half page down / up | View mode |
 | `Ctrl+F` | Scroll full page down (also `PageDown` / `PageUp`) | View mode |

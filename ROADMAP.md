@@ -224,8 +224,8 @@
     - [x] `0`, `$` - Move to beginning/end of line
     - [x] `gg`, `G` - Move to beginning/end of file
     - [x] `dd`, `dNd` - Delete current line, or N lines
-    - [x] `yy`, `yNy` - Yank (copy) current line, or N lines
-    - [x] `p`, `P` - Paste after/before cursor
+    - [x] `yy`, `yNy` - Yank (copy) current line, or N lines (synced to the system clipboard)
+    - [x] `p`, `P` - Paste after/before cursor (picks up text copied in other apps)
     - [x] `u`, `Ctrl+r` - Undo / Redo
     - [x] `/`, `n`, `N` - Search forward, next match, previous match
     - [x] `x` - Delete character under cursor

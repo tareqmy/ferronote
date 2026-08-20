@@ -34,6 +34,7 @@ Explore detailed documentation sections:
 - **External Editor Support** — Press `Ctrl+O` to seamlessly edit any note in your preferred advanced terminal editor (configure explicitly via `Ctrl+P` Settings, or use `$VISUAL` / `$EDITOR` fallback).
 - **Plain Text** — Notes stored as standard Markdown files in your directory of choice.
 - **Vim Editing Mode** — The built-in editor's View mode speaks Vim: motions, operators (`dw`, `ciw`, `yy`), character search (`f`/`t`), visual selections (`v`/`V`), and more.
+- **System Clipboard Integration** — Yanks land on the OS clipboard for pasting into other apps, and `p`/`P` paste text copied elsewhere.
 - **Tag & Backlink Support** — Categorize with `#tag` annotations and link via `[[Note Title]]`.
 - **Custom Themes & Overlays** — Tailor visual aesthetics (`Ctrl+P`) and access help on demand.
 

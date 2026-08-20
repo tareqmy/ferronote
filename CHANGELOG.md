@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Vim: system clipboard integration — yanks (`yy`, `Y`, `yNy`, `yw`, `yiw`, `y$`, visual `y`) also copy to the OS clipboard, so yanked text can be pasted into other applications.
 - Vim: `p`/`P` paste text copied in another application since the last yank, falling back to the internal buffer otherwise — `dd` + `p` to move lines keeps working, and deletes never clobber the system clipboard.
+- CI: GitHub Pages workflow deploys the `docs/` site to https://tareqmy.github.io/ferronote/ on pushes to `master`.
 
 ## [1.2.9] - 2026-08-18
 

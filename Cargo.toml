@@ -16,6 +16,7 @@ description = "A blazing-fast terminal note-taking app inspired by Notational Ve
 license = "MIT"
 readme = "README.md"
 repository = "https://github.com/tareqmy/ferronote"
+homepage = "https://tareqmy.github.io/ferronote/"
 keywords = ["tui", "notes", "notational-velocity", "terminal", "productivity"]
 categories = ["command-line-utilities", "text-processing"]
 exclude = [

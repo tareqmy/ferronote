@@ -10,6 +10,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Site: the docs landing page now carries the Ferronote branding — logo wordmark in the nav, icon in the hero, favicon/social-preview meta, and the rust-orange/cream brand palette for accents.
 
+### Fixed
+- Nix: `nix run github:tareqmy/ferronote` now works — the flake requires `Cargo.lock`, which was gitignored and therefore invisible to flake consumers; `Cargo.lock` and `flake.lock` are now committed.
+- Docs: removed the AUR install instruction (package was never published to AUR) and corrected the site's uninstall commands to use `scripts/uninstall.sh` / `uninstall.ps1`.
+
 ## [1.2.10] - 2026-08-20
 
 ### Added

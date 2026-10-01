@@ -155,6 +155,7 @@ impl ShortcutRegistry {
             KeyCode::Char('l') => Some(Action::FocusSearchBar),
             KeyCode::Char('n') => Some(Action::SaveNote),
             KeyCode::Char('g') => Some(Action::PasteAsNewNote),
+            KeyCode::Char('x') if !is_editing => Some(Action::PromptExport),
             _ => None,
         }
     }
@@ -264,6 +265,7 @@ impl ShortcutRegistry {
             ("Esc", "Clear search bar / Close overlay"),
             ("Ctrl+N", "Start a new note"),
             ("Ctrl+G", "Paste clipboard as a new note"),
+            ("Ctrl+X", "Export note (.html) or whole vault (.zip)"),
             ("Tab", "Cycle focus forwards"),
             (
                 "Enter",

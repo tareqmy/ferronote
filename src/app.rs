@@ -13,6 +13,7 @@ use crate::{
     components::{editor::Editor, note_list::NoteList, search_bar::SearchBar},
     config::Config,
     event::{Event, EventHandler},
+    export::{self, ExportFeedback},
     focus::Focus,
     tui::Tui,
 };
@@ -35,8 +36,11 @@ pub struct App<'a> {
     pub show_settings: bool,
     pub show_delete_confirmation: bool,
     pub show_rename_prompt: bool,
+    pub show_export_prompt: bool,
     pub popup_stack: crate::components::popup_stack::PopupStack,
     pub rename_input: tui_textarea::TextArea<'a>,
+    pub export_input: tui_textarea::TextArea<'a>,
+    pub export_feedback: Option<ExportFeedback>,
     pub show_more_shortcuts: bool,
     pub show_notes_list: bool,
     pub settings_selected_index: usize,
@@ -82,8 +86,11 @@ impl App<'_> {
             show_settings: false,
             show_delete_confirmation: false,
             show_rename_prompt: false,
+            show_export_prompt: false,
             popup_stack: crate::components::popup_stack::PopupStack::new(env.queue.clone()),
             rename_input: tui_textarea::TextArea::default(),
+            export_input: tui_textarea::TextArea::default(),
+            export_feedback: None,
             show_more_shortcuts: false,
             show_notes_list: true,
             settings_selected_index: 0,
@@ -186,6 +193,12 @@ impl App<'_> {
         let filename = self.create_note_with_content(&title_from_text(&content), &content)?;
         self.reveal_note(&filename);
         Ok(Some(filename))
+    }
+
+    /// Filename of the selected note, or `None` for the "create new note" row
+    /// and an empty list.
+    fn selected_note_filename(&self) -> Option<String> {
+        self.note_list.selected_note().filter(|f| !f.is_empty())
     }
 
     /// Selects `filename` in the note list and opens it in the editor.
@@ -558,6 +571,24 @@ impl App<'_> {
                 }
                 _ => {
                     self.rename_input.input(key);
+                    return None;
+                }
+            }
+        }
+
+        if self.show_export_prompt {
+            if matches!(self.export_feedback, Some(ExportFeedback::Done(_))) {
+                return Some(Action::CancelExport);
+            }
+            match key.code {
+                KeyCode::Esc => return Some(Action::CancelExport),
+                KeyCode::Enter => {
+                    let text = self.export_input.lines().join("");
+                    return Some(Action::SubmitExport(text));
+                }
+                _ => {
+                    self.export_feedback = None;
+                    self.export_input.input(key);
                     return None;
                 }
             }
@@ -946,6 +977,35 @@ impl App<'_> {
             }
             Action::CancelRenameNote => {
                 self.show_rename_prompt = false;
+            }
+            Action::PromptExport => {
+                self.update(Action::SaveNote);
+                let target = export::default_target(
+                    &export::default_dir(),
+                    self.selected_note_filename().as_deref(),
+                );
+                let mut textarea = tui_textarea::TextArea::default();
+                textarea.insert_str(target.to_string_lossy());
+                self.export_input = textarea;
+                self.export_feedback = None;
+                self.show_export_prompt = true;
+            }
+            Action::CancelExport => {
+                self.show_export_prompt = false;
+                self.export_feedback = None;
+            }
+            Action::SubmitExport(path) => {
+                self.update(Action::SaveNote);
+                self.export_feedback = Some(
+                    match export::export(
+                        &self.note_store,
+                        self.selected_note_filename().as_deref(),
+                        &path,
+                    ) {
+                        Ok(summary) => ExportFeedback::Done(summary),
+                        Err(err) => ExportFeedback::Error(format!("{err:#}")),
+                    },
+                );
             }
             Action::SubmitRenameNote(new_title) => {
                 self.show_rename_prompt = false;
@@ -1510,6 +1570,61 @@ impl App<'_> {
 
             frame.render_widget(Clear, popup_area);
             frame.render_widget(&rename_block, popup_area);
+        }
+
+        // Render Export Prompt Overlay
+        if self.show_export_prompt {
+            let area = frame.area();
+            let width = area.width.min(72);
+            let height = 6.min(area.height);
+            let x = (area.width.saturating_sub(width)) / 2;
+            let y = (area.height.saturating_sub(height)) / 2;
+            let popup_area = ratatui::layout::Rect::new(x, y, width, height);
+
+            let block = Block::default()
+                .title(" Export (Enter to confirm, Esc to cancel) ")
+                .borders(Borders::ALL)
+                .border_style(Style::default().fg(theme.border_active));
+            let inner = block.inner(popup_area);
+            frame.render_widget(Clear, popup_area);
+            frame.render_widget(block, popup_area);
+
+            let rows = Layout::default()
+                .direction(Direction::Vertical)
+                .constraints([Constraint::Length(1), Constraint::Min(1)])
+                .split(inner);
+
+            let (message, style) = match &self.export_feedback {
+                Some(ExportFeedback::Done(summary)) => (
+                    format!("{summary}\nPress any key to close."),
+                    Style::default().fg(Color::Green),
+                ),
+                Some(ExportFeedback::Error(err)) => (err.clone(), Style::default().fg(Color::Red)),
+                None => (
+                    ".html exports the selected note; .zip exports the whole vault.".to_string(),
+                    Style::default().fg(Color::DarkGray),
+                ),
+            };
+
+            if matches!(self.export_feedback, Some(ExportFeedback::Done(_))) {
+                frame.render_widget(
+                    Paragraph::new(message)
+                        .style(style)
+                        .wrap(ratatui::widgets::Wrap { trim: false }),
+                    inner,
+                );
+            } else {
+                let mut input = self.export_input.clone();
+                input.set_style(Style::default().fg(theme.search_fg));
+                input.set_cursor_line_style(Style::default());
+                frame.render_widget(&input, rows[0]);
+                frame.render_widget(
+                    Paragraph::new(message)
+                        .style(style)
+                        .wrap(ratatui::widgets::Wrap { trim: false }),
+                    rows[1],
+                );
+            }
         }
 
         // Render Popups (Help, etc.)
@@ -2390,5 +2505,175 @@ mod tests {
         // Nothing usable falls back to a timestamped title.
         assert!(title_from_text("###").starts_with("Pasted note "));
         assert!(title_from_text("?*|").starts_with("Pasted note "));
+    }
+
+    fn select_note(app: &mut App<'_>, title: &str) -> String {
+        let filename = app
+            .paste_text_as_new_note(&format!("{title}\nbody text"))
+            .unwrap()
+            .unwrap();
+        app.focus = Focus::NoteList;
+        filename
+    }
+
+    fn type_export_path(app: &mut App<'_>, path: &std::path::Path) {
+        app.export_input = tui_textarea::TextArea::new(vec![path.to_string_lossy().to_string()]);
+    }
+
+    #[test]
+    fn test_export_prompt_opens_prefilled_for_selected_note() {
+        let (mut app, _temp_dir) = setup_test_app();
+        select_note(&mut app, "Quarterly Plan");
+
+        app.update(Action::PromptExport);
+
+        assert!(app.show_export_prompt);
+        assert_eq!(app.export_feedback, None);
+        let prefill = app.export_input.lines().join("");
+        assert!(prefill.ends_with("Quarterly Plan.html"), "{prefill}");
+    }
+
+    #[test]
+    fn test_export_prompt_defaults_to_zip_without_a_selected_note() {
+        let (mut app, _temp_dir) = setup_test_app();
+        // Search for something with no matches: only the "create" row remains.
+        app.search_bar.textarea.insert_str("zzz-no-such-note");
+        app.update_search();
+
+        app.update(Action::PromptExport);
+
+        let prefill = app.export_input.lines().join("");
+        assert!(prefill.ends_with(".zip"), "{prefill}");
+    }
+
+    #[test]
+    fn test_export_submit_writes_html_then_any_key_closes() {
+        let (mut app, _temp_dir) = setup_test_app();
+        select_note(&mut app, "Shared Note");
+        let out = tempfile::tempdir().unwrap();
+        let target = out.path().join("shared.html");
+
+        app.update(Action::PromptExport);
+        type_export_path(&mut app, &target);
+        let action = app.handle_key(KeyEvent::new(KeyCode::Enter, KeyModifiers::NONE));
+        assert_eq!(
+            action,
+            Some(Action::SubmitExport(target.to_string_lossy().to_string()))
+        );
+        app.update(action.unwrap());
+
+        assert!(target.is_file());
+        assert!(matches!(app.export_feedback, Some(ExportFeedback::Done(_))));
+        assert!(app.show_export_prompt);
+
+        // Any key dismisses the confirmation.
+        let action = app.handle_key(KeyEvent::new(KeyCode::Char('q'), KeyModifiers::NONE));
+        assert_eq!(action, Some(Action::CancelExport));
+        app.update(action.unwrap());
+        assert!(!app.show_export_prompt);
+        assert_eq!(app.export_feedback, None);
+    }
+
+    #[test]
+    fn test_export_submit_zip_exports_whole_vault() {
+        let (mut app, _temp_dir) = setup_test_app();
+        let out = tempfile::tempdir().unwrap();
+        let target = out.path().join("vault.zip");
+
+        app.update(Action::PromptExport);
+        app.update(Action::SubmitExport(target.to_string_lossy().to_string()));
+
+        assert!(target.is_file());
+        assert!(matches!(app.export_feedback, Some(ExportFeedback::Done(_))));
+    }
+
+    #[test]
+    fn test_export_error_keeps_prompt_open_until_edited() {
+        let (mut app, _temp_dir) = setup_test_app();
+        let out = tempfile::tempdir().unwrap();
+        let existing = out.path().join("taken.zip");
+        std::fs::write(&existing, "keep me").unwrap();
+
+        app.update(Action::PromptExport);
+        app.update(Action::SubmitExport(existing.to_string_lossy().to_string()));
+
+        assert!(app.show_export_prompt);
+        assert!(
+            matches!(&app.export_feedback, Some(ExportFeedback::Error(e)) if e.contains("already exists"))
+        );
+        assert_eq!(std::fs::read_to_string(&existing).unwrap(), "keep me");
+
+        // Typing clears the error and edits the path.
+        let before = app.export_input.lines().join("");
+        assert_eq!(
+            app.handle_key(KeyEvent::new(KeyCode::Char('x'), KeyModifiers::NONE)),
+            None
+        );
+        assert_eq!(app.export_feedback, None);
+        assert_ne!(app.export_input.lines().join(""), before);
+        assert!(app.show_export_prompt);
+    }
+
+    #[test]
+    fn test_export_esc_cancels_and_saves_pending_edits() {
+        let (mut app, _temp_dir) = setup_test_app();
+        let filename = select_note(&mut app, "Draft");
+        app.update(Action::SelectNote(Some(filename.clone())));
+        app.editor
+            .textareas
+            .get_mut(&filename)
+            .unwrap()
+            .insert_str("unsaved tail");
+        assert!(app.editor.has_unsaved_changes());
+
+        app.update(Action::PromptExport);
+        assert!(!app.editor.has_unsaved_changes());
+        assert!(
+            app.note_store
+                .load_note(&filename)
+                .unwrap()
+                .contains("unsaved tail")
+        );
+
+        let action = app.handle_key(KeyEvent::new(KeyCode::Esc, KeyModifiers::NONE));
+        assert_eq!(action, Some(Action::CancelExport));
+        app.update(action.unwrap());
+        assert!(!app.show_export_prompt);
+    }
+
+    #[test]
+    fn test_ctrl_x_opens_export_except_while_typing_in_editor() {
+        let (mut app, _temp_dir) = setup_test_app();
+        let ctrl_x = KeyEvent::new(KeyCode::Char('x'), KeyModifiers::CONTROL);
+
+        assert_eq!(app.handle_key(ctrl_x), Some(Action::PromptExport));
+
+        // View mode in the editor still exports.
+        app.focus = Focus::Editor;
+        app.editor.is_editing = false;
+        assert_eq!(app.handle_key(ctrl_x), Some(Action::PromptExport));
+
+        // In insert mode Ctrl+X stays with the text editor (cut).
+        app.editor.is_editing = true;
+        assert_eq!(app.handle_key(ctrl_x), None);
+    }
+
+    #[test]
+    fn test_export_prompt_draws() {
+        use ratatui::Terminal;
+        use ratatui::backend::TestBackend;
+        let mut terminal = Terminal::new(TestBackend::new(100, 30)).unwrap();
+        let (mut app, _temp_dir) = setup_test_app();
+
+        app.update(Action::PromptExport);
+        terminal.draw(|f| app.draw(f)).unwrap();
+        app.export_feedback = Some(ExportFeedback::Error("nope".to_string()));
+        terminal.draw(|f| app.draw(f)).unwrap();
+        app.export_feedback = Some(ExportFeedback::Done("Exported 1 note(s)".to_string()));
+        terminal.draw(|f| app.draw(f)).unwrap();
+
+        // And on a terminal too small to fit the popup.
+        let mut tiny = Terminal::new(TestBackend::new(20, 4)).unwrap();
+        tiny.draw(|f| app.draw(f)).unwrap();
     }
 }

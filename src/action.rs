@@ -83,4 +83,10 @@ pub enum Action {
     FocusSearchBar,
     /// Create a new note from the system clipboard contents.
     PasteAsNewNote,
+    /// Prompt for a path to export the selected note (HTML) or vault (zip) to.
+    PromptExport,
+    /// Export to the path typed into the export prompt.
+    SubmitExport(String),
+    /// Close the export prompt.
+    CancelExport,
 }

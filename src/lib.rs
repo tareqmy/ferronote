@@ -10,6 +10,7 @@ pub mod components;
 pub mod config;
 pub mod environment;
 pub mod event;
+pub mod export;
 pub mod focus;
 pub mod queue;
 pub mod shortcuts;

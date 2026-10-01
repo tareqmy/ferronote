@@ -78,6 +78,7 @@ You don't need a separate "New Note" button!
 - Esc: Clear search bar / Close overlay.
 - Ctrl+N: Start a new note.
 - Ctrl+G: Paste the system clipboard as a new note.
+- Ctrl+X: Export the selected note (.html) or the whole vault (.zip).
 - Tab: Cycle focus between Search Bar, Note List, and Editor.
 - Up / Down: Navigate notes in the list.
 - PgUp / PgDn: Scroll note list page by page.

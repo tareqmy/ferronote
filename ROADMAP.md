@@ -267,7 +267,7 @@
 - [x] 🔗 **Open URLs** — Shortcut to open URL under the cursor in the default web browser (inspired by NV)
 - [x] 📌 **Bookmarks / Pins** — Pin or bookmark frequently used notes (inspired by NV)
 - [ ] 🖨️ **Print support** — Print notes directly from the application (inspired by NV)
-- [ ] 📤 **Export from UI** — Trigger export to HTML/Zip via a UI shortcut (inspired by NV)
+- [x] 📤 **Export from UI** — Trigger export to HTML/Zip via a UI shortcut (inspired by NV)
 
 ---
 

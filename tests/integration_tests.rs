@@ -3,6 +3,15 @@ use ferronote_store::NoteStore;
 use std::fs;
 use tempfile::tempdir;
 
+/// Config rooted in `dir`, so the app never reads or writes the real `~/.ferronote`.
+fn test_config(dir: &std::path::Path) -> Config {
+    Config {
+        notes_dir: dir.to_path_buf(),
+        config_dir: Some(dir.to_path_buf()),
+        ..Config::default()
+    }
+}
+
 #[test]
 fn test_end_to_end_note_lifecycle() {
     let temp_vault = tempdir().unwrap();
@@ -26,7 +35,7 @@ fn test_end_to_end_note_lifecycle() {
         .unwrap();
 
     // 2. Initialize App
-    let mut app = App::new(store);
+    let mut app = App::new(store, test_config(temp_vault.path()));
     assert_eq!(app.focus, Focus::SearchBar);
 
     // 3. Search as-you-type and Tag Filtering
@@ -134,10 +143,7 @@ fn test_export_and_import_vault_workflow() {
 fn test_settings_overlay_and_config_persistence() {
     let vault_dir = tempdir().unwrap();
     let store = NoteStore::new(vault_dir.path().to_path_buf()).unwrap();
-    let mut app = App::new(store);
-
-    app.config.notes_dir = vault_dir.path().to_path_buf();
-    app.config.config_dir = Some(vault_dir.path().to_path_buf());
+    let mut app = App::new(store, test_config(vault_dir.path()));
 
     // Toggle settings overlay
     app.update(Action::ToggleSettings);

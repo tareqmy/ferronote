@@ -58,7 +58,7 @@ pub struct App<'a> {
 
 impl App<'_> {
     #[must_use]
-    pub fn new(note_store: NoteStore) -> Self {
+    pub fn new(note_store: NoteStore, config: Config) -> Self {
         let mut index = Index::new();
 
         for filename in note_store.filenames() {
@@ -69,7 +69,6 @@ impl App<'_> {
             }
         }
 
-        let config = Config::load(None).unwrap_or_default();
         let env = crate::environment::Environment::new();
 
         let mut app = Self {
@@ -1956,7 +1955,12 @@ mod tests {
     fn setup_test_app() -> (App<'static>, tempfile::TempDir) {
         let temp_dir = tempfile::tempdir().unwrap();
         let store = NoteStore::new(temp_dir.path().to_path_buf()).unwrap();
-        let app = App::new(store);
+        let config = Config {
+            notes_dir: temp_dir.path().to_path_buf(),
+            config_dir: Some(temp_dir.path().to_path_buf()),
+            ..Config::default()
+        };
+        let app = App::new(store, config);
         (app, temp_dir)
     }
 

@@ -142,7 +142,6 @@ impl Config {
     /// # Errors
     /// Returns an error if it fails to read or write the config file.
     pub fn load(config_dir: Option<PathBuf>) -> Result<Self> {
-        let default_config = Self::default();
         let dir = config_dir.clone().unwrap_or_else(|| {
             dirs::home_dir()
                 .unwrap_or_else(|| PathBuf::from("."))
@@ -156,6 +155,10 @@ impl Config {
             config.config_dir = config_dir;
             Ok(config)
         } else {
+            let default_config = Self {
+                config_dir,
+                ..Self::default()
+            };
             default_config.save()?;
             Ok(default_config)
         }
@@ -230,5 +233,34 @@ mod tests {
         let reloaded_config: Config = serde_json::from_str(&loaded_json).unwrap();
         assert_eq!(reloaded_config.theme, "nord");
         assert_eq!(reloaded_config.tab_size, 2);
+    }
+
+    #[test]
+    fn test_load_custom_dir_without_config_writes_there() {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let custom_dir = temp_dir.path().join("cfg");
+
+        let config = Config::load(Some(custom_dir.clone())).unwrap();
+
+        assert_eq!(config.config_dir, Some(custom_dir.clone()));
+        assert!(custom_dir.join("config.json").exists());
+
+        // A later save (e.g. from the Settings overlay) must stay in the custom dir.
+        let mut config = config;
+        config.theme = "nord".to_string();
+        config.save().unwrap();
+        let reloaded = Config::load(Some(custom_dir)).unwrap();
+        assert_eq!(reloaded.theme, "nord");
+    }
+
+    #[test]
+    fn test_load_custom_dir_with_existing_config() {
+        let temp_dir = tempfile::tempdir().unwrap();
+        std::fs::write(temp_dir.path().join("config.json"), r#"{"tab_size": 8}"#).unwrap();
+
+        let config = Config::load(Some(temp_dir.path().to_path_buf())).unwrap();
+
+        assert_eq!(config.tab_size, 8);
+        assert_eq!(config.config_dir, Some(temp_dir.path().to_path_buf()));
     }
 }

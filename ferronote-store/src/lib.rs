@@ -567,21 +567,22 @@ Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu 
         let mut body_html = String::new();
         for line in content.lines() {
             if let Some(h1) = line.strip_prefix("# ") {
-                body_html.push_str(&format!("<h1>{}</h1>\n", h1));
+                body_html.push_str(&format!("<h1>{}</h1>\n", escape_html(h1)));
             } else if let Some(h2) = line.strip_prefix("## ") {
-                body_html.push_str(&format!("<h2>{}</h2>\n", h2));
+                body_html.push_str(&format!("<h2>{}</h2>\n", escape_html(h2)));
             } else if let Some(h3) = line.strip_prefix("### ") {
-                body_html.push_str(&format!("<h3>{}</h3>\n", h3));
+                body_html.push_str(&format!("<h3>{}</h3>\n", escape_html(h3)));
             } else if line.trim().is_empty() {
                 body_html.push_str("<br/>\n");
             } else {
-                body_html.push_str(&format!("<p>{}</p>\n", line));
+                body_html.push_str(&format!("<p>{}</p>\n", escape_html(line)));
             }
         }
 
         let html_document = format!(
             "<!DOCTYPE html>\n<html>\n<head>\n<meta charset=\"utf-8\">\n<title>{}</title>\n<style>body {{ font-family: system-ui, sans-serif; line-height: 1.6; max-width: 800px; margin: 20px auto; padding: 0 20px; }}</style>\n</head>\n<body>\n{}\n</body>\n</html>",
-            title, body_html
+            escape_html(title),
+            body_html
         );
 
         let final_path = if output_path.is_dir() {
@@ -685,6 +686,23 @@ Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu 
         }
         Ok(())
     }
+}
+
+/// Escapes text for safe inclusion in HTML element content or a quoted
+/// attribute value.
+fn escape_html(text: &str) -> String {
+    let mut escaped = String::with_capacity(text.len());
+    for c in text.chars() {
+        match c {
+            '&' => escaped.push_str("&amp;"),
+            '<' => escaped.push_str("&lt;"),
+            '>' => escaped.push_str("&gt;"),
+            '"' => escaped.push_str("&quot;"),
+            '\'' => escaped.push_str("&#39;"),
+            _ => escaped.push(c),
+        }
+    }
+    escaped
 }
 
 /// Formats a Unix timestamp into a human-readable local date and time string (`YYYY-MM-DD HH:MM`).
@@ -905,6 +923,32 @@ mod tests {
         let count = store.export_vault_to_zip(&zip_target).unwrap();
         assert!(count >= 1);
         assert!(zip_target.exists());
+    }
+
+    #[test]
+    fn test_export_html_escapes_markup_in_notes_and_titles() {
+        let dir = setup_test_dir("export_escape");
+        let mut store = NoteStore::new(dir).unwrap();
+
+        let filename = store.create_note("Tom & Jerry's").unwrap();
+        store
+            .save_note(
+                &filename,
+                "# <script>alert(1)</script>\n## a & b\n### \"quoted\"\nif a < b && c > d then 'go'",
+            )
+            .unwrap();
+
+        let export_dir = setup_test_dir("export_escape_target");
+        let target = export_dir.join("escaped.html");
+        let html = std::fs::read_to_string(store.export_note_to_html(&filename, &target).unwrap())
+            .unwrap();
+
+        assert!(html.contains("<title>Tom &amp; Jerry&#39;s</title>"));
+        assert!(html.contains("<h1>&lt;script&gt;alert(1)&lt;/script&gt;</h1>"));
+        assert!(html.contains("<h2>a &amp; b</h2>"));
+        assert!(html.contains("<h3>&quot;quoted&quot;</h3>"));
+        assert!(html.contains("<p>if a &lt; b &amp;&amp; c &gt; d then &#39;go&#39;</p>"));
+        assert!(!html.contains("<script>"));
     }
 
     #[test]

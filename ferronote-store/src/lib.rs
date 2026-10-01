@@ -77,6 +77,7 @@ You don't need a separate "New Note" button!
 - / or Ctrl+L: Focus search bar.
 - Esc: Clear search bar / Close overlay.
 - Ctrl+N: Start a new note.
+- Ctrl+G: Paste the system clipboard as a new note.
 - Tab: Cycle focus between Search Bar, Note List, and Editor.
 - Up / Down: Navigate notes in the list.
 - PgUp / PgDn: Scroll note list page by page.
@@ -420,6 +421,13 @@ Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu 
     /// # Errors
     /// Returns an error if the file already exists or cannot be written.
     pub fn create_note(&mut self, title: &str) -> Result<String> {
+        self.create_note_with_content(title, &format!("# {title}\n\n"))
+    }
+
+    /// Creates a note named after `title` whose body is exactly `content`.
+    /// # Errors
+    /// Returns an error if the file already exists or cannot be written.
+    pub fn create_note_with_content(&mut self, title: &str, content: &str) -> Result<String> {
         let safe_title = title.replace(['/', '\\'], "-");
         let filename = format!("{safe_title}.md");
         let path = self.notes_dir.join(&filename);
@@ -428,7 +436,6 @@ Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu 
             color_eyre::eyre::bail!("Note already exists");
         }
 
-        let content = format!("# {title}\n\n");
         std::fs::write(&path, content)?;
 
         let now = Utc::now();
@@ -735,6 +742,23 @@ mod tests {
 
         let content = store.load_note(&filename).unwrap();
         assert_eq!(content, "# Test Note\n\n");
+    }
+
+    #[test]
+    fn test_create_note_with_content_is_verbatim() {
+        let dir = setup_test_dir("create_with_content");
+        let mut store = NoteStore::new(dir).unwrap();
+
+        let filename = store
+            .create_note_with_content("Pasted", "line one\nline two")
+            .unwrap();
+        assert_eq!(filename, "Pasted.md");
+        assert_eq!(store.load_note(&filename).unwrap(), "line one\nline two");
+        assert!(store.filenames().contains(&filename));
+
+        // Refuses to overwrite an existing note.
+        assert!(store.create_note_with_content("Pasted", "other").is_err());
+        assert_eq!(store.load_note(&filename).unwrap(), "line one\nline two");
     }
 
     #[test]

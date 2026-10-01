@@ -55,9 +55,16 @@ mod imp {
         s.last_synced = Some(text.clone());
         Some(text)
     }
+
+    /// Returns the current system clipboard text, or `None` when the
+    /// clipboard is unavailable or does not hold text. Unlike
+    /// [`external_text`], this does not consult or update the sync state.
+    pub fn read_text() -> Option<String> {
+        state().lock().ok()?.clipboard.as_mut()?.get_text().ok()
+    }
 }
 
-pub use imp::{copy_to_system, external_text};
+pub use imp::{copy_to_system, external_text, read_text};
 
 // Unit tests exercise yank and paste commands heavily; don't clobber or read
 // the developer's real clipboard while they run.
@@ -66,6 +73,10 @@ mod imp {
     pub fn copy_to_system(_text: &str) {}
 
     pub fn external_text() -> Option<String> {
+        None
+    }
+
+    pub fn read_text() -> Option<String> {
         None
     }
 }

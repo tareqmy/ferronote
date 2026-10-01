@@ -18,6 +18,7 @@ Ferronote is built from the ground up for keyboard efficiency.
 | `Ctrl+D` | Delete active note (prompts for y/n, moves to trash) | Search / List |
 | `Ctrl+R` | Rename active note | Search / List / Insert |
 | `Ctrl+N` | Create new note | Global |
+| `Ctrl+G` | Paste the system clipboard as a new note (titled from its first line) | Global |
 | `Ctrl+K` | Toggle Pin / Bookmark note (or 'p' in Note List) | Global / List |
 | `Ctrl+O` | Open active note in external editor (configured in Settings, or `$VISUAL` / `$EDITOR`) | Global |
 | `Ctrl+Z` / `Ctrl+Y` | Undo / Redo text edits | Editor |

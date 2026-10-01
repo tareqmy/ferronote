@@ -81,4 +81,6 @@ pub enum Action {
     TogglePinNote,
     /// Move focus to search bar.
     FocusSearchBar,
+    /// Create a new note from the system clipboard contents.
+    PasteAsNewNote,
 }

@@ -261,7 +261,7 @@
   - [x] **Visual Mode:**
     - [x] `v`, `V` - Start character-wise / line-wise visual selection
 - [ ] 📊 **Daily notes / Journal mode** — Auto-create daily notes template
-- [ ] 📋 **Paste as new note** — Paste clipboard contents directly as a new note (inspired by NV)
+- [x] 📋 **Paste as new note** — Paste clipboard contents directly as a new note (inspired by NV)
 - [x] ✏️ **Rename from UI** — Shortcut to easily rename the currently selected note (inspired by NV)
 - [x] 🔍 **In-note search** — Find next/previous occurrence of text within the editor (inspired by NV)
 - [x] 🔗 **Open URLs** — Shortcut to open URL under the cursor in the default web browser (inspired by NV)

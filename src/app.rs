@@ -139,27 +139,67 @@ impl App<'_> {
     }
 
     pub fn create_note(&mut self, title: &str) -> Result<String> {
-        let filename = match self.note_store.create_note(title) {
+        self.create_note_with_content(title, &format!("# {title}\n\n"))
+    }
+
+    /// Creates a note named after `title` (made unique if taken) holding
+    /// `content`, and loads it into the editor.
+    fn create_note_with_content(&mut self, title: &str, content: &str) -> Result<String> {
+        let filename = match self.note_store.create_note_with_content(title, content) {
             Ok(f) => f,
-            Err(_) => {
+            Err(err) => {
                 let safe_title = title.replace(['/', '\\'], "-");
-                let mut count = 1;
-                loop {
-                    let candidate = format!("{safe_title} {count}");
-                    if let Ok(f) = self.note_store.create_note(&candidate) {
-                        break f;
-                    }
-                    count += 1;
-                }
+                (1..10_000)
+                    .find_map(|count| {
+                        let candidate = format!("{safe_title} {count}");
+                        self.note_store
+                            .create_note_with_content(&candidate, content)
+                            .ok()
+                    })
+                    .ok_or(err)?
             }
         };
-        let content = format!("# {title}\n\n");
         let modified_at = self.note_store.get_modified_at(&filename).unwrap_or(0);
         self.index
-            .add_note(filename.clone(), content.clone(), modified_at);
-        self.editor.set_content(&filename, &content);
+            .add_note(filename.clone(), content.to_string(), modified_at);
+        self.editor.set_content(&filename, content);
         self.update_search();
         Ok(filename)
+    }
+
+    /// Creates a note from pasted `text`, titled after its first line, and
+    /// opens it in the editor. Returns `None` when `text` is blank.
+    pub fn paste_text_as_new_note(&mut self, text: &str) -> Result<Option<String>> {
+        if text.trim().is_empty() {
+            return Ok(None);
+        }
+        // Match the editor's own line model (no CRLF, no final newline) so
+        // the note on disk equals what the editor would save back.
+        let content = text
+            .replace("\r\n", "\n")
+            .replace('\r', "\n")
+            .lines()
+            .collect::<Vec<_>>()
+            .join("\n");
+        self.update(Action::SaveNote);
+        self.search_bar.clear();
+        let filename = self.create_note_with_content(&title_from_text(&content), &content)?;
+        self.reveal_note(&filename);
+        Ok(Some(filename))
+    }
+
+    /// Selects `filename` in the note list and opens it in the editor.
+    fn reveal_note(&mut self, filename: &str) {
+        if let Some(idx) = self
+            .note_list
+            .items
+            .iter()
+            .position(|r| r.filename == filename)
+        {
+            self.note_list.state.select(Some(idx));
+        }
+        self.focus = Focus::Editor;
+        self.update(Action::SelectNote(Some(filename.to_string())));
     }
 
     pub fn save_note(&mut self, filename: &str, content: &str) -> Result<()> {
@@ -814,6 +854,11 @@ impl App<'_> {
             Action::FocusSearchBar => {
                 self.focus = Focus::SearchBar;
             }
+            Action::PasteAsNewNote => {
+                if let Some(text) = crate::clipboard::read_text() {
+                    let _ = self.paste_text_as_new_note(&text);
+                }
+            }
             Action::SelectNote(maybe_filename) => {
                 self.update(Action::SaveNote);
                 if let Some(filename) = maybe_filename {
@@ -836,17 +881,7 @@ impl App<'_> {
                         if !query.is_empty()
                             && let Ok(filename) = self.create_note(&query)
                         {
-                            // Select it explicitly in the list
-                            if let Some(idx) = self
-                                .note_list
-                                .items
-                                .iter()
-                                .position(|r| r.filename == filename)
-                            {
-                                self.note_list.state.select(Some(idx));
-                            }
-                            self.focus = Focus::Editor;
-                            self.update(Action::SelectNote(Some(filename)));
+                            self.reveal_note(&filename);
                         }
                     } else {
                         // Jump to existing note
@@ -1765,6 +1800,39 @@ impl App<'_> {
     }
 }
 
+/// Longest title derived from pasted text, in characters.
+const MAX_PASTED_TITLE_CHARS: usize = 60;
+
+/// Derives a note title from the first non-blank line of `text`: markdown
+/// heading markers are dropped, characters that are invalid in file names on
+/// common platforms are replaced or removed, and the result is truncated.
+/// Falls back to a timestamped title when nothing usable remains.
+fn title_from_text(text: &str) -> String {
+    let first_line = text.lines().find(|l| !l.trim().is_empty()).unwrap_or("");
+    let title: String = first_line
+        .trim_start_matches(|c: char| c == '#' || c.is_whitespace())
+        .chars()
+        .filter(|c| !c.is_control() && !matches!(c, '*' | '?' | '"' | '<' | '>' | '|'))
+        .map(|c| {
+            if matches!(c, '/' | '\\' | ':') {
+                '-'
+            } else {
+                c
+            }
+        })
+        .take(MAX_PASTED_TITLE_CHARS)
+        .collect();
+    let title = title.trim().trim_end_matches('.').trim_end();
+    if title.is_empty() {
+        format!(
+            "Pasted note {}",
+            chrono::Local::now().format("%Y-%m-%d %H-%M-%S")
+        )
+    } else {
+        title.to_string()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -2210,5 +2278,117 @@ mod tests {
         // Toggle pin off
         app.update(Action::TogglePinNote);
         assert!(!app.note_store.is_pinned(&filename));
+    }
+
+    #[test]
+    fn test_paste_text_as_new_note_creates_verbatim_note() {
+        let (mut app, _temp_dir) = setup_test_app();
+        app.search_bar.textarea.insert_str("stale query");
+
+        let text = "Buy milk\r\nand eggs\r\n";
+        let filename = app.paste_text_as_new_note(text).unwrap().unwrap();
+
+        assert_eq!(filename, "Buy milk.md");
+        assert_eq!(
+            app.note_store.load_note(&filename).unwrap(),
+            "Buy milk\nand eggs"
+        );
+        assert!(!app.editor.has_unsaved_changes());
+        assert_eq!(app.editor.current_note, Some(filename.clone()));
+        assert_eq!(app.focus, Focus::Editor);
+        assert_eq!(app.search_bar.query(), "");
+        assert_eq!(app.note_list.selected_note(), Some(filename));
+    }
+
+    #[test]
+    fn test_paste_text_as_new_note_ignores_blank_text() {
+        let (mut app, _temp_dir) = setup_test_app();
+        let before = app.note_store.filenames().len();
+
+        assert_eq!(app.paste_text_as_new_note("").unwrap(), None);
+        assert_eq!(app.paste_text_as_new_note(" \n\t\r\n").unwrap(), None);
+        assert_eq!(app.note_store.filenames().len(), before);
+    }
+
+    #[test]
+    fn test_paste_text_as_new_note_dedupes_title() {
+        let (mut app, _temp_dir) = setup_test_app();
+
+        let first = app.paste_text_as_new_note("Idea\nfirst").unwrap().unwrap();
+        let second = app.paste_text_as_new_note("Idea\nsecond").unwrap().unwrap();
+
+        assert_eq!(first, "Idea.md");
+        assert_eq!(second, "Idea 1.md");
+        assert_eq!(app.note_store.load_note(&first).unwrap(), "Idea\nfirst");
+        assert_eq!(app.note_store.load_note(&second).unwrap(), "Idea\nsecond");
+    }
+
+    #[test]
+    fn test_paste_text_as_new_note_saves_pending_edits_first() {
+        let (mut app, _temp_dir) = setup_test_app();
+        let existing = app.create_note("Existing").unwrap();
+        app.update(Action::SelectNote(Some(existing.clone())));
+        app.editor
+            .textareas
+            .get_mut(&existing)
+            .unwrap()
+            .insert_str("edited");
+        assert!(app.editor.has_unsaved_changes());
+
+        app.paste_text_as_new_note("Other").unwrap();
+
+        assert!(
+            app.note_store
+                .load_note(&existing)
+                .unwrap()
+                .contains("edited")
+        );
+    }
+
+    #[test]
+    fn test_ctrl_g_triggers_paste_as_new_note() {
+        let (mut app, _temp_dir) = setup_test_app();
+        let action = app.handle_key(KeyEvent::new(KeyCode::Char('g'), KeyModifiers::CONTROL));
+        assert_eq!(action, Some(Action::PasteAsNewNote));
+
+        // Reachable while typing in the editor, too.
+        app.focus = Focus::Editor;
+        app.editor.is_editing = true;
+        let action = app.handle_key(KeyEvent::new(KeyCode::Char('g'), KeyModifiers::CONTROL));
+        assert_eq!(action, Some(Action::PasteAsNewNote));
+    }
+
+    #[test]
+    fn test_title_from_text() {
+        assert_eq!(title_from_text("Hello world\nsecond"), "Hello world");
+        assert_eq!(
+            title_from_text("\n\n  \nfirst real line"),
+            "first real line"
+        );
+        assert_eq!(title_from_text("## Heading"), "Heading");
+        assert_eq!(title_from_text("TODO: buy milk"), "TODO- buy milk");
+        assert_eq!(title_from_text("a/b\\c"), "a-b-c");
+        assert_eq!(
+            title_from_text("What? \"Really\" <now> *yes* |"),
+            "What Really now yes"
+        );
+        assert_eq!(title_from_text("Trailing dots..."), "Trailing dots");
+
+        let long = "x".repeat(200);
+        assert_eq!(
+            title_from_text(&long).chars().count(),
+            MAX_PASTED_TITLE_CHARS
+        );
+
+        // Multibyte characters are truncated on char boundaries.
+        let emoji = "é".repeat(200);
+        assert_eq!(
+            title_from_text(&emoji).chars().count(),
+            MAX_PASTED_TITLE_CHARS
+        );
+
+        // Nothing usable falls back to a timestamped title.
+        assert!(title_from_text("###").starts_with("Pasted note "));
+        assert!(title_from_text("?*|").starts_with("Pasted note "));
     }
 }

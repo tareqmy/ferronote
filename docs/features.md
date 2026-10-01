@@ -42,7 +42,7 @@ Drag the panel divider boundary with your mouse to dynamically resize the notes 
 Deleted notes (`Ctrl+D` from the Search bar or Note List) are moved to a soft-delete trash directory, ensuring accidental deletions can be restored easily via CLI (`--restore`).
 
 ### 📦 Vault Import & Export
-- **Export**: Export single notes to `.html` or full vaults to `.zip` archives, from the CLI (`--export`) or in the app with `Ctrl+X`.
+- **Export**: Export single notes to `.html` or full vaults to `.zip` archives, from the CLI (`--export`, with `--note` to pick the note) or in the app with `Ctrl+X`.
 - **Import**: Import `.md`, `.txt`, entire directories, or `.zip` archives into your vault seamlessly.
 
 ---

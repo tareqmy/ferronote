@@ -1,4 +1,4 @@
-use ferronote::{app::App, config::Config, event::EventHandler, tui::Tui};
+use ferronote::{app::App, config::Config, event::EventHandler, export, tui::Tui};
 use ferronote_store::NoteStore;
 
 use clap::Parser;
@@ -28,9 +28,13 @@ struct Args {
     #[arg(long)]
     restore: Option<String>,
 
-    /// Export notes to zip archive or HTML file
+    /// Export the vault to a .zip archive, or a note (see --note) to an HTML file
     #[arg(short, long)]
     export: Option<PathBuf>,
+
+    /// Note to export as HTML with --export: a title or filename
+    #[arg(short, long, requires = "export", value_name = "NAME")]
+    note: Option<String>,
 }
 
 #[tokio::main]
@@ -50,25 +54,10 @@ async fn main() -> Result<()> {
     let mut note_store = NoteStore::new(config.notes_dir.clone())?;
 
     if let Some(export_path) = args.export {
-        let ext = export_path
-            .extension()
-            .and_then(|e| e.to_str())
-            .unwrap_or("");
-        if ext == "zip" {
-            let count = note_store.export_vault_to_zip(&export_path)?;
-            println!(
-                "Exported {} note(s) to zip archive: {:?}",
-                count, export_path
-            );
-        } else {
-            let first_note = note_store
-                .filenames()
-                .first()
-                .cloned()
-                .ok_or_else(|| color_eyre::eyre::eyre!("No notes found to export"))?;
-            let html_path = note_store.export_note_to_html(&first_note, &export_path)?;
-            println!("Exported '{}' to HTML: {:?}", first_note, html_path);
-        }
+        println!(
+            "{}",
+            export::export_for_cli(&note_store, &export_path, args.note.as_deref())?
+        );
         return Ok(());
     }
 

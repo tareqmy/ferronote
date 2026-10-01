@@ -169,3 +169,84 @@ fn test_settings_overlay_and_config_persistence() {
     let loaded_config: Config = serde_json::from_str(&saved_json).unwrap();
     assert_eq!(loaded_config.theme, app.config.theme);
 }
+
+/// Runs a built CLI binary against a throwaway vault. `HOME` points into the
+/// temp dir and a config file is pre-written, so nothing outside it is touched.
+fn run_cli(bin: &str, root: &std::path::Path, args: &[&str]) -> std::process::Output {
+    std::process::Command::new(bin)
+        .env("HOME", root)
+        .env_remove("FERRONOTE_CONFIG_DIR")
+        .env_remove("FERRONOTE_NOTES_DIR")
+        .arg("--config-dir")
+        .arg(root.join("config"))
+        .arg("--dir")
+        .arg(root.join("notes"))
+        .args(args)
+        .output()
+        .unwrap()
+}
+
+#[test]
+fn test_cli_export_html_uses_the_note_named_by_flag() {
+    let root = tempdir().unwrap();
+    fs::create_dir_all(root.path().join("config")).unwrap();
+    fs::write(
+        root.path().join("config/config.json"),
+        serde_json::to_string(&Config::default()).unwrap(),
+    )
+    .unwrap();
+    let mut store = NoteStore::new(root.path().join("notes")).unwrap();
+    store
+        .create_note_with_content("Alpha", "# Alpha\n\nfirst body")
+        .unwrap();
+    store
+        .create_note_with_content("Beta", "# Beta\n\nsecond body")
+        .unwrap();
+
+    let out = root.path().join("out");
+    fs::create_dir_all(&out).unwrap();
+    let html = out.join("note.html");
+    let zip = out.join("vault.zip");
+    let (html_arg, zip_arg) = (html.to_str().unwrap(), zip.to_str().unwrap());
+
+    for bin in [env!("CARGO_BIN_EXE_ferronote"), env!("CARGO_BIN_EXE_fnt")] {
+        // Repeated runs must always pick the named note, never an arbitrary one.
+        for name in ["beta", "Alpha.md", "BETA", "Alpha"] {
+            let run = run_cli(bin, root.path(), &["--export", html_arg, "--note", name]);
+            assert!(run.status.success(), "{name}: {run:?}");
+            let written = fs::read_to_string(&html).unwrap();
+            let (wanted, other) = if name.to_lowercase().starts_with("beta") {
+                ("second body", "first body")
+            } else {
+                ("first body", "second body")
+            };
+            assert!(written.contains(wanted), "{name}: {written}");
+            assert!(!written.contains(other), "{name}: {written}");
+        }
+
+        // HTML export without --note is an error, not a guess.
+        let _ = fs::remove_file(&html);
+        let run = run_cli(bin, root.path(), &["--export", html_arg]);
+        assert!(!run.status.success());
+        assert!(String::from_utf8_lossy(&run.stderr).contains("--note <NAME>"));
+        assert!(!html.exists());
+
+        let run = run_cli(bin, root.path(), &["--export", html_arg, "--note", "Nope"]);
+        assert!(!run.status.success());
+        assert!(String::from_utf8_lossy(&run.stderr).contains("Note 'Nope' not found"));
+        assert!(!html.exists());
+
+        // --note only makes sense together with --export, and not with a .zip.
+        let run = run_cli(bin, root.path(), &["--note", "Alpha"]);
+        assert_eq!(run.status.code(), Some(2));
+        let run = run_cli(bin, root.path(), &["--export", zip_arg, "--note", "Alpha"]);
+        assert!(!run.status.success());
+        assert!(!zip.exists());
+
+        // The whole vault still exports to a .zip.
+        let run = run_cli(bin, root.path(), &["--export", zip_arg]);
+        assert!(run.status.success(), "{run:?}");
+        assert!(zip.is_file());
+        let _ = fs::remove_file(&zip);
+    }
+}

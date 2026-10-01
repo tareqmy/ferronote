@@ -650,6 +650,28 @@ Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu 
         self.metadata.keys().cloned().collect()
     }
 
+    /// Finds the note `name` refers to: an exact filename, a title (the
+    /// filename without `.md`), or failing that a unique case-insensitive
+    /// match of either.
+    #[must_use]
+    pub fn resolve_note(&self, name: &str) -> Option<String> {
+        let name = name.trim();
+        let with_ext = format!("{name}.md");
+        for candidate in [name, with_ext.as_str()] {
+            if self.metadata.contains_key(candidate) {
+                return Some(candidate.to_string());
+            }
+        }
+
+        let (name, with_ext) = (name.to_lowercase(), with_ext.to_lowercase());
+        let mut matches = self.metadata.keys().filter(|f| {
+            let f = f.to_lowercase();
+            f == name || f == with_ext
+        });
+        let first = matches.next()?;
+        matches.next().is_none().then(|| first.clone())
+    }
+
     #[must_use]
     pub fn get_modified_at(&self, filename: &str) -> Option<i64> {
         self.metadata
@@ -761,6 +783,43 @@ mod tests {
 
         let content = store.load_note(&filename).unwrap();
         assert_eq!(content, "# Test Note\n\n");
+    }
+
+    #[test]
+    fn test_resolve_note_by_filename_title_and_case() {
+        let dir = setup_test_dir("resolve_note");
+        let mut store = NoteStore::new(dir).unwrap();
+        store.create_note("Project Plan").unwrap();
+
+        let expected = Some("Project Plan.md".to_string());
+        assert_eq!(store.resolve_note("Project Plan.md"), expected);
+        assert_eq!(store.resolve_note("Project Plan"), expected);
+        assert_eq!(store.resolve_note("  project plan "), expected);
+        assert_eq!(store.resolve_note("PROJECT PLAN.MD"), expected);
+        assert_eq!(store.resolve_note("Project"), None);
+        assert_eq!(store.resolve_note(""), None);
+    }
+
+    #[test]
+    fn test_resolve_note_prefers_exact_and_rejects_ambiguous() {
+        let dir = setup_test_dir("resolve_note_ambiguous");
+        let mut store = NoteStore::new(dir.clone()).unwrap();
+        // Insert both spellings directly: a case-insensitive filesystem would
+        // refuse to hold two files that differ only by case.
+        for name in ["Ideas.md", "ideas.md"] {
+            store.metadata.insert(
+                name.to_string(),
+                NoteMetadata {
+                    created_at: Utc::now(),
+                    modified_at: Utc::now(),
+                    is_pinned: false,
+                },
+            );
+        }
+
+        assert_eq!(store.resolve_note("ideas"), Some("ideas.md".to_string()));
+        assert_eq!(store.resolve_note("Ideas"), Some("Ideas.md".to_string()));
+        assert_eq!(store.resolve_note("IDEAS"), None);
     }
 
     #[test]

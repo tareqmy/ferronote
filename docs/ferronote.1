@@ -16,7 +16,12 @@ Specify custom notes directory (default: ~/.ferronotes/ or config location).
 Import notes from a file (.md/.txt), a directory, or a .zip archive.
 .TP
 \fB\-e\fR, \fB\-\-export\fR \fIPATH\fR
-Export full vault to a .zip archive or a single note to an HTML file.
+Export the full vault to a .zip archive, or a single note to an HTML file.
+An HTML export requires \fB\-\-note\fR. An existing output file is overwritten.
+.TP
+\fB\-n\fR, \fB\-\-note\fR \fINAME\fR
+Note to export as HTML with \fB\-\-export\fR, given as a title or filename
+(case-insensitive). Cannot be combined with a .zip export.
 .TP
 \fB\-\-trash\fR
 List soft-deleted notes currently in the trash.

@@ -72,10 +72,7 @@ pub fn export(store: &NoteStore, note: Option<&str>, input: &str) -> Result<Stri
         bail!("Folder {} does not exist", parent.display());
     }
 
-    if path
-        .extension()
-        .is_some_and(|e| e.eq_ignore_ascii_case("zip"))
-    {
+    if is_zip(&path) {
         let count = store.export_vault_to_zip(&path)?;
         return Ok(format!("Exported {count} note(s) to {}", path.display()));
     }
@@ -86,6 +83,40 @@ pub fn export(store: &NoteStore, note: Option<&str>, input: &str) -> Result<Stri
     let written = store.export_note_to_html(note, &path)?;
     let title = note.strip_suffix(".md").unwrap_or(note);
     Ok(format!("Exported '{title}' to {}", written.display()))
+}
+
+/// Command-line export (`--export <PATH> [--note <NAME>]`). A `.zip` path
+/// archives the whole vault; any other path writes the note named `note`
+/// (a title or filename) as HTML. Unlike the in-app prompt this overwrites an
+/// existing file, as scripts expect. Returns a one-line summary on success.
+///
+/// # Errors
+/// Returns a user-facing message when `--note` is missing for an HTML export,
+/// is combined with a `.zip` path, names no note, or writing fails.
+pub fn export_for_cli(store: &NoteStore, path: &Path, note: Option<&str>) -> Result<String> {
+    if is_zip(path) {
+        if note.is_some() {
+            bail!("--note cannot be used with a .zip export; a .zip exports the whole vault");
+        }
+        let count = store.export_vault_to_zip(path)?;
+        return Ok(format!("Exported {count} note(s) to zip archive: {path:?}"));
+    }
+
+    let Some(name) = note else {
+        bail!(
+            "Exporting HTML needs a note: pass --note <NAME>, or use a .zip path for the whole vault"
+        );
+    };
+    let Some(filename) = store.resolve_note(name) else {
+        bail!("Note '{name}' not found");
+    };
+    let written = store.export_note_to_html(&filename, path)?;
+    Ok(format!("Exported '{filename}' to HTML: {written:?}"))
+}
+
+fn is_zip(path: &Path) -> bool {
+    path.extension()
+        .is_some_and(|e| e.eq_ignore_ascii_case("zip"))
 }
 
 /// Expands a leading `~` or `~/` to the user's home directory.
@@ -189,6 +220,56 @@ mod tests {
             err(out.path().join("x.html").to_str().unwrap(), None).contains("No note selected")
         );
         assert!(!out.path().join("x.html").exists());
+    }
+
+    #[test]
+    fn test_export_for_cli_html_exports_the_named_note() {
+        let (mut store, _notes, out) = store_with_note();
+        store
+            .create_note_with_content("Other", "# Other\n\nnot this one")
+            .unwrap();
+        let target = out.path().join("plan.html");
+
+        let msg = export_for_cli(&store, &target, Some("plan")).unwrap();
+
+        assert!(msg.contains("Exported 'Plan.md' to HTML"));
+        let html = std::fs::read_to_string(&target).unwrap();
+        assert!(html.contains("<h1>Plan</h1>"));
+        assert!(!html.contains("not this one"));
+
+        // Overwrites, unlike the in-app prompt.
+        export_for_cli(&store, &target, Some("Other.md")).unwrap();
+        assert!(
+            std::fs::read_to_string(&target)
+                .unwrap()
+                .contains("not this one")
+        );
+    }
+
+    #[test]
+    fn test_export_for_cli_zip_exports_whole_vault() {
+        let (store, _notes, out) = store_with_note();
+        let target = out.path().join("vault.zip");
+
+        let msg = export_for_cli(&store, &target, None).unwrap();
+
+        assert!(msg.starts_with("Exported 3 note(s) to zip archive"));
+        assert!(target.is_file());
+    }
+
+    #[test]
+    fn test_export_for_cli_rejects_bad_combinations() {
+        let (store, _notes, out) = store_with_note();
+        let html = out.path().join("x.html");
+        let zip = out.path().join("x.zip");
+
+        let err = |path: &Path, note| export_for_cli(&store, path, note).unwrap_err().to_string();
+
+        assert!(err(&html, None).contains("--note <NAME>"));
+        assert!(err(&html, Some("Nope")).contains("Note 'Nope' not found"));
+        assert!(err(&zip, Some("Plan")).contains("cannot be used with a .zip"));
+        assert!(!html.exists());
+        assert!(!zip.exists());
     }
 
     #[test]

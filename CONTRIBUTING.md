@@ -2,6 +2,8 @@
 
 Thank you for your interest in contributing to Ferronote! 🎉
 
+By participating, you agree to abide by our [Code of Conduct](CODE_OF_CONDUCT.md).
+
 ## Getting Started
 
 1. **Fork** the repository
@@ -22,11 +24,9 @@ cargo run -- --dir ./test-notes
 ```
 
 ### Quality Checks
-Before submitting a PR, ensure:
+Before submitting a PR, run the same checks as CI:
 ```bash
-cargo fmt --check        # Code formatting
-cargo clippy -- -W clippy::pedantic  # Linting
-cargo test               # All tests pass
+make ci                  # cargo fmt -- --check, strict clippy, cargo test
 ```
 
 ## Commit Convention
@@ -45,6 +45,10 @@ We use [Conventional Commits](https://www.conventionalcommits.org/):
 Read [`.gemini/AGENTS.md`](.gemini/AGENTS.md) for a full architecture overview.
 
 The key pattern: **Event → Action → Update State → Render** (The Elm Architecture).
+
+## Reporting Issues
+
+Use the [issue templates](https://github.com/tareqmy/ferronote/issues/new/choose) for bug reports and feature requests.
 
 ## Pull Request Process
 

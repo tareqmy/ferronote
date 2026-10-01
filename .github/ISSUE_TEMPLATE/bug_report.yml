@@ -1,0 +1,64 @@
+name: Bug report
+description: Something in Ferronote isn't working as expected
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug. Please search [existing issues](https://github.com/tareqmy/ferronote/issues) first.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Describe the bug and what you expected to happen instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Run `ferronote`
+        2. Press ...
+        3. See ...
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Ferronote version
+      description: Output of `ferronote --version`.
+      placeholder: "1.2.11"
+    validations:
+      required: true
+  - type: dropdown
+    id: install
+    attributes:
+      label: How did you install it?
+      options:
+        - Shell / PowerShell installer
+        - Homebrew
+        - cargo install
+        - Nix
+        - AUR
+        - Built from source
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: Operating system
+      placeholder: "macOS 15, Ubuntu 24.04, Windows 11 ..."
+    validations:
+      required: true
+  - type: input
+    id: terminal
+    attributes:
+      label: Terminal emulator
+      placeholder: "iTerm2, Alacritty, Windows Terminal, tmux inside kitty ..."
+  - type: textarea
+    id: logs
+    attributes:
+      label: Extra context
+      description: Screenshots, panic output, or relevant `config.json` settings. Please don't paste private note contents.

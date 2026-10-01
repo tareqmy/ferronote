@@ -22,6 +22,7 @@ Ferronote is a Rust TUI application that brings the elegance and speed of Notati
 - ⌨️ **[Keybindings Reference](docs/keybindings.md)** — Full list of keyboard shortcuts, Vim mode controls, navigation, and panel focus.
 - 🏗️ **[Architecture & Structure](docs/architecture.md)** — The Elm Architecture (TEA) in Rust, dependencies, and source tree layout.
 - 🤝 **[Contributing Guide](CONTRIBUTING.md)** — Guidelines for opening issues and submitting pull requests.
+- 📜 **[Code of Conduct](CODE_OF_CONDUCT.md)** — Expectations for participating in the community.
 - 🗺️ **[Development Roadmap](ROADMAP.md)** — Project vision and upcoming features.
 
 ---

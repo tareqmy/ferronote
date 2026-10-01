@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Documentation
+    url: https://tareqmy.github.io/ferronote/
+    about: Installation, CLI options, and keybindings are documented on the project website.

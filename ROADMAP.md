@@ -200,10 +200,10 @@
   - [x] Website / landing page
   - [x] `CONTRIBUTING.md`
   - [x] Architecture decision records (ADRs)
-- [ ] **Community**
-  - [ ] Issue templates
-  - [ ] PR template
-  - [ ] Code of Conduct
+- [x] **Community**
+  - [x] Issue templates
+  - [x] PR template
+  - [x] Code of Conduct
 
 **Deliverable**: Ferronote is installable in one command and welcoming to contributors.
 

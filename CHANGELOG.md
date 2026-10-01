@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.12] - 2026-10-01
+
+### Added
+- Paste as new note: `Ctrl+G` creates a note from the system clipboard, titled from its first line (heading markers stripped, characters invalid in file names replaced, capped at 60 characters). Duplicate titles get a numeric suffix, a blank clipboard is ignored, and pending edits are saved first.
+- Export from the UI: `Ctrl+X` opens a prompt prefilled with a unique path in your Downloads folder. A `.zip` path exports the whole vault; any other path exports the selected note as HTML. Existing files are never overwritten, and errors keep the prompt open for correction. Available from the Search bar, Note List and the editor's View mode (Insert mode keeps `Ctrl+X` for cut).
+- CLI: `-n`/`--note <NAME>` picks the note to export as HTML with `--export` — a title or filename, matched case-insensitively.
+- Community: bug report and feature request issue forms, a pull request template, and a Code of Conduct (Contributor Covenant 2.1).
+
+### Changed
+- CLI: `--export <path>.html` now requires `--note <NAME>`; `--note` cannot be combined with a `.zip` path. Previously it exported an arbitrary note. A `.zip` extension is now matched case-insensitively.
+- Internal: `App::new` now takes the already-loaded `Config` instead of reading the home config itself (library API change).
+- Docs: `CONTRIBUTING.md` points at `make ci`, matching what CI runs, and links the issue templates and Code of Conduct.
+
+### Fixed
+- Export: HTML export now escapes note text and titles, so notes containing `<`, `&` or markup such as `<script>` no longer produce broken or unsafe HTML.
+- CLI: `--export x.html` exported whichever note a hash map happened to yield first, so the result varied between runs.
+- Config: `--config-dir` pointing at a directory without a `config.json` wrote the default config to `~/.ferronote/config.json` — overwriting an existing one — and left the custom directory empty. The app also ignored `--config-dir` and `--dir` for its own settings; it now uses the config the entry points loaded.
+
 ## [1.2.11] - 2026-08-20
 
 ### Changed

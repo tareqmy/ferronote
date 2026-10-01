@@ -28,7 +28,7 @@ body:
     attributes:
       label: Ferronote version
       description: Output of `ferronote --version`.
-      placeholder: "1.2.11"
+      placeholder: "1.2.12"
     validations:
       required: true
   - type: dropdown
